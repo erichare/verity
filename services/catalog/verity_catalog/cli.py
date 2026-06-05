@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import typer
 from sqlalchemy import func
 from sqlmodel import Session, select
@@ -63,6 +65,27 @@ def list_manifests() -> None:
 
     for path in sorted(MANIFEST_DIR.glob("*.yaml")):
         typer.echo(path.stem)
+
+
+@app.command("crawl-study")
+def crawl_study_cmd(
+    study_guid: str = typer.Argument(..., help="NBTRD study GUID"),
+    name: str = typer.Option(..., help="Manifest name/slug"),
+    title: str | None = typer.Option(None, help="Study title"),
+    caliber: str | None = typer.Option(None, help="Caliber (firearm default)"),
+    out: Path | None = typer.Option(None, help="Output path (default: bundled manifests dir)"),
+) -> None:
+    """Crawl an NBTRD bullet study into a manifest YAML; then `ingest` it."""
+    import yaml
+
+    from .harvest.nbtrd import crawl_to_manifest
+    from .ingest import MANIFEST_DIR
+
+    typer.echo(f"crawling study {study_guid} ...")
+    manifest = crawl_to_manifest(study_guid, name=name, title=title, caliber=caliber)
+    out = out or (MANIFEST_DIR / f"{name}.yaml")
+    out.write_text(yaml.safe_dump(manifest, sort_keys=False))
+    typer.echo(f"wrote {len(manifest['files'])} scans -> {out}")
 
 
 def main() -> None:
