@@ -8,6 +8,7 @@ The learned representation + calibrated likelihood-ratio decision layer come in
 later phases.
 """
 
+from .decision import ScoreLRModel, cllr, cllr_min, eer, roc_auc, tippett
 from .orientation import dominant_orientation
 from .preprocess import gaussian_lowpass, isolate_roughness, remove_form, sa, sq
 from .registration import Registration, align_1d, register
@@ -28,4 +29,10 @@ __all__ = [
     "register",
     "Registration",
     "align_1d",
+    "ScoreLRModel",
+    "cllr",
+    "cllr_min",
+    "eer",
+    "roc_auc",
+    "tippett",
 ]

@@ -10,6 +10,7 @@ dependencies = [
     "numpy>=1.24",
     "scipy>=1.11",
     "scikit-image>=0.21",
+    "scikit-learn>=1.3",
 ]
 
 [project.optional-dependencies]
@@ -21,6 +22,7 @@ oracle = ["surfalize>=0.10"]
 
 [project.scripts]
 verity-demo-hamby = "verity.examples.hamby_km_knm:main"
+verity-validate-hamby = "verity.examples.hamby_validation:main"
 
 [build-system]
 requires = ["hatchling"]
