@@ -36,6 +36,31 @@ def info() -> None:
     typer.echo(f"  {'blobs':<14} {store.count()}")
 
 
+@app.command()
+def ingest(
+    manifest: str = typer.Argument(..., help="Manifest name (see 'manifests') or path to a .yaml"),
+    limit: int | None = typer.Option(None, help="Max number of files to ingest"),
+) -> None:
+    """Ingest a dataset manifest: fetch, validate (verity-x3p), hash, catalog."""
+    from .ingest import ingest_manifest, load_manifest
+    from .store import get_store
+
+    manifest_obj = load_manifest(manifest)
+    store = get_store()
+    with Session(engine) as session:
+        stats = ingest_manifest(session, store, manifest_obj, limit=limit)
+    typer.echo(f"ingested '{manifest_obj.name}': {stats}")
+
+
+@app.command("manifests")
+def list_manifests() -> None:
+    """List the bundled dataset manifests."""
+    from .ingest import MANIFEST_DIR
+
+    for path in sorted(MANIFEST_DIR.glob("*.yaml")):
+        typer.echo(path.stem)
+
+
 def main() -> None:
     app()
 
