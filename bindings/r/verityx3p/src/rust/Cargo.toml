@@ -16,12 +16,16 @@ path = 'document.rs'
 [dependencies]
 extendr-api = '*'
 # The Verity X3P core, aliased so it doesn't clash with this crate's name.
-verity-core = { package = "verity-x3p", path = "../../../../../crates/verity-x3p" }
+# Bundled in-package (src/rust/verity-x3p) so the package is self-contained for
+# R CMD check / CRAN; regenerate with bindings/r/vendor-core.sh.
+verity-core = { package = "verity-x3p", path = "verity-x3p" }
 ndarray = "0.16"
 
 [profile.release]
 lto = true
 codegen-units = 1
 
-# Standalone workspace so this crate isn't absorbed into the repo-root workspace.
+# Standalone workspace so this crate isn't absorbed into the repo-root
+# workspace. The bundled `verity-x3p` path dependency lives inside this
+# directory, so Cargo auto-includes it as a workspace member.
 [workspace]
