@@ -47,8 +47,12 @@ def ingest(
 
     manifest_obj = load_manifest(manifest)
     store = get_store()
+
+    def _progress(index: int, total: int, name: str) -> None:
+        typer.echo(f"  [{index}/{total}] {name}")
+
     with Session(engine) as session:
-        stats = ingest_manifest(session, store, manifest_obj, limit=limit)
+        stats = ingest_manifest(session, store, manifest_obj, limit=limit, on_progress=_progress)
     typer.echo(f"ingested '{manifest_obj.name}': {stats}")
 
 

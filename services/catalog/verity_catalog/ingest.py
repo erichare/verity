@@ -9,6 +9,7 @@ import json
 import os
 import re
 import tempfile
+from collections.abc import Callable
 from pathlib import Path
 
 import yaml
@@ -253,9 +254,14 @@ def ingest_manifest(
     *,
     limit: int | None = None,
     source: Source | None = None,
+    on_progress: Callable[[int, int, str], None] | None = None,
 ) -> dict:
     """Ingest a manifest's scans into the catalog. ``source`` may be injected
-    (e.g. in tests) to avoid network access."""
+    (e.g. in tests) to avoid network access.
+
+    Idempotent and **resumable**: a scan already present (matched by its source
+    URL) is skipped *without* re-downloading, so an interrupted pull can simply
+    be re-run."""
     study = get_or_create_study(session, manifest.study)
     source = source or build_source(manifest)
 
@@ -263,27 +269,32 @@ def ingest_manifest(
     if limit is not None:
         files = files[:limit]
 
-    stats = {"files": len(files), "ingested": 0, "skipped_no_lea": 0}
-    for remote in files:
+    stats = {"files": len(files), "ingested": 0, "already_present": 0, "skipped_no_lea": 0}
+    total = len(files)
+    for index, remote in enumerate(files, start=1):
         lea = parse_lea(remote.name)
         if lea is None:
             stats["skipped_no_lea"] += 1
-            continue
-        barrel, bullet, land_no = lea
-        firearm = get_or_create_firearm(
-            session, study, f"Barrel{barrel}", manifest.firearm_defaults
-        )
-        bullet_row = get_or_create_bullet(session, firearm, f"Barrel{barrel}_Bullet{bullet}")
-        land = get_or_create_land(session, bullet_row, land_no, remote.name)
-        data = source.fetch(remote)
-        ingest_scan(
-            session,
-            store,
-            data,
-            name=remote.name,
-            source=manifest.study.source,
-            source_ref=remote.url,
-            land=land,
-        )
-        stats["ingested"] += 1
+        elif session.exec(select(models.Scan).where(models.Scan.source_ref == remote.url)).first():
+            stats["already_present"] += 1  # resume: don't re-download
+        else:
+            barrel, bullet, land_no = lea
+            firearm = get_or_create_firearm(
+                session, study, f"Barrel{barrel}", manifest.firearm_defaults
+            )
+            bullet_row = get_or_create_bullet(session, firearm, f"Barrel{barrel}_Bullet{bullet}")
+            land = get_or_create_land(session, bullet_row, land_no, remote.name)
+            data = source.fetch(remote)
+            ingest_scan(
+                session,
+                store,
+                data,
+                name=remote.name,
+                source=manifest.study.source,
+                source_ref=remote.url,
+                land=land,
+            )
+            stats["ingested"] += 1
+        if on_progress:
+            on_progress(index, total, remote.name)
     return stats
