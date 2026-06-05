@@ -47,6 +47,55 @@ def test_crawl_study_enumerates_hierarchy():
     assert parse_lea(scans[5].name) is not None  # ingest can parse the names
 
 
+def _fake_site_with_questioned():
+    """2 known barrels (Brl01/Brl02, 1 bullet x 2 lands) + an 'Unk' questioned
+    bucket. Each firearm appears on the study page as a label link *and* a
+    'Bullet / CC' link sharing its GUID — the real NBTRD double-anchor pattern."""
+    known = {_guid(1): "Brl01", _guid(2): "Brl02"}
+    questioned = {_guid(9): "Unk"}
+    firearms = {**known, **questioned}
+    bullets = {f: [_guid(10 + i)] for i, f in enumerate(firearms)}  # one bullet each
+    measurements = {
+        bs[0]: [_guid(100 + 2 * i), _guid(101 + 2 * i)] for i, bs in enumerate(bullets.values())
+    }
+
+    def fetch(url: str) -> str:
+        if "/Studies/Studies/Details/" in url:
+            return "".join(
+                f'<a href="/NRBTD/Studies/Firearm/Details/{f}">{label}</a>'
+                f'<a href="/NRBTD/Studies/Firearm/Details/{f}">Bullet / CC</a>'
+                for f, label in firearms.items()
+            )
+        for f, bs in bullets.items():
+            if f"/Firearm/Details/{f}" in url:
+                return "".join(
+                    f'<a href="/NRBTD/Studies/Bullet/Details/{b}">Measurements</a>' for b in bs
+                )
+        for b, ms in measurements.items():
+            if f"/Bullet/Details/{b}" in url:
+                return "".join(
+                    f'<a href="/NRBTD/Studies/BulletMeasurement/Details/{m}">scan.x3p</a>'
+                    for m in ms
+                )
+        return ""
+
+    return fetch
+
+
+def test_crawl_study_skips_questioned_bucket():
+    fetch = _fake_site_with_questioned()
+    # Default: the 'Unk' bucket is skipped -> 2 known barrels x 1 bullet x 2 lands.
+    scans = crawl_study(_guid(999), fetch=fetch)
+    assert {s.firearm_index for s in scans} == {1, 2}
+    assert len(scans) == 2 * 1 * 2
+    # The first-seen label (not the 'Bullet / CC' second anchor) drives the GUID set.
+    assert len({s.guid for s in scans}) == 4
+    # Opt out: keep the questioned bucket too -> 3 firearms.
+    kept = crawl_study(_guid(999), fetch=fetch, skip_questioned=False)
+    assert {s.firearm_index for s in kept} == {1, 2, 3}
+    assert len(kept) == 3 * 1 * 2
+
+
 def test_crawl_to_manifest_is_valid():
     manifest_dict = crawl_to_manifest(
         _guid(999), name="test-study", caliber="9mm Luger", fetch=_fake_site()

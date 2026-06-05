@@ -17,9 +17,20 @@ from dataclasses import dataclass
 BASE = "https://tsapps.nist.gov/NRBTD"
 _UA = "verity-catalog/0.1 (+https://github.com/erichare/verity)"
 _GUID = r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
-_FIREARM_RE = re.compile(rf"/NRBTD/Studies/Firearm/Details/({_GUID})")
+# Firearm anchors also carry the barrel's display label (e.g. "G1A9", "Brl03",
+# "Unk"); capture it so questioned/unknown buckets can be skipped. Each firearm
+# GUID appears twice on the study page (a label link + a "Bullet / CC" link),
+# so dedupe by GUID keeping the first (the real label).
+_FIREARM_ANCHOR_RE = re.compile(
+    rf'/NRBTD/Studies/Firearm/Details/({_GUID})[^"]*"[^>]*>(.*?)</a>', re.S
+)
 _BULLET_RE = re.compile(rf"/NRBTD/Studies/Bullet/Details/({_GUID})")
 _MEASUREMENT_RE = re.compile(rf"/NRBTD/Studies/BulletMeasurement/Details/({_GUID})")
+# A firearm whose label is a questioned/unknown bucket groups bullets with no
+# known source barrel. Those would seed false same-source (KM) pairs, so they are
+# skipped by default. (Questioned bullets *nested under their true barrel* — the
+# Hamby convention — are unaffected: this filters firearms, not bullets.)
+_QUESTIONED_RE = re.compile(r"^(unk|unknown|quest|q\d)", re.I)
 
 
 @dataclass
@@ -43,6 +54,22 @@ def _unique(items: list[str]) -> list[str]:
     return out
 
 
+def _firearm_guids(study_html: str, *, skip_questioned: bool = True) -> list[str]:
+    """Firearm GUIDs in document order, deduped by GUID (first label wins),
+    with questioned/unknown buckets skipped when ``skip_questioned``."""
+    seen: set[str] = set()
+    out: list[str] = []
+    for guid, label in _FIREARM_ANCHOR_RE.findall(study_html):
+        if guid in seen:
+            continue
+        seen.add(guid)
+        text = re.sub(r"<.*?>", "", label).strip()
+        if skip_questioned and _QUESTIONED_RE.match(text):
+            continue
+        out.append(guid)
+    return out
+
+
 def _fetch(url: str, *, timeout: float = 60.0, retries: int = 4, delay: float = 0.6) -> str:
     import httpx
 
@@ -61,14 +88,16 @@ def _fetch(url: str, *, timeout: float = 60.0, retries: int = 4, delay: float = 
     raise RuntimeError(f"failed to fetch {url}") from last_error
 
 
-def crawl_study(study_guid: str, *, fetch=None) -> list[CrawledScan]:
+def crawl_study(study_guid: str, *, fetch=None, skip_questioned: bool = True) -> list[CrawledScan]:
     """Enumerate every bullet measurement in a study, by page order. ``fetch`` is
-    injectable (``fetch(url) -> html``) for testing without network."""
+    injectable (``fetch(url) -> html``) for testing without network. Questioned/
+    unknown firearm buckets are skipped by default (no known source barrel)."""
     fetch = fetch or _fetch
     study_html = fetch(f"{BASE}/Studies/Studies/Details/{study_guid}")
 
     scans: list[CrawledScan] = []
-    for f_idx, firearm_guid in enumerate(_unique(_FIREARM_RE.findall(study_html)), start=1):
+    firearm_guids = _firearm_guids(study_html, skip_questioned=skip_questioned)
+    for f_idx, firearm_guid in enumerate(firearm_guids, start=1):
         firearm_html = fetch(f"{BASE}/Studies/Firearm/Details/{firearm_guid}")
         for b_idx, bullet_guid in enumerate(_unique(_BULLET_RE.findall(firearm_html)), start=1):
             bullet_html = fetch(f"{BASE}/Studies/Bullet/Details/{bullet_guid}")
@@ -95,9 +124,10 @@ def crawl_to_manifest(
     title: str | None = None,
     caliber: str | None = None,
     fetch=None,
+    skip_questioned: bool = True,
 ) -> dict:
     """Crawl a study into a manifest dict (ready for ``Manifest.model_validate``)."""
-    scans = crawl_study(study_guid, fetch=fetch)
+    scans = crawl_study(study_guid, fetch=fetch, skip_questioned=skip_questioned)
     firearm_defaults = {"caliber": caliber} if caliber else {}
     return {
         "name": name,
