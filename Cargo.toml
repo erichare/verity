@@ -1,0 +1,19 @@
+# Verity — polyglot monorepo.
+# The X3P codec is a single Rust core (`crates/verity-x3p`) with thin per-language
+# bindings (Python via PyO3 first; R/TS/Swift/Java to follow). Writing the fiddly
+# parts (column-major X-fastest matrix order, I/L/F/D codes, MD5 split, validity
+# masks) once guarantees every language reads/writes bit-identical files.
+[workspace]
+resolver = "2"
+members = ["crates/verity-x3p"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/erichare/verity"
+authors = ["Eric Hare <ericrhare@gmail.com>"]
+
+[workspace.dependencies]
+ndarray = "0.16"
+thiserror = "2"
