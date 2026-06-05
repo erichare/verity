@@ -25,7 +25,9 @@ learn = ["torch>=2.2"]
 [project.scripts]
 verity-demo-hamby = "verity.examples.hamby_km_knm:main"
 verity-validate-hamby = "verity.examples.hamby_validation:main"
+verity-validate = "verity.examples.hamby_validation:main"
 verity-learn-hamby = "verity.examples.hamby_learned:main"
+verity-learn-pooled = "verity.examples.hamby_learned:pooled_main"
 
 [build-system]
 requires = ["hatchling"]

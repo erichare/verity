@@ -84,7 +84,7 @@ def crawl_study_cmd(
     typer.echo(f"crawling study {study_guid} ...")
     manifest = crawl_to_manifest(study_guid, name=name, title=title, caliber=caliber)
     out = out or (MANIFEST_DIR / f"{name}.yaml")
-    out.write_text(yaml.safe_dump(manifest, sort_keys=False))
+    out.write_text(yaml.safe_dump(manifest, sort_keys=False, allow_unicode=True))
     typer.echo(f"wrote {len(manifest['files'])} scans -> {out}")
 
 
