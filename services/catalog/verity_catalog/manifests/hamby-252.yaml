@@ -1,0 +1,451 @@
+# Hamby (2009) Barrel Set 252 — FULL set: 210 LEA scans from NBTRD.
+#
+# NBTRD study GUID: c09aaa86-5d60-4acb-9031-46dad2c0ad32
+# Title: "Hamby (2009) Barrel Set 252"  (10 consecutively rifled 9mm Ruger barrels)
+# 10 barrels x (2 known + 1-3 questioned bullets) x 6 lands = 210 scans, ~3.5 MB each (~0.75 GB).
+# Enumerated by crawling study -> Firearm/Details -> Bullet/Details -> BulletMeasurement GUIDs.
+# Open, no-auth GET DownloadMeasurement/{guid} endpoints. There is NO working bulk/zip export.
+#
+# Bullet numbering: known bullets keep 1/2; questioned (lettered) bullets are numbered
+# 3,4,5... per barrel so the LEA filename parser accepts them. Original NBTRD letter noted inline.
+name: hamby-252
+title: "Hamby (2009) Barrel Set 252 — full (NBTRD)"
+
+study:
+  source: nbtrd
+  external_id: c09aaa86-5d60-4acb-9031-46dad2c0ad32
+  title: "Hamby (2009) Barrel Set 252"
+  nist_measurement: true
+  consecutively_manufactured: true
+
+firearm_defaults:
+  brand: Ruger
+  model: P-85
+  caliber: 9mm Luger
+  n_lands: 6
+  twist: right
+
+source:
+  kind: url_list
+
+files:
+  - name: Hamby252_Barrel1_Bullet1_Land1.x3p  # NBTRD: Br1 Bullet 1-1.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/43567404-1611-4b40-ae74-a1e440e79f6a
+  - name: Hamby252_Barrel1_Bullet1_Land2.x3p  # NBTRD: Br1 Bullet 1-2.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/a9f59fe1-f64b-487b-9f73-322ea0133a74
+  - name: Hamby252_Barrel1_Bullet1_Land3.x3p  # NBTRD: Br1 Bullet 1-3.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/2ea4efe4-beeb-4291-993d-ae7726c624f4
+  - name: Hamby252_Barrel1_Bullet1_Land4.x3p  # NBTRD: Br1 Bullet 1-4.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/6bb13db8-01ca-4cd4-ba5d-1c5670f1c204
+  - name: Hamby252_Barrel1_Bullet1_Land5.x3p  # NBTRD: Br1 Bullet 1-5.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/2110e6c2-f801-458f-941a-9740804aa162
+  - name: Hamby252_Barrel1_Bullet1_Land6.x3p  # NBTRD: Br1 Bullet 1-6.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/eaa73b31-8f9c-4b7f-a1c8-48e4da3ff9e0
+  - name: Hamby252_Barrel1_Bullet2_Land1.x3p  # NBTRD: Br1 Bullet 2-1.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/979bf3f5-2bf4-43ab-aa14-66e79e0cbc99
+  - name: Hamby252_Barrel1_Bullet2_Land2.x3p  # NBTRD: Br1 Bullet 2-2.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/b2b25004-364c-4468-b835-fd563b190a27
+  - name: Hamby252_Barrel1_Bullet2_Land3.x3p  # NBTRD: Br1 Bullet 2-3.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/554c40d8-8857-4b1c-a28f-fda9b347999b
+  - name: Hamby252_Barrel1_Bullet2_Land4.x3p  # NBTRD: Br1 Bullet 2-4.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/da019fc2-3a19-4da5-b1d7-ec059cd095f2
+  - name: Hamby252_Barrel1_Bullet2_Land5.x3p  # NBTRD: Br1 Bullet 2-5.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/d6dfaef6-f066-4b76-bf42-f0e8c06d6241
+  - name: Hamby252_Barrel1_Bullet2_Land6.x3p  # NBTRD: Br1 Bullet 2-6.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/a172932e-121c-4bee-9477-ae2454f0b513
+  - name: Hamby252_Barrel1_Bullet3_Land1.x3p  # NBTRD: Ukn Bullet C-1.x3p (questioned bullet 'C')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/3652ae66-4647-4451-8be1-da373bc3f740
+  - name: Hamby252_Barrel1_Bullet3_Land2.x3p  # NBTRD: Ukn Bullet C-2.x3p (questioned bullet 'C')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/be966b5b-4eeb-4822-8290-ad852bc3bdd2
+  - name: Hamby252_Barrel1_Bullet3_Land3.x3p  # NBTRD: Ukn Bullet C-3.x3p (questioned bullet 'C')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/037c5ed6-3940-4c7c-8cd3-7cba60ad975d
+  - name: Hamby252_Barrel1_Bullet3_Land4.x3p  # NBTRD: Ukn Bullet C-4.x3p (questioned bullet 'C')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/f818e30c-fd0c-4957-8bdf-b35616e74007
+  - name: Hamby252_Barrel1_Bullet3_Land5.x3p  # NBTRD: Ukn Bullet C-5.x3p (questioned bullet 'C')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/f2e7c3ed-1573-4501-8383-f7033e779d0d
+  - name: Hamby252_Barrel1_Bullet3_Land6.x3p  # NBTRD: Ukn Bullet C-6.x3p (questioned bullet 'C')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/d756ed15-706b-429b-827f-9a8c8b7cde69
+  - name: Hamby252_Barrel1_Bullet4_Land1.x3p  # NBTRD: Ukn Bullet F-1.x3p (questioned bullet 'F')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/b3cc267b-1424-4375-aee5-940d4f7f7936
+  - name: Hamby252_Barrel1_Bullet4_Land2.x3p  # NBTRD: Ukn Bullet F-2.x3p (questioned bullet 'F')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/b5d44473-dce6-487b-b713-293d878f96db
+  - name: Hamby252_Barrel1_Bullet4_Land3.x3p  # NBTRD: Ukn Bullet F-3.x3p (questioned bullet 'F')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/2a23215f-0468-4272-9e96-1842c0483013
+  - name: Hamby252_Barrel1_Bullet4_Land4.x3p  # NBTRD: Ukn Bullet F-4.x3p (questioned bullet 'F')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/fe692ae2-e48d-4c1f-83c6-3eee053c078c
+  - name: Hamby252_Barrel1_Bullet4_Land5.x3p  # NBTRD: Ukn Bullet F-5.x3p (questioned bullet 'F')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/75a2c0b3-6f10-4c73-a0e8-89c6588c15bc
+  - name: Hamby252_Barrel1_Bullet4_Land6.x3p  # NBTRD: Ukn Bullet F-6.x3p (questioned bullet 'F')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/f698a902-0d05-4add-aeb0-6fa908f610ad
+  - name: Hamby252_Barrel2_Bullet1_Land1.x3p  # NBTRD: Br2 Bullet 1-1.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/cd204983-465b-4ec3-9da8-cba515a779ff
+  - name: Hamby252_Barrel2_Bullet1_Land2.x3p  # NBTRD: Br2 Bullet 1-2.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/0e72228c-5e39-4a42-8c4e-3da41a11f32c
+  - name: Hamby252_Barrel2_Bullet1_Land3.x3p  # NBTRD: Br2 Bullet 1-3.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/b9d6e187-2de7-44e8-9b88-c83c29a8129d
+  - name: Hamby252_Barrel2_Bullet1_Land4.x3p  # NBTRD: Br2 Bullet 1-4.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/fda92f6a-71ba-4735-ade0-02942d14d1e9
+  - name: Hamby252_Barrel2_Bullet1_Land5.x3p  # NBTRD: Br2 Bullet 1-5.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/8fa798b4-c5bb-40e2-acf4-d9296865e8d4
+  - name: Hamby252_Barrel2_Bullet1_Land6.x3p  # NBTRD: Br2 Bullet 1-6.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/81e817e5-15d8-409f-b5bd-d67c525941fe
+  - name: Hamby252_Barrel2_Bullet2_Land1.x3p  # NBTRD: Br2 Bullet 2-1.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/288341e0-0fdf-4b0c-bd26-b31ac8c43f72
+  - name: Hamby252_Barrel2_Bullet2_Land2.x3p  # NBTRD: Br2 Bullet 2-2.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/c97ada55-3a35-44fd-adf3-ac27dd202522
+  - name: Hamby252_Barrel2_Bullet2_Land3.x3p  # NBTRD: Br2 Bullet 2-3.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/8a1805d9-9d01-4427-8873-aef4a0bd323a
+  - name: Hamby252_Barrel2_Bullet2_Land4.x3p  # NBTRD: Br2 Bullet 2-4.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/a116e448-18e1-4500-859c-38a5f5cc38fd
+  - name: Hamby252_Barrel2_Bullet2_Land5.x3p  # NBTRD: Br2 Bullet 2-5.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/0b7182d3-1275-456e-a9b4-ae378105e4af
+  - name: Hamby252_Barrel2_Bullet2_Land6.x3p  # NBTRD: Br2 Bullet 2-6.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/86934fcd-7317-4c74-86ae-f167dbc2f434
+  - name: Hamby252_Barrel2_Bullet3_Land1.x3p  # NBTRD: Ukn Bullet H-1.x3p (questioned bullet 'H')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/6b3b1881-0101-47e0-a26e-993728d3bcb4
+  - name: Hamby252_Barrel2_Bullet3_Land2.x3p  # NBTRD: Ukn Bullet H-2.x3p (questioned bullet 'H')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/84c92b1e-ed36-4fed-b4a1-9a4dc5cf66d1
+  - name: Hamby252_Barrel2_Bullet3_Land3.x3p  # NBTRD: Ukn Bullet H-3.x3p (questioned bullet 'H')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/e01c9330-2a63-46af-ace6-d91355b29db5
+  - name: Hamby252_Barrel2_Bullet3_Land4.x3p  # NBTRD: Ukn Bullet H-4.x3p (questioned bullet 'H')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/54ee42cb-6af5-45a3-abee-16b3441cf628
+  - name: Hamby252_Barrel2_Bullet3_Land5.x3p  # NBTRD: Ukn Bullet H-5.x3p (questioned bullet 'H')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/57692046-0b08-4baa-b6e7-b049030f5041
+  - name: Hamby252_Barrel2_Bullet3_Land6.x3p  # NBTRD: Ukn Bullet H-6.x3p (questioned bullet 'H')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/442cad6d-0186-4dac-865e-af439eaef433
+  - name: Hamby252_Barrel3_Bullet1_Land1.x3p  # NBTRD: Br3 Bullet 1-1.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/c94d2561-78bd-4520-83f8-79e19ae103a8
+  - name: Hamby252_Barrel3_Bullet1_Land2.x3p  # NBTRD: Br3 Bullet 1-2.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/b2e3ae98-1f03-45e1-9d2c-25682d22fa0d
+  - name: Hamby252_Barrel3_Bullet1_Land3.x3p  # NBTRD: Br3 Bullet 1-3.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/569c843e-49be-439a-9141-8d2da649e526
+  - name: Hamby252_Barrel3_Bullet1_Land4.x3p  # NBTRD: Br3 Bullet 1-4.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/f7e35a06-680a-46c5-b1da-479989f3b7b2
+  - name: Hamby252_Barrel3_Bullet1_Land5.x3p  # NBTRD: Br3 Bullet 1-5.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/563aa62d-1760-4ccb-b52e-55566eb2e57a
+  - name: Hamby252_Barrel3_Bullet1_Land6.x3p  # NBTRD: Br3 Bullet 1-6.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/2289d9c9-99d9-4e97-a2a0-90a2925e812c
+  - name: Hamby252_Barrel3_Bullet2_Land1.x3p  # NBTRD: Br3 Bullet 2-1.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/9f9cbd54-2f80-4cd5-8cf2-8c70908cd367
+  - name: Hamby252_Barrel3_Bullet2_Land2.x3p  # NBTRD: Br3 Bullet 2-2.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/d0cfa2f8-20db-4f8e-8f0d-76646a91263a
+  - name: Hamby252_Barrel3_Bullet2_Land3.x3p  # NBTRD: Br3 Bullet 2-3.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/0024d0ba-0938-4f7b-a023-2b2acd76726d
+  - name: Hamby252_Barrel3_Bullet2_Land4.x3p  # NBTRD: Br3 Bullet 2-4.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/441dfa6e-4cf6-41ba-b014-f9e4d3b83f66
+  - name: Hamby252_Barrel3_Bullet2_Land5.x3p  # NBTRD: Br3 Bullet 2-5.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/faf315f9-de3a-46b8-bd16-13baa141be79
+  - name: Hamby252_Barrel3_Bullet2_Land6.x3p  # NBTRD: Br3 Bullet 2-6.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/534f8b34-c30a-4e09-9977-94d67f5d8928
+  - name: Hamby252_Barrel3_Bullet3_Land1.x3p  # NBTRD: Ukn Bullet S-1.x3p (questioned bullet 'S')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/9e91eb8a-0354-40b6-aa73-d02e92a03cb9
+  - name: Hamby252_Barrel3_Bullet3_Land2.x3p  # NBTRD: Ukn Bullet S-2.x3p (questioned bullet 'S')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/67922b93-4d4a-4add-8617-d4665532cc2c
+  - name: Hamby252_Barrel3_Bullet3_Land3.x3p  # NBTRD: Ukn Bullet S-3.x3p (questioned bullet 'S')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/e8466b9f-f6a0-4f45-8584-0eaa9650e124
+  - name: Hamby252_Barrel3_Bullet3_Land4.x3p  # NBTRD: Ukn Bullet S-4.x3p (questioned bullet 'S')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/c83e9b33-d52a-4c1c-aeb7-4b5fb0d5e70f
+  - name: Hamby252_Barrel3_Bullet3_Land5.x3p  # NBTRD: Ukn Bullet S-5.x3p (questioned bullet 'S')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/8113cc53-bbf1-430a-85e0-df33c9395694
+  - name: Hamby252_Barrel3_Bullet3_Land6.x3p  # NBTRD: Ukn Bullet S-6.x3p (questioned bullet 'S')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/b57d115c-c8b0-4a58-98bd-a26528137576
+  - name: Hamby252_Barrel3_Bullet4_Land1.x3p  # NBTRD: Ukn Bullet X-1.x3p (questioned bullet 'X')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/24612eb3-bdc9-49e7-bfc0-f9a31435c2a5
+  - name: Hamby252_Barrel3_Bullet4_Land2.x3p  # NBTRD: Ukn Bullet X-2.x3p (questioned bullet 'X')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/d6a992a7-dfef-4825-b351-77fb32a22d5f
+  - name: Hamby252_Barrel3_Bullet4_Land3.x3p  # NBTRD: Ukn Bullet X-3.x3p (questioned bullet 'X')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/7dedb0c7-9a8b-4367-81a7-5f60d194ac07
+  - name: Hamby252_Barrel3_Bullet4_Land4.x3p  # NBTRD: Ukn Bullet X-4.x3p (questioned bullet 'X')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/d6a7bf99-2c1c-4c66-b164-e02f65e4faad
+  - name: Hamby252_Barrel3_Bullet4_Land5.x3p  # NBTRD: Ukn Bullet X-5.x3p (questioned bullet 'X')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/f3165909-5159-416c-88a7-020bd43bae46
+  - name: Hamby252_Barrel3_Bullet4_Land6.x3p  # NBTRD: Ukn Bullet X-6.x3p (questioned bullet 'X')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/2b79168f-d4a5-4a24-ae2a-7407bd0b9c07
+  - name: Hamby252_Barrel4_Bullet1_Land1.x3p  # NBTRD: Br4 Bullet 1-1.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/b54a04bf-47d3-45fc-93da-083dea02fa99
+  - name: Hamby252_Barrel4_Bullet1_Land2.x3p  # NBTRD: Br4 Bullet 1-2.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/bf7d11da-2e2a-46af-8fe8-2e5c361f859a
+  - name: Hamby252_Barrel4_Bullet1_Land3.x3p  # NBTRD: Br4 Bullet 1-3.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/caa93bea-e96d-4f27-886f-5a00ef95d7f9
+  - name: Hamby252_Barrel4_Bullet1_Land4.x3p  # NBTRD: Br4 Bullet 1-4.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/73e33a6e-14c9-4425-8a0e-fb0a83efc02b
+  - name: Hamby252_Barrel4_Bullet1_Land5.x3p  # NBTRD: Br4 Bullet 1-5.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/48bfd2bc-d19a-4e83-97a5-6191f4cb1b75
+  - name: Hamby252_Barrel4_Bullet1_Land6.x3p  # NBTRD: Br4 Bullet 1-6.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/09ae9722-bc77-4a8b-9b2a-e22321c1516f
+  - name: Hamby252_Barrel4_Bullet2_Land1.x3p  # NBTRD: Br4 Bullet 2-1.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/7545b87d-4ae0-447a-a8de-9ce08ba3d189
+  - name: Hamby252_Barrel4_Bullet2_Land2.x3p  # NBTRD: Br4 Bullet 2-2.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/319a26e8-49e5-4e6d-abc5-1d358f14ddd6
+  - name: Hamby252_Barrel4_Bullet2_Land3.x3p  # NBTRD: Br4 Bullet 2-3.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/8c144fdf-9dec-4223-a657-6cb864fe2a5c
+  - name: Hamby252_Barrel4_Bullet2_Land4.x3p  # NBTRD: Br4 Bullet 2-4.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/d030eef1-5d8e-4988-9167-0a6417f1a62c
+  - name: Hamby252_Barrel4_Bullet2_Land5.x3p  # NBTRD: Br4 Bullet 2-5.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/ff8084b1-4440-4db5-83f6-35589be88723
+  - name: Hamby252_Barrel4_Bullet2_Land6.x3p  # NBTRD: Br4 Bullet 2-6.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/112ce95c-8e6c-448a-9639-b37e3194c4c9
+  - name: Hamby252_Barrel4_Bullet3_Land1.x3p  # NBTRD: Ukn Bullet B-1.x3p (questioned bullet 'B')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/aaab2062-5042-4cc2-8764-b2f402b9a3c1
+  - name: Hamby252_Barrel4_Bullet3_Land2.x3p  # NBTRD: Ukn Bullet B-2.x3p (questioned bullet 'B')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/4145602c-f055-42a4-989d-ec30c6be6e41
+  - name: Hamby252_Barrel4_Bullet3_Land3.x3p  # NBTRD: Ukn Bullet B-3.x3p (questioned bullet 'B')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/35211024-ce5c-4e78-a97f-63e2bd7b1d6c
+  - name: Hamby252_Barrel4_Bullet3_Land4.x3p  # NBTRD: Ukn Bullet B-4.x3p (questioned bullet 'B')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/8f88369f-a35a-4ff0-aa1e-5068a23e00f7
+  - name: Hamby252_Barrel4_Bullet3_Land5.x3p  # NBTRD: Ukn Bullet B-5.x3p (questioned bullet 'B')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/13784d3d-4c6b-4d3f-8625-92a3add11a02
+  - name: Hamby252_Barrel4_Bullet3_Land6.x3p  # NBTRD: Ukn Bullet B-6.x3p (questioned bullet 'B')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/78e36666-75b6-4831-acb2-fb0f3d4eee56
+  - name: Hamby252_Barrel5_Bullet1_Land1.x3p  # NBTRD: Br5 Bullet 1-1.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/a9f76eb1-6166-4f81-a62f-989b315969a3
+  - name: Hamby252_Barrel5_Bullet1_Land2.x3p  # NBTRD: Br5 Bullet 1-2.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/db30e70c-351a-4272-a409-3dd18097060c
+  - name: Hamby252_Barrel5_Bullet1_Land3.x3p  # NBTRD: Br5 Bullet 1-3.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/d4147d48-1568-420d-9606-10d7c1c092a5
+  - name: Hamby252_Barrel5_Bullet1_Land4.x3p  # NBTRD: Br5 Bullet 1-4.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/a7584494-1b30-416e-aad9-d7d4de573d34
+  - name: Hamby252_Barrel5_Bullet1_Land5.x3p  # NBTRD: Br5 Bullet 1-5.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/f404cbd0-6f75-4f0e-86a8-dff352d0999a
+  - name: Hamby252_Barrel5_Bullet1_Land6.x3p  # NBTRD: Br5 Bullet 1-6.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/42df324a-9af4-45c1-9071-90b99a44ba8e
+  - name: Hamby252_Barrel5_Bullet2_Land1.x3p  # NBTRD: Br5 Bullet 2-1.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/31f71320-11b1-4a8f-bf8c-5e9200f607d7
+  - name: Hamby252_Barrel5_Bullet2_Land2.x3p  # NBTRD: Br5 Bullet 2-2.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/32880564-20d8-403d-bffb-e1155e3d34ea
+  - name: Hamby252_Barrel5_Bullet2_Land3.x3p  # NBTRD: Br5 Bullet 2-3.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/74cd283f-c477-4fd5-9066-68b11303e974
+  - name: Hamby252_Barrel5_Bullet2_Land4.x3p  # NBTRD: Br5 Bullet 2-4.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/5c8454be-5845-4a16-957c-7fd544af5b79
+  - name: Hamby252_Barrel5_Bullet2_Land5.x3p  # NBTRD: Br5 Bullet 2-5.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/77308476-9ef0-4a2b-96d2-fb4905337dff
+  - name: Hamby252_Barrel5_Bullet2_Land6.x3p  # NBTRD: Br5 Bullet 2-6.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/134cdd58-6f04-46fe-a91f-0e100f8862b0
+  - name: Hamby252_Barrel5_Bullet3_Land1.x3p  # NBTRD: Ukn Bullet D-1.x3p (questioned bullet 'D')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/1a5ec37e-4164-4a52-af08-501ea254d49d
+  - name: Hamby252_Barrel5_Bullet3_Land2.x3p  # NBTRD: Ukn Bullet D-2.x3p (questioned bullet 'D')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/4f5c411c-7b35-40f8-8e40-9265aecb3ffb
+  - name: Hamby252_Barrel5_Bullet3_Land3.x3p  # NBTRD: Ukn Bullet D-3.x3p (questioned bullet 'D')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/cbbe86c3-8800-4240-9e22-1cb9665febbb
+  - name: Hamby252_Barrel5_Bullet3_Land4.x3p  # NBTRD: Ukn Bullet D-4.x3p (questioned bullet 'D')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/15847490-5e10-4280-9410-96925fb2d84d
+  - name: Hamby252_Barrel5_Bullet3_Land5.x3p  # NBTRD: Ukn Bullet D-5.x3p (questioned bullet 'D')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/78888ced-6c94-4620-9906-6ebcfa8e322a
+  - name: Hamby252_Barrel5_Bullet3_Land6.x3p  # NBTRD: Ukn Bullet D-6.x3p (questioned bullet 'D')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/ff0c76de-2db6-437f-a9db-eba517db4c05
+  - name: Hamby252_Barrel5_Bullet4_Land1.x3p  # NBTRD: Ukn Bullet Z-1.x3p (questioned bullet 'Z')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/550b4a27-f080-4d11-bc16-d7295d5f2445
+  - name: Hamby252_Barrel5_Bullet4_Land2.x3p  # NBTRD: Ukn Bullet Z-2.x3p (questioned bullet 'Z')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/089e724f-9d95-447d-b8b4-2f4b3d20b399
+  - name: Hamby252_Barrel5_Bullet4_Land3.x3p  # NBTRD: Ukn Bullet Z-3.x3p (questioned bullet 'Z')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/693a2e7e-1296-4a26-a472-71a3123abac6
+  - name: Hamby252_Barrel5_Bullet4_Land4.x3p  # NBTRD: Ukn Bullet Z-4.x3p (questioned bullet 'Z')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/3a75aa4c-6904-4316-a25a-4918cc130751
+  - name: Hamby252_Barrel5_Bullet4_Land5.x3p  # NBTRD: Ukn Bullet Z-5.x3p (questioned bullet 'Z')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/c7b142ff-88c3-4adc-8297-1548c403721c
+  - name: Hamby252_Barrel5_Bullet4_Land6.x3p  # NBTRD: Ukn Bullet Z-6.x3p (questioned bullet 'Z')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/33e4a51c-891a-4a18-8922-6405deb53fa2
+  - name: Hamby252_Barrel6_Bullet1_Land1.x3p  # NBTRD: Br6 Bullet 1-1.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/86a8f83b-7e61-47f6-92a2-a99a4935fec3
+  - name: Hamby252_Barrel6_Bullet1_Land2.x3p  # NBTRD: Br6 Bullet 1-2.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/a26ae97c-00bb-46b3-8db3-13d3aca45e72
+  - name: Hamby252_Barrel6_Bullet1_Land3.x3p  # NBTRD: Br6 Bullet 1-3.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/866500df-b598-4f2f-a972-24d5bd072076
+  - name: Hamby252_Barrel6_Bullet1_Land4.x3p  # NBTRD: Br6 Bullet 1-4.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/4d3112cd-24a1-426a-b396-38f86099aa2e
+  - name: Hamby252_Barrel6_Bullet1_Land5.x3p  # NBTRD: Br6 Bullet 1-5.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/cef24a69-454c-4f7d-8574-340fed355b97
+  - name: Hamby252_Barrel6_Bullet1_Land6.x3p  # NBTRD: Br6 Bullet 1-6.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/952fa73b-ae19-4df7-b6ab-9dcef8f8c79b
+  - name: Hamby252_Barrel6_Bullet2_Land1.x3p  # NBTRD: Br6 Bullet 2-1.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/0a96bede-2071-4c68-bc2f-33fee2a73bef
+  - name: Hamby252_Barrel6_Bullet2_Land2.x3p  # NBTRD: Br6 Bullet 2-2.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/47b4d2ab-6890-4fdf-927c-c9acb646b473
+  - name: Hamby252_Barrel6_Bullet2_Land3.x3p  # NBTRD: Br6 Bullet 2-3.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/4fbbcafa-caec-4c67-b441-c29a1a1e177b
+  - name: Hamby252_Barrel6_Bullet2_Land4.x3p  # NBTRD: Br6 Bullet 2-4.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/ac83c877-f081-4082-9fe0-44e0e2b592f3
+  - name: Hamby252_Barrel6_Bullet2_Land5.x3p  # NBTRD: Br6 Bullet 2-5.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/72c7f7e8-ac81-483a-8f42-6d98a7056808
+  - name: Hamby252_Barrel6_Bullet2_Land6.x3p  # NBTRD: Br6 Bullet 2-6.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/f02563fc-ecdb-49b1-89ee-35081756f1fc
+  - name: Hamby252_Barrel6_Bullet3_Land1.x3p  # NBTRD: Ukn Bullet E-1.x3p (questioned bullet 'E')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/68905943-6d47-4338-9889-cf2a8732e81e
+  - name: Hamby252_Barrel6_Bullet3_Land2.x3p  # NBTRD: Ukn Bullet E-2.x3p (questioned bullet 'E')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/50f4a0ba-416c-409f-8324-9e687ebcbf32
+  - name: Hamby252_Barrel6_Bullet3_Land3.x3p  # NBTRD: Ukn Bullet E-3.x3p (questioned bullet 'E')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/bc9e7225-24bb-4e91-b020-a8090e2a3fa4
+  - name: Hamby252_Barrel6_Bullet3_Land4.x3p  # NBTRD: Ukn Bullet E-4.x3p (questioned bullet 'E')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/2e63bc53-75d0-4ce3-8b4d-1a5f20997af2
+  - name: Hamby252_Barrel6_Bullet3_Land5.x3p  # NBTRD: Ukn Bullet E-5.x3p (questioned bullet 'E')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/14333330-92f7-4388-ae76-02a966b1f75b
+  - name: Hamby252_Barrel6_Bullet3_Land6.x3p  # NBTRD: Ukn Bullet E-6.x3p (questioned bullet 'E')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/ce05e6b4-d9ad-41da-b36c-aef806092aec
+  - name: Hamby252_Barrel6_Bullet4_Land1.x3p  # NBTRD: Ukn Bullet M-1.x3p (questioned bullet 'M')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/213ee575-8a71-4d71-99de-a5a39ccbca51
+  - name: Hamby252_Barrel6_Bullet4_Land2.x3p  # NBTRD: Ukn Bullet M-2.x3p (questioned bullet 'M')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/1755b6d7-e7fe-46b0-a8d7-6bd6e0a2bde2
+  - name: Hamby252_Barrel6_Bullet4_Land3.x3p  # NBTRD: Ukn Bullet M-3.x3p (questioned bullet 'M')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/7103cbf5-d655-423b-b1ab-a7220f37a5bc
+  - name: Hamby252_Barrel6_Bullet4_Land4.x3p  # NBTRD: Ukn Bullet M-4.x3p (questioned bullet 'M')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/cf02f37b-ffc2-4652-beb8-2511b2a1f0e4
+  - name: Hamby252_Barrel6_Bullet4_Land5.x3p  # NBTRD: Ukn Bullet M-5.x3p (questioned bullet 'M')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/b8475f24-4ec6-428b-98c7-13baa6895ada
+  - name: Hamby252_Barrel6_Bullet4_Land6.x3p  # NBTRD: Ukn Bullet M-6.x3p (questioned bullet 'M')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/7b140847-b689-4f7e-8e88-93c6ed20e683
+  - name: Hamby252_Barrel6_Bullet5_Land1.x3p  # NBTRD: Ukn Bullet Y-1.x3p (questioned bullet 'Y')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/1c6c0be5-3b3a-4e86-a22c-36962298660c
+  - name: Hamby252_Barrel6_Bullet5_Land2.x3p  # NBTRD: Ukn Bullet Y-2.x3p (questioned bullet 'Y')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/5416ed1f-49a0-4b07-a413-ac9cbc08d03b
+  - name: Hamby252_Barrel6_Bullet5_Land3.x3p  # NBTRD: Ukn Bullet Y-3.x3p (questioned bullet 'Y')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/f738f24f-5afd-459c-93d3-c2c2122da75f
+  - name: Hamby252_Barrel6_Bullet5_Land4.x3p  # NBTRD: Ukn Bullet Y-4.x3p (questioned bullet 'Y')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/2df2193b-d9d1-4cd4-9515-9d03feaafaec
+  - name: Hamby252_Barrel6_Bullet5_Land5.x3p  # NBTRD: Ukn Bullet Y-5.x3p (questioned bullet 'Y')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/aa132d22-9010-4e96-943a-37a267905214
+  - name: Hamby252_Barrel6_Bullet5_Land6.x3p  # NBTRD: Ukn Bullet Y-6.x3p (questioned bullet 'Y')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/c6fde644-6d88-4e9b-b853-6b1fbb5f5c91
+  - name: Hamby252_Barrel7_Bullet1_Land1.x3p  # NBTRD: Br7 Bullet 1-1.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/e5b7ab82-b7ac-4789-beff-2f2e9862324a
+  - name: Hamby252_Barrel7_Bullet1_Land2.x3p  # NBTRD: Br7 Bullet 1-2.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/b96f4b38-778c-4520-9a5a-72ee6d116da9
+  - name: Hamby252_Barrel7_Bullet1_Land3.x3p  # NBTRD: Br7 Bullet 1-3.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/b594fe05-f3b4-4411-920d-8b9c52a182f3
+  - name: Hamby252_Barrel7_Bullet1_Land4.x3p  # NBTRD: Br7 Bullet 1-4.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/0ae86818-3808-49a4-b652-790ca2771b52
+  - name: Hamby252_Barrel7_Bullet1_Land5.x3p  # NBTRD: Br7 Bullet 1-5.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/418f932c-2f9b-4134-8ab7-c3e9804a9b66
+  - name: Hamby252_Barrel7_Bullet1_Land6.x3p  # NBTRD: Br7 Bullet 1-6.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/8469a3ce-7eed-485e-83e5-e0549a3be4ea
+  - name: Hamby252_Barrel7_Bullet2_Land1.x3p  # NBTRD: Br7 Bullet 2-1.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/3f3e3469-78fc-4c52-8664-14a8c252c491
+  - name: Hamby252_Barrel7_Bullet2_Land2.x3p  # NBTRD: Br7 Bullet 2-2.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/827828f7-e3cb-4998-bb71-c8807f0034f9
+  - name: Hamby252_Barrel7_Bullet2_Land3.x3p  # NBTRD: Br7 Bullet 2-3.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/1d9b0cb6-31f6-408b-8be5-e7ea09bc8dad
+  - name: Hamby252_Barrel7_Bullet2_Land4.x3p  # NBTRD: Br7 Bullet 2-4.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/b88e4a73-129a-41a1-ba5e-b0ebd1ac48f0
+  - name: Hamby252_Barrel7_Bullet2_Land5.x3p  # NBTRD: Br7 Bullet 2-5.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/f5215c3e-9569-4bbb-aaad-a5b031d7a000
+  - name: Hamby252_Barrel7_Bullet2_Land6.x3p  # NBTRD: Br7 Bullet 2-6.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/fb0808b1-19d6-4744-a4d4-98b4b55d2bf5
+  - name: Hamby252_Barrel7_Bullet3_Land1.x3p  # NBTRD: Ukn Bullet J-1.x3p (questioned bullet 'J')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/5157e0d3-3240-4704-b698-2bb97e273e1d
+  - name: Hamby252_Barrel7_Bullet3_Land2.x3p  # NBTRD: Ukn Bullet J-2.x3p (questioned bullet 'J')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/d47ed273-5b4a-4721-aaa8-f0424c9cd5a9
+  - name: Hamby252_Barrel7_Bullet3_Land3.x3p  # NBTRD: Ukn Bullet J-3.x3p (questioned bullet 'J')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/6e8e4283-c630-4e24-a227-cb00f2dc7599
+  - name: Hamby252_Barrel7_Bullet3_Land4.x3p  # NBTRD: Ukn Bullet J-4.x3p (questioned bullet 'J')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/43455dda-a669-4c3f-b5e4-1fc5d7eb5824
+  - name: Hamby252_Barrel7_Bullet3_Land5.x3p  # NBTRD: Ukn Bullet J-5.x3p (questioned bullet 'J')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/a33cff14-8942-4052-aa4d-84377707cf8a
+  - name: Hamby252_Barrel7_Bullet3_Land6.x3p  # NBTRD: Ukn Bullet J-6.x3p (questioned bullet 'J')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/62595d6c-cf40-4519-aa7e-1c72daa2b269
+  - name: Hamby252_Barrel8_Bullet1_Land1.x3p  # NBTRD: Br8 Bullet 1-1.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/a2a4df54-6824-4261-af23-d9defd86db78
+  - name: Hamby252_Barrel8_Bullet1_Land2.x3p  # NBTRD: Br8 Bullet 1-2.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/0cf1dfa6-0b5f-4ea8-884c-381a13266060
+  - name: Hamby252_Barrel8_Bullet1_Land3.x3p  # NBTRD: Br8 Bullet 1-3.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/0771156c-4f5c-4e49-bf02-b02197c81cf5
+  - name: Hamby252_Barrel8_Bullet1_Land4.x3p  # NBTRD: Br8 Bullet 1-4.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/f14a8544-e258-4ef8-88c4-dc11d80d78a9
+  - name: Hamby252_Barrel8_Bullet1_Land5.x3p  # NBTRD: Br8 Bullet 1-5.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/8b07ae26-48c7-4fcb-9852-c2d53d7c40df
+  - name: Hamby252_Barrel8_Bullet1_Land6.x3p  # NBTRD: Br8 Bullet 1-6.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/bf66e934-577b-4d76-ba1f-de8b543a5ac2
+  - name: Hamby252_Barrel8_Bullet2_Land1.x3p  # NBTRD: Br8 Bullet 2-1.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/a963c273-8732-4f36-91c8-bdec0cb81263
+  - name: Hamby252_Barrel8_Bullet2_Land2.x3p  # NBTRD: Br8 Bullet 2-2.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/5b4eee84-6c1c-4c4a-8630-77fcbca12b15
+  - name: Hamby252_Barrel8_Bullet2_Land3.x3p  # NBTRD: Br8 Bullet 2-3.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/5ad513c7-a8ea-494e-b834-1d60761e8c27
+  - name: Hamby252_Barrel8_Bullet2_Land4.x3p  # NBTRD: Br8 Bullet 2-4.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/b730ebf9-b7d2-40a1-a397-942cfe89ddbb
+  - name: Hamby252_Barrel8_Bullet2_Land5.x3p  # NBTRD: Br8 Bullet 2-5.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/e48f5af1-4cef-49f1-a17c-02610b001b89
+  - name: Hamby252_Barrel8_Bullet2_Land6.x3p  # NBTRD: Br8 Bullet 2-6.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/656886f5-5687-4a72-afa4-ee5dee0987ae
+  - name: Hamby252_Barrel8_Bullet3_Land1.x3p  # NBTRD: Ukn Bullet L-1.x3p (questioned bullet 'L')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/182997de-f9be-4cd3-a1db-2d83eff2911f
+  - name: Hamby252_Barrel8_Bullet3_Land2.x3p  # NBTRD: Ukn Bullet L-2.x3p (questioned bullet 'L')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/7d6e5287-4151-4c9f-8880-d74d6fe49ec7
+  - name: Hamby252_Barrel8_Bullet3_Land3.x3p  # NBTRD: Ukn Bullet L-3.x3p (questioned bullet 'L')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/7fadae2e-6bd5-4b90-937c-818506fbe2fc
+  - name: Hamby252_Barrel8_Bullet3_Land4.x3p  # NBTRD: Ukn Bullet L-4.x3p (questioned bullet 'L')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/c578ea25-9e0c-4314-87f4-d243d99cd6ba
+  - name: Hamby252_Barrel8_Bullet3_Land5.x3p  # NBTRD: Ukn Bullet L-5.x3p (questioned bullet 'L')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/a1abda7c-0761-4ba4-b03d-23111586d28c
+  - name: Hamby252_Barrel8_Bullet3_Land6.x3p  # NBTRD: Ukn Bullet L-6.x3p (questioned bullet 'L')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/32af41f4-d11c-4f20-9dd7-a2fba0c88633
+  - name: Hamby252_Barrel9_Bullet1_Land1.x3p  # NBTRD: Br9 Bullet 1-1.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/9bbbf2a4-28e1-4d46-a262-71bf5e5ca422
+  - name: Hamby252_Barrel9_Bullet1_Land2.x3p  # NBTRD: Br9 Bullet 1-2.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/477ec445-317c-48b6-a544-46f67bdafcdd
+  - name: Hamby252_Barrel9_Bullet1_Land3.x3p  # NBTRD: Br9 Bullet 1-3.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/db1c68a1-a94e-4b54-b124-cb5d078f81cf
+  - name: Hamby252_Barrel9_Bullet1_Land4.x3p  # NBTRD: Br9 Bullet 1-4.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/bd13bfde-fed1-419c-9ae5-95c8419ad54d
+  - name: Hamby252_Barrel9_Bullet1_Land5.x3p  # NBTRD: Br9 Bullet 1-5.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/57adc08b-7d04-4e62-baff-fd485ae53bd7
+  - name: Hamby252_Barrel9_Bullet1_Land6.x3p  # NBTRD: Br9 Bullet 1-6.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/60159111-ea36-4ecb-8cf7-83d6e3670ba1
+  - name: Hamby252_Barrel9_Bullet2_Land1.x3p  # NBTRD: Br9 Bullet 2-1.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/b1bfc9aa-c596-4ac2-bbef-86337fab2100
+  - name: Hamby252_Barrel9_Bullet2_Land2.x3p  # NBTRD: Br9 Bullet 2-2.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/80c363d8-d63f-4deb-850a-46605b9d4f25
+  - name: Hamby252_Barrel9_Bullet2_Land3.x3p  # NBTRD: Br9 Bullet 2-3.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/a665e76f-c090-4257-8fd2-c0eb1457430f
+  - name: Hamby252_Barrel9_Bullet2_Land4.x3p  # NBTRD: Br9 Bullet 2-4.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/9c90cd1a-ca3e-40d0-b6c2-75a6873a6e58
+  - name: Hamby252_Barrel9_Bullet2_Land5.x3p  # NBTRD: Br9 Bullet 2-5.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/b936c275-a050-45e8-88ed-cc8197837a0b
+  - name: Hamby252_Barrel9_Bullet2_Land6.x3p  # NBTRD: Br9 Bullet 2-6.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/98cc80f4-0a80-4a42-ac2f-5f5de63cbcf9
+  - name: Hamby252_Barrel9_Bullet3_Land1.x3p  # NBTRD: Ukn Bullet U-1.x3p (questioned bullet 'U')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/77e505cf-ad00-49f7-a39e-b49bfd6b5eae
+  - name: Hamby252_Barrel9_Bullet3_Land2.x3p  # NBTRD: Ukn Bullet U-2.x3p (questioned bullet 'U')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/5bf65a28-ee36-4e21-959d-5f90c624b41f
+  - name: Hamby252_Barrel9_Bullet3_Land3.x3p  # NBTRD: Ukn Bullet U-3.x3p (questioned bullet 'U')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/49fc7205-c254-429e-8f98-6a12668241ee
+  - name: Hamby252_Barrel9_Bullet3_Land4.x3p  # NBTRD: Ukn Bullet U-4.x3p (questioned bullet 'U')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/df04e976-a41d-40f2-a8bd-3503955280c5
+  - name: Hamby252_Barrel9_Bullet3_Land5.x3p  # NBTRD: Ukn Bullet U-5.x3p (questioned bullet 'U')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/ffecb2f6-5f0e-4f9b-8439-7758c9cc39cf
+  - name: Hamby252_Barrel9_Bullet3_Land6.x3p  # NBTRD: Ukn Bullet U-6.x3p (questioned bullet 'U')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/bb3bda03-4027-4ee2-a571-93e339ebe376
+  - name: Hamby252_Barrel10_Bullet1_Land1.x3p  # NBTRD: Br10 Bullet 1-1.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/51c5a15b-a1a1-44e6-acd5-4e2929c9fd29
+  - name: Hamby252_Barrel10_Bullet1_Land2.x3p  # NBTRD: Br10 Bullet 1-2.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/dc09cf8a-727f-420a-b369-5ca28c9b5bab
+  - name: Hamby252_Barrel10_Bullet1_Land3.x3p  # NBTRD: Br10 Bullet 1-3.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/28bf72b0-84a8-4b9f-b43f-e574340047c1
+  - name: Hamby252_Barrel10_Bullet1_Land4.x3p  # NBTRD: Br10 Bullet 1-4.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/84e06091-296b-49f2-a667-004cbcde452d
+  - name: Hamby252_Barrel10_Bullet1_Land5.x3p  # NBTRD: Br10 Bullet 1-5.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/3d097004-4da8-4170-8064-d76c612d9ed5
+  - name: Hamby252_Barrel10_Bullet1_Land6.x3p  # NBTRD: Br10 Bullet 1-6.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/f7979620-cb7c-45ff-b370-ee03f1f9057c
+  - name: Hamby252_Barrel10_Bullet2_Land1.x3p  # NBTRD: Br10 Bullet 2-1.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/20391061-e19e-41d1-b290-47b663e96f34
+  - name: Hamby252_Barrel10_Bullet2_Land2.x3p  # NBTRD: Br10 Bullet 2-2.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/30820f01-d011-4f70-9cf1-1d67d58cfa62
+  - name: Hamby252_Barrel10_Bullet2_Land3.x3p  # NBTRD: Br10 Bullet 2-3.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/3838d836-f220-439f-90d7-97c4e710104b
+  - name: Hamby252_Barrel10_Bullet2_Land4.x3p  # NBTRD: Br10 Bullet 2-4.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/e5ef288c-2ffe-43b6-866e-7f438d1d5cd5
+  - name: Hamby252_Barrel10_Bullet2_Land5.x3p  # NBTRD: Br10 Bullet 2-5.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/f267c0e8-dc1f-46d2-86f7-9b2bd57ca446
+  - name: Hamby252_Barrel10_Bullet2_Land6.x3p  # NBTRD: Br10 Bullet 2-6.x3p
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/ca76cdfb-e70c-4b23-9200-d68d875d3a0f
+  - name: Hamby252_Barrel10_Bullet3_Land1.x3p  # NBTRD: Ukn Bullet Q-1.x3p (questioned bullet 'Q')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/e4eb3247-a7e7-4d12-a6f6-8c2f479485fd
+  - name: Hamby252_Barrel10_Bullet3_Land2.x3p  # NBTRD: Ukn Bullet Q-2.x3p (questioned bullet 'Q')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/58eb159c-5f90-4dd7-a624-13ee8ce892ea
+  - name: Hamby252_Barrel10_Bullet3_Land3.x3p  # NBTRD: Ukn Bullet Q-3.x3p (questioned bullet 'Q')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/9e138316-9d3e-4369-b72e-18f31fd1e576
+  - name: Hamby252_Barrel10_Bullet3_Land4.x3p  # NBTRD: Ukn Bullet Q-4.x3p (questioned bullet 'Q')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/3feac85e-85cb-4050-8f4b-25ca9e8c4d36
+  - name: Hamby252_Barrel10_Bullet3_Land5.x3p  # NBTRD: Ukn Bullet Q-5.x3p (questioned bullet 'Q')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/bd75524c-3400-4633-af65-22509b9c7094
+  - name: Hamby252_Barrel10_Bullet3_Land6.x3p  # NBTRD: Ukn Bullet Q-6.x3p (questioned bullet 'Q')
+    url: https://tsapps.nist.gov/NRBTD/Studies/BulletMeasurement/DownloadMeasurement/c3ce34de-44a8-480f-9e17-3f154604d840

@@ -65,7 +65,7 @@ def test_ingest_single_real_file(session, tmp_path):
 
     stats = ingest_manifest(session, store, manifest, source=src)
 
-    assert stats == {"files": 1, "ingested": 1, "skipped_no_lea": 0}
+    assert stats == {"files": 1, "ingested": 1, "already_present": 0, "skipped_no_lea": 0}
     scans = session.exec(select(models.Scan)).all()
     assert len(scans) == 1
     scan = scans[0]
@@ -124,9 +124,12 @@ def test_ingest_is_idempotent(session, tmp_path):
     files = [RemoteFile(name=manifest.files[0].name, url=manifest.files[0].url)]
     src = FakeSource(files, lambda rf: FIXTURE.read_bytes())
 
-    ingest_manifest(session, store, manifest, source=src)
-    ingest_manifest(session, store, manifest, source=src)  # run again
+    stats1 = ingest_manifest(session, store, manifest, source=src)
+    stats2 = ingest_manifest(session, store, manifest, source=src)  # run again
 
+    assert stats1["ingested"] == 1
+    # second run skips the already-present scan without re-downloading
+    assert stats2["ingested"] == 0 and stats2["already_present"] == 1
     assert len(session.exec(select(models.Study)).all()) == 1
     assert len(session.exec(select(models.Firearm)).all()) == 1
     assert len(session.exec(select(models.Land)).all()) == 1
