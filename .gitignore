@@ -17,6 +17,11 @@ wheels/
 .ruff_cache/
 .mypy_cache/
 
+# Catalog runtime data (local-first SQLite + blob store)
+*.db
+*.sqlite3
+.verity/
+
 # OS / editor
 .DS_Store
 *.swp
