@@ -1,0 +1,27 @@
+[package]
+name = 'verityx3p'
+publish = false
+version = '0.1.0'
+edition = '2021'
+rust-version = '1.65'
+
+[lib]
+crate-type = [ 'rlib', 'staticlib' ]
+name = 'verityx3p'
+
+[[bin]]
+name = 'document'
+path = 'document.rs'
+
+[dependencies]
+extendr-api = '*'
+# The Verity X3P core, aliased so it doesn't clash with this crate's name.
+verity-core = { package = "verity-x3p", path = "../../../../../crates/verity-x3p" }
+ndarray = "0.16"
+
+[profile.release]
+lto = true
+codegen-units = 1
+
+# Standalone workspace so this crate isn't absorbed into the repo-root workspace.
+[workspace]

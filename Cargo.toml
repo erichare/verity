@@ -6,9 +6,9 @@
 [workspace]
 resolver = "2"
 members = ["crates/verity-x3p"]
-# The Python binding is its own workspace (built by maturin) so the core
-# `cargo test` never needs a Python toolchain.
-exclude = ["bindings/python"]
+# The language bindings are their own workspaces (built by maturin / R CMD
+# INSTALL) so the core `cargo test` never needs a Python or R toolchain.
+exclude = ["bindings/python", "bindings/r"]
 
 [workspace.package]
 version = "0.1.0"

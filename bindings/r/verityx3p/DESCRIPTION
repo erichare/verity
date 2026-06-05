@@ -1,0 +1,17 @@
+Package: verityx3p
+Title: Native X3P (ISO 25178-72) Reader and Writer
+Version: 0.1.0
+Authors@R:
+    person("Eric", "Hare", , "ericrhare@gmail.com", role = c("aut", "cre"))
+Description: Read and write X3P (ISO 25178-72) 3D surface-topography files via
+    the Verity Rust core, so files round-trip bit-identically with the other
+    Verity language bindings. Part of the Verity forensic surface-comparison
+    project.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 8.0.0
+Config/rextendr/version: 0.5.0
+SystemRequirements: Cargo (Rust's package manager), rustc >= 1.65.0, xz
+Depends:
+    R (>= 4.2)
