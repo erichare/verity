@@ -19,10 +19,13 @@ demo = ["verity-x3p", "verity-catalog"]
 dev = ["pytest>=8", "ruff>=0.6"]
 # surfalize is GPL — kept in its own extra and used ONLY as a test oracle.
 oracle = ["surfalize>=0.10"]
+# The learned representation (Phase 2b) needs PyTorch.
+learn = ["torch>=2.2"]
 
 [project.scripts]
 verity-demo-hamby = "verity.examples.hamby_km_knm:main"
 verity-validate-hamby = "verity.examples.hamby_validation:main"
+verity-learn-hamby = "verity.examples.hamby_learned:main"
 
 [build-system]
 requires = ["hatchling"]
