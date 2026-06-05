@@ -5,7 +5,7 @@ preprocessing and registration for forensic X3P scans. See
 [`docs/data-catalog-plan.md`](../../docs/data-catalog-plan.md) and the project
 plan for the full method.
 
-## Phases 1–2a (this package, so far)
+## Phases 1–2b (this package, so far)
 
 - **`Surface`** — a height field (`NaN` = invalid) with a pixel pitch.
 - **Preprocessing** (`verity.preprocess`) — form removal (ISO 25178 F-operation)
@@ -18,6 +18,9 @@ plan for the full method.
   layer: logistic / PAV calibration plus forensic metrics (`Cllr`, `Cllr_min`,
   EER, AUC, Tippett). Any score (the cross-correlation today, a learned embedding
   later) becomes an auditable, calibrated weight of evidence.
+- **Representation** (`verity.representation`, `learn` extra) — a small
+  shift-invariant 1-D encoder + contrastive training; its cosine similarity is a
+  drop-in score for the decision layer. (See the honest Phase-2b finding below.)
 - **`examples/hamby_km_knm.py`** — a sanity anchor on the real Hamby 252 lands.
   With orientation normalization, same-barrel (known-match) bullet pairs score
   **0.58** vs **0.47** for different-barrel (known-non-match) pairs — a **+0.11**
@@ -36,8 +39,17 @@ representation yet*. (`Cllr` < 1 = informative; the `Cllr` − `Cllr_min` gap is
 calibration loss the source-disjoint split exposes — answering the Cuellar et al.
 2024 critique on its own terms.)
 
-Next: the **learned representation** — a better score that slots into this same
-decision layer — then the full firearms-proof validation.
+**Phase-2b finding** (`examples/hamby_learned.py`, `verity-learn-hamby`): a
+learned representation, trained barrel-disjoint on labels bootstrapped from the
+Phase-1 matcher, **does *not* beat the cross-correlation baseline on 210 scans** —
+it overfits (held-out AUC 0.92 → 0.67, `Cllr` ≈ 1). The synthetic
+`test_representation` tests confirm the pipeline *does* learn when given enough
+signal, so this is a **data limit, not a defect** — an empirical confirmation
+that the learned representation needs more data than Hamby alone, and that the
+hand-engineered cross-correlation is a strong baseline for clean 1-D striae.
+
+Next: **expand the dataset** (harvest more NBTRD bullet studies) and retest the
+learned representation; then the full firearms-proof validation.
 
 ## Develop
 
