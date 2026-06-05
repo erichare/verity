@@ -11,9 +11,9 @@ fn data_eq(a: &Array2<f64>, b: &Array2<f64>) -> bool {
     if a.dim() != b.dim() {
         return false;
     }
-    a.iter().zip(b.iter()).all(|(x, y)| {
-        (x.is_nan() && y.is_nan()) || x == y
-    })
+    a.iter()
+        .zip(b.iter())
+        .all(|(x, y)| (x.is_nan() && y.is_nan()) || x == y)
 }
 
 fn sample_surface() -> Surface {
@@ -50,7 +50,10 @@ fn synthetic_roundtrip_f64() {
     assert_eq!(back.mask, s.mask, "validity mask must round-trip");
     assert!(!back.mask[[1, 2]], "the NaN point stays invalid");
     assert_eq!(back.general.creator, "Verity Test");
-    assert_eq!(back.general.comment, s.general.comment, "XML escaping must decode");
+    assert_eq!(
+        back.general.comment, s.general.comment,
+        "XML escaping must decode"
+    );
     assert_eq!(back.general.instrument.manufacturer, "Acme Metrology");
     assert_eq!(back.feature_type, "SUR");
 }
@@ -95,7 +98,10 @@ fn bad_checksum_is_rejected() {
 
 #[test]
 fn real_csafe_logo_conformance() {
-    let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../../tests/fixtures/csafe-logo.x3p");
+    let path = concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../tests/fixtures/csafe-logo.x3p"
+    );
 
     // Reads with checksum verification ON — proves our MD5 matches the file's.
     let s = read_x3p(path).expect("read real csafe-logo.x3p with checksum verification");
@@ -129,7 +135,18 @@ fn real_csafe_logo_conformance() {
     let back = read_x3p_bytes(&bytes, &ReadOptions::default()).expect("re-read logo");
     assert_eq!(back.data.dim(), s.data.dim());
     assert_eq!(back.mask, s.mask);
-    assert!(data_eq(&back.data, &s.data), "real-file heights must round-trip");
-    assert_eq!(back.increment_x(), s.increment_x(), "X increment must round-trip exactly");
-    assert_eq!(back.increment_y(), s.increment_y(), "Y increment must round-trip exactly");
+    assert!(
+        data_eq(&back.data, &s.data),
+        "real-file heights must round-trip"
+    );
+    assert_eq!(
+        back.increment_x(),
+        s.increment_x(),
+        "X increment must round-trip exactly"
+    );
+    assert_eq!(
+        back.increment_y(),
+        s.increment_y(),
+        "Y increment must round-trip exactly"
+    );
 }

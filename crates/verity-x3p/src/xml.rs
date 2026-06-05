@@ -67,10 +67,10 @@ pub(crate) fn parse_main_xml(xml: &str) -> Result<ParsedMeta> {
     let doc = Document::parse(xml)?;
     let root = doc.root_element();
 
-    let cx_node = find(root, "CX")
-        .ok_or_else(|| X3pError::Malformed("missing <CX> axis".to_string()))?;
-    let cy_node = find(root, "CY")
-        .ok_or_else(|| X3pError::Malformed("missing <CY> axis".to_string()))?;
+    let cx_node =
+        find(root, "CX").ok_or_else(|| X3pError::Malformed("missing <CX> axis".to_string()))?;
+    let cy_node =
+        find(root, "CY").ok_or_else(|| X3pError::Malformed("missing <CY> axis".to_string()))?;
     let cz = match find(root, "CZ") {
         Some(n) => parse_axis(n, "A")?,
         None => Axis::default_z(),
@@ -82,10 +82,18 @@ pub(crate) fn parse_main_xml(xml: &str) -> Result<ParsedMeta> {
         date: text(root, "Date").unwrap_or_default(),
         creator: text(root, "Creator").unwrap_or_default(),
         instrument: Instrument {
-            manufacturer: instrument.and_then(|n| text(n, "Manufacturer")).unwrap_or_default(),
-            model: instrument.and_then(|n| text(n, "Model")).unwrap_or_default(),
-            serial: instrument.and_then(|n| text(n, "Serial")).unwrap_or_default(),
-            version: instrument.and_then(|n| text(n, "Version")).unwrap_or_default(),
+            manufacturer: instrument
+                .and_then(|n| text(n, "Manufacturer"))
+                .unwrap_or_default(),
+            model: instrument
+                .and_then(|n| text(n, "Model"))
+                .unwrap_or_default(),
+            serial: instrument
+                .and_then(|n| text(n, "Serial"))
+                .unwrap_or_default(),
+            version: instrument
+                .and_then(|n| text(n, "Version"))
+                .unwrap_or_default(),
         },
         calibration_date: text(root, "CalibrationDate").unwrap_or_default(),
         probing_system_type: probing.and_then(|n| text(n, "Type")).unwrap_or_default(),
@@ -98,7 +106,9 @@ pub(crate) fn parse_main_xml(xml: &str) -> Result<ParsedMeta> {
     Ok(ParsedMeta {
         size_x: req_usize(root, "SizeX")?,
         size_y: req_usize(root, "SizeY")?,
-        size_z: text(root, "SizeZ").and_then(|s| s.parse().ok()).unwrap_or(1),
+        size_z: text(root, "SizeZ")
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(1),
         cx: parse_axis(cx_node, "I")?,
         cy: parse_axis(cy_node, "I")?,
         cz,

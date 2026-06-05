@@ -1,0 +1,24 @@
+[package]
+name = "verity-x3p-python"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+description = "Python binding to the verity-x3p native X3P reader/writer."
+publish = false
+
+[lib]
+name = "verity_x3p"
+crate-type = ["cdylib"]
+
+[dependencies]
+# Aliased to `verity_core` so it doesn't collide with this crate's own
+# `verity_x3p` lib name / pymodule function.
+verity-core = { package = "verity-x3p", path = "../../crates/verity-x3p" }
+# Kept in lockstep with verity-x3p so Array2<f64> is the same type on both sides.
+ndarray = "0.16"
+pyo3 = { version = "0.24", features = ["extension-module", "abi3-py39"] }
+numpy = "0.24"
+
+# Standalone workspace: maturin builds this crate directly, and the core
+# `cargo test` (root workspace) never pulls in a Python toolchain.
+[workspace]
