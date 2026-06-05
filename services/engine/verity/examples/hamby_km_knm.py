@@ -48,14 +48,27 @@ def read_surface(data: bytes) -> Surface:
         Path(path).unlink(missing_ok=True)
 
 
+# The Hamby-252 study this demo is anchored to (avoids barrel-number collisions
+# with other studies once more than one is ingested).
+HAMBY_252_EXTERNAL_ID = "c09aaa86-5d60-4acb-9031-46dad2c0ad32"
+
+
 def load_bullet_signatures(session, store, barrel: int, bullet: int) -> list[np.ndarray]:
     """Striation signatures for the six lands of one bullet, ordered by land."""
     import verity_catalog.models as m
     from sqlmodel import select
 
-    firearm = session.exec(
-        select(m.Firearm).where(m.Firearm.external_id == f"Barrel{barrel}")
+    study = session.exec(
+        select(m.Study).where(m.Study.external_id == HAMBY_252_EXTERNAL_ID)
     ).first()
+    firearm = None
+    if study is not None:
+        firearm = session.exec(
+            select(m.Firearm).where(
+                m.Firearm.study_id == study.id,
+                m.Firearm.external_id == f"Barrel{barrel}",
+            )
+        ).first()
     if firearm is None:
         return []
     bullet_row = session.exec(
