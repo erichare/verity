@@ -4,10 +4,12 @@ use verity_core::{
     WriteOptions,
 };
 
-/// Read an X3P file into raw components.
-///
-/// `data`/`mask` are returned X-fastest, i.e. ordered to fill an `nx`-by-`ny`
-/// R matrix in column-major order (the `x3ptools` convention).
+// Read an X3P file into raw components. Internal FFI shim — the documented R
+// API is `read_x3p()` in R/x3p.R, so this carries no roxygen block (a plain
+// `//` comment keeps it out of the generated wrappers and the man/ pages).
+//
+// `data`/`mask` are returned X-fastest, i.e. ordered to fill an `nx`-by-`ny`
+// R matrix in column-major order (the `x3ptools` convention).
 #[extendr]
 fn rust_read_x3p(path: &str, verify_checksums: bool) -> Result<List, Error> {
     let opts = ReadOptions { verify_checksums };
@@ -27,8 +29,9 @@ fn rust_read_x3p(path: &str, verify_checksums: bool) -> Result<List, Error> {
     ))
 }
 
-/// Write raw components to an X3P file. `data` is X-fastest (column-major from
-/// an `nx`-by-`ny` matrix); `z_type` is `"D"` (float64) or `"F"` (float32).
+// Write raw components to an X3P file. Internal FFI shim for `write_x3p()` in
+// R/x3p.R (no roxygen block, by design). `data` is X-fastest (column-major from
+// an `nx`-by-`ny` matrix); `z_type` is `"D"` (float64) or `"F"` (float32).
 #[extendr]
 fn rust_write_x3p(
     path: &str,
