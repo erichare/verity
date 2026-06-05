@@ -1,0 +1,18 @@
+[build-system]
+requires = ["maturin>=1.7,<2"]
+build-backend = "maturin"
+
+[project]
+name = "verity-x3p"
+version = "0.1.0"
+description = "Native X3P (ISO 25178-72) reader/writer — Python binding to the Verity Rust core."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT OR Apache-2.0" }
+authors = [{ name = "Eric Hare", email = "ericrhare@gmail.com" }]
+keywords = ["forensics", "x3p", "metrology", "topography", "iso25178"]
+dependencies = ["numpy>=1.21"]
+
+[tool.maturin]
+module-name = "verity_x3p"
+features = ["pyo3/extension-module"]
