@@ -37,10 +37,11 @@ Design principles:
 ## Architecture
 
 - **`crates/verity-x3p`** — a native Rust reader/writer for X3P (ISO 25178-72).
-  It is the single source of truth for the format; thin per-language bindings
-  (Python via PyO3 first, then R / TypeScript / Swift / Java) wrap this one core
-  so a file written from any language reads back *bit-identically* in every
-  other. Licensed `MIT OR Apache-2.0`.
+  It is the single source of truth for the format; thin per-language bindings —
+  **`bindings/python`** (PyO3 + NumPy) and **`bindings/r/verityx3p`** (extendr)
+  today, with TypeScript / Swift / Java to follow — wrap this one core so a file
+  written from any language reads back *bit-identically* in every other.
+  Licensed `MIT OR Apache-2.0`.
 - **`verity` (planned)** — the Python science stack: surface-metrology
   preprocessing (ISO 16610 S/L/F filtering), registration, the hybrid
   representation + calibrated LR, and the validation harness.
