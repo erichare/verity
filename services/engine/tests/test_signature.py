@@ -1,6 +1,6 @@
 import numpy as np
 
-from verity import Surface, dominant_orientation, striation_signature
+from verity import Surface, align_1d, dominant_orientation, striation_signature
 
 
 def _striae(nx: int, ny: int, direction_deg: float, wavelength: float = 10.0) -> np.ndarray:
@@ -46,7 +46,10 @@ def test_signature_orientation_invariant_for_vertical():
     profile = np.sin(2 * np.pi * x / 12.0)
     s = Surface(heights=np.tile(profile, (ny, 1)), dx=1.0, dy=1.0)
 
-    sig = striation_signature(s, orient=True)  # already vertical -> rotation ~ 0
-
-    corr = np.corrcoef(sig - np.nanmean(sig), profile - profile.mean())[0, 1]
-    assert corr > 0.9
+    # The Stage-0 path FFT-orients then groove-crops. With the crop off (keep=1)
+    # the orientation alone must recover the profile; with the default crop the
+    # signature is a shorter inner-band slice.
+    full = striation_signature(s, orient=True, keep=1.0)
+    assert align_1d(full, profile)[1] > 0.95
+    cropped = striation_signature(s, orient=True)
+    assert len(cropped) < len(full)  # groove shoulders dropped
