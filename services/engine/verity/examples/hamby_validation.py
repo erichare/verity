@@ -23,12 +23,12 @@ from itertools import combinations
 import numpy as np
 
 from verity import ScoreLRModel, cllr, cllr_min, roc_auc
+from verity.aggregate import bullet_comparison
 from verity.examples.hamby_km_knm import (
     LAMBDA_C,
     LAMBDA_S,
     ORIENT,
     _catalog_dir,
-    bullet_score,
     read_surface,
 )
 from verity.signature import striation_signature
@@ -113,13 +113,21 @@ def _resolve_study(session, external_id: str | None):
 
 
 def pairwise_scores(bullets):
-    """Bullet-to-bullet scores with KM/KNM labels and the barrel of each side."""
+    """Bullet-to-bullet scores with KM/KNM labels and the barrel of each side.
+
+    The production score is ``diag_contrast`` — how far the matched land diagonal
+    rises above the rest of the CCF matrix — not the bare mean diagonal CCF. The
+    contrast suppresses different-source pairs that lucked into a high mean,
+    widening the KM/KNM margin; barrel-disjoint it improves the discrimination
+    floor (Cllr_min) and AUC on the harder studies (e.g. Hamby-173 AUC
+    0.960->0.971) at no cost on the strong ones. See ``examples/margin_levers.py``
+    (``verity-margin``) for the lever comparison that selected it."""
     scores, labels, barrels_a, barrels_b = [], [], [], []
     for (ba, _ka, sa), (bb, _kb, sb) in combinations(bullets, 2):
-        s = bullet_score(sa, sb)
-        if not np.isfinite(s):
+        cmp = bullet_comparison(sa, sb)
+        if cmp is None or not np.isfinite(cmp.diag_contrast):
             continue
-        scores.append(s)
+        scores.append(cmp.diag_contrast)
         labels.append(1 if ba == bb else 0)
         barrels_a.append(ba)
         barrels_b.append(bb)

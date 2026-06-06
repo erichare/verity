@@ -147,6 +147,20 @@ def evaluate_levers(comps, labels, ba, bb) -> dict[str, list[dict]]:
     for f in FEATURES:
         out[f] = _folds(lambda tr, te, v=feat[f]: (v[tr], v[te]), labels, ba, bb)
 
+    def combo_scores(tr, te):
+        # Transparent 2-feature combiner: a logistic on [diag_mean, diag_contrast]
+        # (two inspectable coefficients), fit on the training barrels only. The
+        # decision_function (the logit) is the combined score; the firewall's
+        # final monotone calibration still happens in _folds.
+        from sklearn.linear_model import LogisticRegression
+
+        x = np.column_stack([feat["diag_mean"], feat["diag_contrast"]])
+        clf = LogisticRegression(C=1e6, class_weight="balanced").fit(x[tr], labels[tr])
+        s = clf.decision_function(x)
+        return s[tr], s[te]
+
+    out["combo(mean+ctr)"] = _folds(combo_scores, labels, ba, bb)
+
     def fusion_scores(tr, te, method):
         idx = np.where(tr)[0]
         model = LandFusionModel.fit([diag_ccfs[i] for i in idx], labels[tr], method=method)
@@ -162,10 +176,17 @@ def _mean(rows, key):
     return float(np.mean([r[key] for r in rows])) if rows else float("nan")
 
 
+def _std(rows, key):
+    return float(np.std([r[key] for r in rows])) if rows else float("nan")
+
+
 def _print_levers(title, n_barrels, n_bullets, labels, levers) -> None:
     print(f"=== {title}  ({n_barrels} barrels, {n_bullets} bullets) ===")
     print(f"  pairs={len(labels)}  KM={int(labels.sum())}  KNM={int((labels == 0).sum())}")
-    print(f"  {'lever':<16}{'AUC':>8}{'Cllr':>8}{'Cllr_min':>10}{'cohens_d':>10}{'pct_gap':>9}")
+    print(
+        f"  {'lever':<16}{'AUC':>8}{'Cllr':>8}{'Cllr_sd':>9}"
+        f"{'Cllr_min':>10}{'cohens_d':>10}{'pct_gap':>9}"
+    )
     base = levers.get("diag_mean")
     base_d = _mean(base, "cohens_d") if base else float("nan")
     for name, rows in levers.items():
@@ -176,7 +197,8 @@ def _print_levers(title, n_barrels, n_bullets, labels, levers) -> None:
         tag = "" if name == "diag_mean" else f"  (margin x{d / base_d:.2f})" if base_d else ""
         print(
             f"  {name:<16}{_mean(rows, 'auc'):>8.3f}{_mean(rows, 'cllr'):>8.3f}"
-            f"{_mean(rows, 'cllr_min'):>10.3f}{d:>10.2f}{_mean(rows, 'pct_gap'):>9.2f}{tag}"
+            f"{_std(rows, 'cllr'):>9.3f}{_mean(rows, 'cllr_min'):>10.3f}"
+            f"{d:>10.2f}{_mean(rows, 'pct_gap'):>9.2f}{tag}"
         )
 
 
