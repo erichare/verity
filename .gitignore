@@ -22,6 +22,9 @@ wheels/
 *.sqlite3
 .verity/
 
+# Diagnostic / QA render output (verity.examples.diagnose_extraction)
+diag/
+
 # OS / editor
 .DS_Store
 *.swp
