@@ -31,6 +31,7 @@ verity-learn-pooled = "verity.examples.hamby_learned:pooled_main"
 verity-learn-surface = "verity.examples.surface_learned:main"
 verity-learn-ssl = "verity.examples.ssl_learned:main"
 verity-firearms-proof = "verity.examples.firearms_proof:main"
+verity-toolmark-transfer = "verity.examples.toolmark_transfer:main"
 
 [build-system]
 requires = ["hatchling"]
