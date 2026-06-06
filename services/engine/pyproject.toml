@@ -33,6 +33,7 @@ verity-learn-ssl = "verity.examples.ssl_learned:main"
 verity-firearms-proof = "verity.examples.firearms_proof:main"
 verity-toolmark-transfer = "verity.examples.toolmark_transfer:main"
 verity-toolmark-ameslab = "verity.examples.toolmark_ameslab:main"
+verity-toolmark-chumbley-proof = "verity.examples.toolmark_chumbley_proof:main"
 
 [build-system]
 requires = ["hatchling"]
