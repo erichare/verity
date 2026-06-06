@@ -28,6 +28,7 @@ verity-validate-hamby = "verity.examples.hamby_validation:main"
 verity-validate = "verity.examples.hamby_validation:main"
 verity-learn-hamby = "verity.examples.hamby_learned:main"
 verity-learn-pooled = "verity.examples.hamby_learned:pooled_main"
+verity-learn-surface = "verity.examples.surface_learned:main"
 
 [build-system]
 requires = ["hatchling"]
