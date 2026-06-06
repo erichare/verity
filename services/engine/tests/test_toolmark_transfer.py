@@ -10,7 +10,11 @@ from __future__ import annotations
 
 import numpy as np
 
-from verity.examples.toolmark_transfer import evaluate, mark_pairwise_scores
+from verity.examples.toolmark_transfer import (
+    evaluate,
+    mark_pairwise_scores,
+    profile_signature,
+)
 
 
 def _synthetic_marks(n_sources: int = 6, n_rep: int = 5, length: int = 300, seed: int = 0):
@@ -46,6 +50,22 @@ def test_source_disjoint_transfer_is_informative():
     assert res["folds"], "expected at least one source-disjoint fold"
     mean_cllr = np.mean([f["cllr"] for f in res["folds"]])
     assert mean_cllr < 0.5  # informative calibrated LRs across held-out tools
+
+
+def test_profile_signature_recovers_striae_from_form():
+    """A profile dominated by form/waviness: the signature must isolate the
+    striae (high correlation) and shed the form (which raw cross-correlation
+    would otherwise lock onto)."""
+    x = np.arange(4000)
+    form = 50.0 * (x / 4000.0 - 0.5) ** 2  # large curvature
+    striae = np.sin(2 * np.pi * x / 25.0)  # the individualizing band
+    profile = form + 0.3 * striae + np.random.default_rng(0).normal(0, 0.02, len(x))
+
+    sig = profile_signature(profile, waviness=80.0)
+    assert len(sig) == len(x)
+    # signature tracks the striae, not the form
+    assert abs(np.corrcoef(sig, striae)[0, 1]) > 0.9
+    assert abs(np.corrcoef(sig, form)[0, 1]) < 0.2
 
 
 def test_label_shuffle_collapses_to_chance():

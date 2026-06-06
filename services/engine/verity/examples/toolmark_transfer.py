@@ -32,6 +32,7 @@ from itertools import combinations
 from pathlib import Path
 
 import numpy as np
+from scipy.ndimage import gaussian_filter1d
 
 from verity import align_1d, cllr_min, roc_auc
 from verity.examples.hamby_km_knm import LAMBDA_C, LAMBDA_S, ORIENT, read_surface
@@ -52,6 +53,29 @@ def signature_of(surface, *, keep: float | None = None) -> np.ndarray:
     return striation_signature(
         surface, lambda_s=LAMBDA_S, lambda_c=LAMBDA_C, orient=ORIENT, **kw
     )
+
+
+def profile_signature(values, *, deg: int = 2, waviness: float = 80.0) -> np.ndarray:
+    """The 1-D analog of :func:`verity.signature.striation_signature` for marks
+    that *arrive as profiles* — an already-extracted cross-section, so there is no
+    surface to FFT-orient or groove-crop (Stage-0 is the surface→profile step
+    these skip). Same logic as the bullet pipeline's form removal + roughness
+    isolation, in 1-D: detrend a low-order polynomial (form/curvature), then
+    high-pass to drop the residual waviness, leaving the individualizing striae
+    residual. ``waviness`` is the high-pass cutoff in samples (0 disables it).
+
+    On the Ames Lab screwdriver profiles this is the difference between chance
+    (raw, AUC 0.64) and an informative transfer (AUC 0.82, source-disjoint
+    Cllr 0.81) — the same roughness-isolation lesson the bullet lands taught."""
+    v = np.asarray(values, dtype=np.float64)
+    v = v[np.isfinite(v)]
+    if len(v) < deg + 2:
+        return v - v.mean() if len(v) else v
+    x = np.arange(len(v))
+    resid = v - np.polyval(np.polyfit(x, v, deg), x)  # remove form (ISO F-operator)
+    if waviness and waviness > 0:
+        resid = resid - gaussian_filter1d(resid, waviness)  # high-pass: drop waviness
+    return resid
 
 
 def load_marks_from_dir(
