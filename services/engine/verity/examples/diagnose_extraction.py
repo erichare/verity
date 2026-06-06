@@ -1,10 +1,8 @@
-"""Visual diagnostic for Stage-0 region extraction (:mod:`verity.region`).
+"""Visual diagnostic for the per-land pipeline (a thin CLI over the trace layer).
 
-Renders, for a single land: the bandpassed surface oriented striae-vertical, the
-extracted striae rectangle (groove shoulders cropped from the ends of the long
-axis), and the 1-D across-striae signature overlaid. The assessment tool for the
-orientation + groove-crop pipeline — run it on any land to eyeball what gets
-extracted.
+Renders, for a single land, the full four-panel trace: raw surface → bandpassed
+→ FFT-oriented + groove-cropped → 1-D signature (see :mod:`verity.viz.land_trace`
+and :mod:`verity.trace`). Run it on any land to eyeball what gets extracted.
 
 Usage:
     uv run --with matplotlib python -m verity.examples.diagnose_extraction \\
@@ -13,51 +11,19 @@ Usage:
 
 from __future__ import annotations
 
-import numpy as np
-
 from verity.examples.hamby_km_knm import LAMBDA_C, LAMBDA_S, read_surface
-from verity.preprocess import isolate_roughness, remove_form
-from verity.region import extract_region
+from verity.region import DEFAULT_KEEP
 from verity.surface import Surface
+from verity.trace import land_trace
+from verity.viz import render_land_trace
 
 
-def _bandpassed(surface: Surface) -> np.ndarray:
-    s = remove_form(surface)
-    s = isolate_roughness(s, LAMBDA_S, LAMBDA_C)
-    return s.heights
-
-
-def plot_extraction(surface: Surface, out_path: str, title: str = "", keep: float = 0.5) -> None:
-    """Render the surface (striae vertical) + extracted rectangle + 1-D signature."""
-    import matplotlib
-
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
-
-    z = _bandpassed(surface)
-    w = (~np.isnan(z)).astype(np.float64)
-    zr, wr, prof, (lo, hi), tilt = extract_region(z, w, keep=keep)
-    disp = np.where(wr > 0.5, zr, np.nan)
-    h, width = disp.shape
-    fig, ax = plt.subplots(figsize=(12, 6))
-    vals = disp[np.isfinite(disp)]
-    vmin, vmax = np.percentile(vals, [2, 98]) if len(vals) else (-1, 1)
-    ax.imshow(disp, cmap="gray", vmin=vmin, vmax=vmax, aspect="auto", extent=[0, width, h, 0])
-    ax.axvspan(0, lo, color="red", alpha=0.25)
-    ax.axvspan(hi, width, color="red", alpha=0.25)
-    ax.add_patch(plt.Rectangle((lo, 0), hi - lo, h, fill=False, edgecolor="yellow", lw=2.5))
-    seg = prof[lo:hi]
-    seg = (seg - np.nanmean(seg)) / (np.nanstd(seg) + 1e-9)
-    ax.plot(np.arange(lo, hi), h / 2 - seg * h * 0.18, color="cyan", lw=1.3)
-    ax.set_title(
-        f"{title}  | striae vertical (tilt {tilt:+.0f} deg), "
-        f"yellow = extracted region (keep {keep:.0%}), red = grooves"
-    )
-    ax.set_xlabel("across-striae (long axis)")
-    ax.set_ylabel("along striae")
-    plt.tight_layout()
-    plt.savefig(out_path, dpi=95)
-    plt.close()
+def plot_extraction(
+    surface: Surface, out_path: str, title: str = "", keep: float = DEFAULT_KEEP
+) -> None:
+    """Render the full per-land trace (raw → bandpassed → oriented → signature)."""
+    trace = land_trace(surface, lambda_s=LAMBDA_S, lambda_c=LAMBDA_C, keep=keep)
+    render_land_trace(trace, out_path, title=title)
 
 
 def _load_land(study_ext: str, barrel: int, bullet: int, land_index: int) -> Surface:

@@ -20,7 +20,8 @@ from pathlib import Path
 
 import numpy as np
 
-from verity import Surface, align_1d, striation_signature
+from verity import Surface, striation_signature
+from verity.aggregate import bullet_score  # noqa: F401  (re-exported for callers)
 
 # Bandpass cutoffs (metres) for the bullet-striae individualizing band.
 LAMBDA_S = float(os.environ.get("VERITY_LAMBDA_S", 4e-6))  # drop measurement noise
@@ -93,15 +94,6 @@ def load_bullet_signatures(session, store, barrel: int, bullet: int) -> list[np.
             striation_signature(surface, lambda_s=LAMBDA_S, lambda_c=LAMBDA_C, orient=ORIENT)
         )
     return signatures
-
-
-def bullet_score(sigs_a: list[np.ndarray], sigs_b: list[np.ndarray]) -> float:
-    """Best mean land-to-land CCF over cyclic land rotations."""
-    if not sigs_a or not sigs_b:
-        return float("nan")
-    n, mm = len(sigs_a), len(sigs_b)
-    ccf = np.array([[align_1d(a, b)[1] for b in sigs_b] for a in sigs_a])
-    return float(max(np.mean([ccf[i, (i + k) % mm] for i in range(n)]) for k in range(mm)))
 
 
 def evaluate(barrels: range = range(1, 11)) -> dict:

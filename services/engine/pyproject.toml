@@ -14,9 +14,12 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# Read X3P + pull scans from the catalog for the real-data demo.
-demo = ["verity-x3p", "verity-catalog"]
+# Read X3P + pull scans from the catalog for the real-data demo (matplotlib for
+# the trace/diagnostic renderers).
+demo = ["verity-x3p", "verity-catalog", "matplotlib>=3.7"]
 dev = ["pytest>=8", "ruff>=0.6"]
+# Trace artifact rendering (PNGs) without the rest of the demo stack.
+viz = ["matplotlib>=3.7"]
 # surfalize is GPL — kept in its own extra and used ONLY as a test oracle.
 oracle = ["surfalize>=0.10"]
 # The learned representation (Phase 2b) needs PyTorch.
@@ -33,6 +36,9 @@ verity-learn-ssl = "verity.examples.ssl_learned:main"
 verity-firearms-proof = "verity.examples.firearms_proof:main"
 verity-toolmark-transfer = "verity.examples.toolmark_transfer:main"
 verity-toolmark-ameslab = "verity.examples.toolmark_ameslab:main"
+verity-margin = "verity.examples.margin_levers:main"
+verity-trace = "verity.examples.trace_cli:main"
+verity-trace-pairs = "verity.examples.trace_cli:pairs_main"
 
 [build-system]
 requires = ["hatchling"]
@@ -43,7 +49,8 @@ packages = ["verity"]
 
 [tool.uv.sources]
 verity-x3p = { path = "../../bindings/python" }
-verity-catalog = { path = "../catalog" }
+# editable so engine picks up catalog schema/model changes without a reinstall.
+verity-catalog = { path = "../catalog", editable = true }
 
 [tool.ruff]
 line-length = 100

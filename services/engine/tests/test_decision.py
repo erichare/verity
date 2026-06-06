@@ -1,6 +1,7 @@
 import numpy as np
 
 from verity import ScoreLRModel, cllr, cllr_min, ece, eer, roc_auc, tippett
+from verity.decision import lr_separation, margin
 
 
 def _labelled(km: np.ndarray, knm: np.ndarray):
@@ -71,6 +72,21 @@ def test_ece_rewards_calibrated_lrs():
     # right) is miscalibrated -> ECE > 0.
     bad = ece(np.concatenate([np.full(50, 1e6), np.full(50, 1e-6)]), np.full(100, 1e6))
     assert bad > 0.1
+
+
+def test_margin_wider_for_separated_scores():
+    rng = np.random.default_rng(4)
+    sep_s, sep_l = _labelled(rng.normal(5, 1, 500), rng.normal(-5, 1, 500))
+    ovl_s, ovl_l = _labelled(rng.normal(0.2, 1, 500), rng.normal(0, 1, 500))
+    sep, ovl = margin(sep_s, sep_l), margin(ovl_s, ovl_l)
+    assert sep["cohens_d"] > ovl["cohens_d"]
+    assert sep["pct_gap"] > ovl["pct_gap"]
+    assert sep["pct_gap"] > 0 > ovl["pct_gap"]  # clean gap vs interleaved tails
+
+
+def test_lr_separation_signed_by_evidence_direction():
+    assert lr_separation(np.full(50, 100.0), np.full(50, 0.01)) > 0
+    assert lr_separation(np.full(50, 0.01), np.full(50, 100.0)) < 0
 
 
 def test_tippett_proportions_decrease_with_threshold():

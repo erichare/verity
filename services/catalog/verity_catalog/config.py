@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     # Content-addressed blob store. "local" today; "s3" is the deploy target.
     blob_store_backend: str = "local"
     blob_store_path: Path = Path(".verity/blobs")
+    # Derived artifacts (trace PNGs, npz bundles) — a parallel content-addressed
+    # store so regenerable outputs never collide with the immutable raw scans.
+    artifact_store_path: Path = Path(".verity/artifacts")
 
 
 @lru_cache

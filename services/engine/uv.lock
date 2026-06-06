@@ -2508,6 +2508,7 @@ dependencies = [
 
 [package.optional-dependencies]
 demo = [
+    { name = "matplotlib" },
     { name = "verity-catalog" },
     { name = "verity-x3p" },
 ]
@@ -2521,9 +2522,14 @@ learn = [
 oracle = [
     { name = "surfalize" },
 ]
+viz = [
+    { name = "matplotlib" },
+]
 
 [package.metadata]
 requires-dist = [
+    { name = "matplotlib", marker = "extra == 'demo'", specifier = ">=3.7" },
+    { name = "matplotlib", marker = "extra == 'viz'", specifier = ">=3.7" },
     { name = "numpy", specifier = ">=1.24" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.6" },
@@ -2532,15 +2538,15 @@ requires-dist = [
     { name = "scipy", specifier = ">=1.11" },
     { name = "surfalize", marker = "extra == 'oracle'", specifier = ">=0.10" },
     { name = "torch", marker = "extra == 'learn'", specifier = ">=2.2" },
-    { name = "verity-catalog", marker = "extra == 'demo'", directory = "../catalog" },
+    { name = "verity-catalog", marker = "extra == 'demo'", editable = "../catalog" },
     { name = "verity-x3p", marker = "extra == 'demo'", directory = "../../bindings/python" },
 ]
-provides-extras = ["demo", "dev", "oracle", "learn"]
+provides-extras = ["demo", "dev", "viz", "oracle", "learn"]
 
 [[package]]
 name = "verity-catalog"
 version = "0.1.0"
-source = { directory = "../catalog" }
+source = { editable = "../catalog" }
 dependencies = [
     { name = "alembic" },
     { name = "pydantic-settings" },
