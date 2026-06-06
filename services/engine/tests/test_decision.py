@@ -37,6 +37,28 @@ def test_score_lr_model_is_monotone_and_calibrated():
     assert 0.0 < cllr(lr[labels == 1], lr[labels == 0]) < 1.0
 
 
+def test_lr_bound_caps_overconfident_lrs():
+    # Hugely separated classes: an unbounded near-unregularized logistic emits
+    # extreme LRs. The data-driven "auto" bound caps |log10 LR| at log10(n_min).
+    rng = np.random.default_rng(7)
+    scores, labels = _labelled(rng.normal(8, 1, 50), rng.normal(-8, 1, 50))  # n_min = 50
+    cap = 10.0 ** np.log10(50)  # ~= 50
+
+    bounded = ScoreLRModel(lr_bound="auto").fit(scores, labels).predict_lr(scores)
+    unbounded = ScoreLRModel(lr_bound=None).fit(scores, labels).predict_lr(scores)
+
+    assert bounded.max() <= cap + 1e-6
+    assert bounded.min() >= 1.0 / cap - 1e-9
+    assert unbounded.max() > 100.0  # unbounded really is over-confident here
+
+    # A fixed bound is honored, and bounding preserves monotonicity.
+    fixed = ScoreLRModel(lr_bound=1.0).fit(scores, labels)
+    order = np.argsort(scores)
+    lr_sorted = fixed.predict_lr(scores[order])
+    assert lr_sorted.max() <= 10.0 + 1e-6  # |log10 LR| <= 1
+    assert np.all(np.diff(lr_sorted) >= -1e-9)
+
+
 def test_cllr_of_uninformative_system_is_one():
     assert abs(cllr(np.ones(100), np.ones(100)) - 1.0) < 1e-9
 
