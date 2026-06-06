@@ -38,6 +38,26 @@ def eer(scores: np.ndarray, labels: np.ndarray) -> float:
     return float((fpr[idx] + fnr[idx]) / 2.0)
 
 
+def ece(lr_km: np.ndarray, lr_knm: np.ndarray, n_bins: int = 10) -> float:
+    """Expected calibration error of the LRs' implied posteriors (prior 0.5).
+
+    Each LR maps to a same-source posterior ``p = LR / (1 + LR)``; comparisons are
+    binned by ``p`` and a bin's mean posterior is compared to its empirical
+    same-source fraction. ``0`` is perfectly reliable."""
+    lr_km = np.asarray(lr_km, dtype=np.float64)
+    lr_knm = np.asarray(lr_knm, dtype=np.float64)
+    lr = np.concatenate([lr_km, lr_knm])
+    y = np.concatenate([np.ones_like(lr_km), np.zeros_like(lr_knm)])
+    p = lr / (1.0 + lr)
+    edges = np.linspace(0.0, 1.0, n_bins + 1)
+    total = 0.0
+    for lo, hi in zip(edges[:-1], edges[1:], strict=True):
+        in_bin = (p >= lo) & (p <= hi) if hi == 1.0 else (p >= lo) & (p < hi)
+        if in_bin.any():
+            total += abs(p[in_bin].mean() - y[in_bin].mean()) * in_bin.mean()
+    return float(total)
+
+
 def tippett(lr_km: np.ndarray, lr_knm: np.ndarray, n: int = 100):
     """Tippett-plot data: over a grid of LR thresholds, the proportion of
     same-source and different-source comparisons with ``LR >= threshold``.

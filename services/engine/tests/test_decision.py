@@ -1,6 +1,6 @@
 import numpy as np
 
-from verity import ScoreLRModel, cllr, cllr_min, eer, roc_auc, tippett
+from verity import ScoreLRModel, cllr, cllr_min, ece, eer, roc_auc, tippett
 
 
 def _labelled(km: np.ndarray, knm: np.ndarray):
@@ -39,6 +39,16 @@ def test_score_lr_model_is_monotone_and_calibrated():
 
 def test_cllr_of_uninformative_system_is_one():
     assert abs(cllr(np.ones(100), np.ones(100)) - 1.0) < 1e-9
+
+
+def test_ece_rewards_calibrated_lrs():
+    # A perfectly reliable system: LR = 1 everywhere with a 50/50 split has
+    # posterior 0.5 and empirical 0.5 -> ECE 0.
+    assert ece(np.ones(100), np.ones(100)) < 1e-9
+    # An over-confident system (huge LRs for KM, tiny for KNM, but only half
+    # right) is miscalibrated -> ECE > 0.
+    bad = ece(np.concatenate([np.full(50, 1e6), np.full(50, 1e-6)]), np.full(100, 1e6))
+    assert bad > 0.1
 
 
 def test_tippett_proportions_decrease_with_threshold():
