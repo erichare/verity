@@ -29,6 +29,7 @@ verity-validate = "verity.examples.hamby_validation:main"
 verity-learn-hamby = "verity.examples.hamby_learned:main"
 verity-learn-pooled = "verity.examples.hamby_learned:pooled_main"
 verity-learn-surface = "verity.examples.surface_learned:main"
+verity-learn-ssl = "verity.examples.ssl_learned:main"
 verity-firearms-proof = "verity.examples.firearms_proof:main"
 
 [build-system]
