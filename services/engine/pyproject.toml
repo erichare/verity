@@ -39,6 +39,7 @@ verity-toolmark-ameslab = "verity.examples.toolmark_ameslab:main"
 verity-margin = "verity.examples.margin_levers:main"
 verity-trace = "verity.examples.trace_cli:main"
 verity-trace-pairs = "verity.examples.trace_cli:pairs_main"
+verity-toolmark-chumbley-proof = "verity.examples.toolmark_chumbley_proof:main"
 
 [build-system]
 requires = ["hatchling"]
