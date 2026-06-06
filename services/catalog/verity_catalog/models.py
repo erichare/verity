@@ -149,6 +149,72 @@ class Scan(SQLModel, table=True):
     land: Land | None = Relationship(back_populates="scans")
     mark: Mark | None = Relationship(back_populates="scans")
     instrument: Instrument | None = Relationship(back_populates="scans")
+    traces: list["ScanTrace"] = Relationship(back_populates="scan")
+
+
+class ScanTrace(SQLModel, table=True):
+    """Per-scan algorithmic trace.
+
+    Records the pipeline-stage artifacts for one land scan — raw / bandpassed /
+    rotated / cropped surfaces and the 1-D signature, stored as content-addressed
+    blobs in the *artifact* store — plus the orientation/crop metadata. One row
+    per ``(scan, pipeline_version)``. A trace is regenerable from the scan, so it
+    is a cache (with a version), never source data."""
+
+    __table_args__ = (
+        UniqueConstraint("scan_id", "pipeline_version", name="uq_scantrace_scan_pipeline"),
+    )
+
+    id: int | None = Field(default=None, primary_key=True)
+    scan_id: int = Field(foreign_key="scan.id", index=True)
+    pipeline_version: str = Field(index=True)
+    content_hash_scan: str = Field(index=True)  # = Scan.content_hash (denormalized)
+
+    # Pipeline parameters (reproducibility).
+    lambda_s: float | None = None
+    lambda_c: float | None = None
+    degree: int = 2
+    keep: float = 0.5
+    orient: bool = True
+
+    # Orientation + groove-crop results.
+    striae_angle_deg: float | None = None
+    tilt_deg: float | None = None
+    crop_lo: int | None = None
+    crop_hi: int | None = None
+    n_signature: int | None = None
+
+    # Content hashes into the artifact store (composite PNG + npz array bundle).
+    png_hash: str | None = Field(default=None, index=True)
+    npz_hash: str | None = Field(default=None, index=True)
+
+    created_at: datetime = Field(default_factory=_utcnow)
+
+    scan: Scan | None = Relationship(back_populates="traces")
+
+
+class PairDiagnostic(SQLModel, table=True):
+    """A bullet-pair comparison diagnostic: the CCF-matrix structure features and
+    a rendered PNG (content-addressed in the artifact store). Stored for the
+    hardest KM/KNM pairs — the ones that carry the remaining discrimination
+    headroom — so the failure modes can be inspected and tracked over time."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    study_id: int = Field(foreign_key="study.id", index=True)
+    bullet_a_id: int = Field(foreign_key="bullet.id", index=True)
+    bullet_b_id: int = Field(foreign_key="bullet.id", index=True)
+    pipeline_version: str = Field(index=True)
+    label: int = Field(index=True)  # 1 = KM (same barrel), 0 = KNM
+
+    offset: int | None = None
+    diag_mean: float | None = None
+    diag_min: float | None = None
+    diag_contrast: float | None = None
+    offset_margin: float | None = None
+    lag_coherence: float | None = None
+
+    png_hash: str | None = Field(default=None, index=True)
+    created_at: datetime = Field(default_factory=_utcnow)
 
 
 # Convenience grouping for callers that want to iterate every table.
@@ -161,4 +227,6 @@ ALL_MODELS = (
     Mark,
     Instrument,
     Scan,
+    ScanTrace,
+    PairDiagnostic,
 )

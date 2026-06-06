@@ -8,12 +8,24 @@ The learned representation + calibrated likelihood-ratio decision layer come in
 later phases.
 """
 
-from .decision import ScoreLRModel, cllr, cllr_min, ece, eer, roc_auc, tippett
+from .aggregate import BulletComparison, bullet_comparison, bullet_score, land_ccf_matrix
+from .decision import (
+    ScoreLRModel,
+    cllr,
+    cllr_min,
+    ece,
+    eer,
+    lr_separation,
+    margin,
+    roc_auc,
+    tippett,
+)
 from .orientation import dominant_orientation
 from .preprocess import gaussian_lowpass, isolate_roughness, remove_form, sa, sq
 from .registration import Registration, align_1d, register
 from .signature import striation_signature
 from .surface import Surface
+from .trace import LandTrace, land_trace
 
 __version__ = "0.1.0"
 
@@ -29,11 +41,19 @@ __all__ = [
     "register",
     "Registration",
     "align_1d",
+    "bullet_score",
+    "bullet_comparison",
+    "BulletComparison",
+    "land_ccf_matrix",
+    "land_trace",
+    "LandTrace",
     "ScoreLRModel",
     "cllr",
     "cllr_min",
     "ece",
     "eer",
+    "lr_separation",
+    "margin",
     "roc_auc",
     "tippett",
 ]

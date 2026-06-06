@@ -123,3 +123,87 @@ def test_study_source_external_id_unique(session):
     session.add(models.Study(source="figshare", external_id="dup", title="B"))
     with pytest.raises(IntegrityError):
         session.commit()
+
+
+def _study_firearm(session, external_id="g-trace"):
+    study = models.Study(source="nbtrd", external_id=external_id, title="T")
+    session.add(study)
+    session.commit()
+    session.refresh(study)
+    firearm = models.Firearm(study_id=study.id, brand="Ruger")
+    session.add(firearm)
+    session.commit()
+    session.refresh(firearm)
+    return study, firearm
+
+
+def test_scan_trace_round_trip(session):
+    _, firearm = _study_firearm(session)
+    scan = _bullet_scan(session, firearm, content_hash="a" * 64)
+    tr = models.ScanTrace(
+        scan_id=scan.id,
+        pipeline_version="stage0-v1",
+        content_hash_scan=scan.content_hash,
+        lambda_s=4e-6,
+        lambda_c=250e-6,
+        striae_angle_deg=178.5,
+        tilt_deg=-88.5,
+        crop_lo=10,
+        crop_hi=200,
+        n_signature=190,
+        png_hash="p" * 64,
+        npz_hash="n" * 64,
+    )
+    session.add(tr)
+    session.commit()
+
+    session.refresh(scan)
+    assert scan.traces[0].pipeline_version == "stage0-v1"
+    assert scan.traces[0].scan.content_hash == "a" * 64  # relationship navigates both ways
+    assert scan.traces[0].crop_hi - scan.traces[0].crop_lo == 190
+
+
+def test_scan_trace_unique_per_pipeline_version(session):
+    _, firearm = _study_firearm(session, external_id="g-uniq")
+    scan = _bullet_scan(session, firearm, content_hash="b" * 64)
+    for _ in range(2):
+        session.add(
+            models.ScanTrace(
+                scan_id=scan.id, pipeline_version="stage0-v1", content_hash_scan=scan.content_hash
+            )
+        )
+    with pytest.raises(IntegrityError):
+        session.commit()
+
+
+def test_pair_diagnostic_round_trip(session):
+    study, firearm = _study_firearm(session, external_id="g-pair")
+    b1 = models.Bullet(firearm_id=firearm.id)
+    b2 = models.Bullet(firearm_id=firearm.id)
+    session.add(b1)
+    session.add(b2)
+    session.commit()
+    session.refresh(b1)
+    session.refresh(b2)
+
+    pd = models.PairDiagnostic(
+        study_id=study.id,
+        bullet_a_id=b1.id,
+        bullet_b_id=b2.id,
+        pipeline_version="stage0-v1",
+        label=1,
+        offset=2,
+        diag_mean=0.7,
+        diag_min=0.5,
+        diag_contrast=0.4,
+        offset_margin=0.2,
+        lag_coherence=0.9,
+        png_hash="p" * 64,
+    )
+    session.add(pd)
+    session.commit()
+
+    got = session.get(models.PairDiagnostic, pd.id)
+    assert got.label == 1
+    assert got.offset == 2
+    assert got.diag_contrast == 0.4

@@ -70,3 +70,41 @@ def tippett(lr_km: np.ndarray, lr_knm: np.ndarray, n: int = 100):
     km_prop = np.array([np.mean(lr_km >= t) for t in thresholds])
     knm_prop = np.array([np.mean(lr_knm >= t) for t in thresholds])
     return thresholds, km_prop, knm_prop
+
+
+def margin(scores: np.ndarray, labels: np.ndarray) -> dict[str, float]:
+    """How *distinctly different* the same-source and different-source score
+    distributions are — separation, not mere rank-separability.
+
+    ``AUC`` can be 1.0 while the two distributions sit almost on top of each
+    other (perfectly ordered but barely apart); that narrow margin calibrates
+    poorly and does not generalize. These measures quantify the gap the system is
+    trying to widen:
+
+    * ``cohens_d`` — standardized mean difference
+      ``(mean_KM - mean_KNM) / pooled_sd``. Scale-free; bigger is wider.
+    * ``pct_gap`` — robust separation ``percentile(KM, 5) - percentile(KNM, 95)``.
+      Positive ⇒ a near-non-overlapping margin between the bulk of each class;
+      negative ⇒ the tails still interleave.
+    """
+    scores = np.asarray(scores, dtype=np.float64)
+    labels = np.asarray(labels, dtype=np.float64)
+    km = scores[labels == 1]
+    knm = scores[labels == 0]
+    if km.size == 0 or knm.size == 0:
+        return {"cohens_d": float("nan"), "pct_gap": float("nan")}
+    n1, n0 = km.size, knm.size
+    pooled_var = ((n1 - 1) * km.var(ddof=1) + (n0 - 1) * knm.var(ddof=1)) / max(n1 + n0 - 2, 1)
+    pooled_sd = float(np.sqrt(pooled_var))
+    cohens_d = (km.mean() - knm.mean()) / pooled_sd if pooled_sd > 0 else 0.0
+    pct_gap = float(np.percentile(km, 5) - np.percentile(knm, 95))
+    return {"cohens_d": float(cohens_d), "pct_gap": pct_gap}
+
+
+def lr_separation(lr_km: np.ndarray, lr_knm: np.ndarray) -> float:
+    """Mean ``log10 LR`` of same-source comparisons minus that of different-source
+    ones — the margin in evidence space. Larger ⇒ the system reports decisively
+    different weights of evidence for matches vs non-matches."""
+    lr_km = np.asarray(lr_km, dtype=np.float64)
+    lr_knm = np.asarray(lr_knm, dtype=np.float64)
+    return float(np.mean(np.log10(lr_km)) - np.mean(np.log10(lr_knm)))

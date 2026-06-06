@@ -85,8 +85,18 @@ class LocalBlobStore(BlobStore):
 
 
 def get_store(settings: Settings | None = None) -> BlobStore:
-    """Construct the configured blob store."""
+    """Construct the configured blob store for raw scans."""
     settings = settings or get_settings()
     if settings.blob_store_backend == "local":
         return LocalBlobStore(settings.blob_store_path)
+    raise ValueError(f"unknown blob_store_backend: {settings.blob_store_backend!r}")
+
+
+def get_artifact_store(settings: Settings | None = None) -> BlobStore:
+    """Construct the configured store for *derived* artifacts (trace PNGs, npz
+    bundles) — same backend, separate root, so outputs never collide with the
+    immutable raw-scan blobs."""
+    settings = settings or get_settings()
+    if settings.blob_store_backend == "local":
+        return LocalBlobStore(settings.artifact_store_path)
     raise ValueError(f"unknown blob_store_backend: {settings.blob_store_backend!r}")
