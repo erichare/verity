@@ -1,0 +1,12 @@
+# The Vercel project (verity) has Root Directory services/web. Git deploys clone
+# the repo and never include git-ignored files, but this also protects any *manual*
+# CLI deploy run from the repo root: keep the multi-GB GPL-sourced X3P data cache
+# and build artifacts out of the upload.
+**/.verity
+services/catalog/.verity
+**/target
+**/node_modules
+**/.next
+**/__pycache__
+**/*.x3p
+**/*.npz

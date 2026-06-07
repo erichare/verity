@@ -58,24 +58,30 @@ Render, Cloud Run, …).
 
 ## 2. Web → Vercel
 
-The `verity` project keeps the default **Root Directory `.`** and is deployed **from
-`services/web`** (where the Next.js `package.json` lives — the frontend is
-standalone and needs nothing else from the repo):
+The `verity` project has **Root Directory `services/web`** and is connected to Git,
+so **pushing to `main` auto-deploys** — Vercel clones the repo and builds
+`services/web`. Set the API URL once, then just push:
 
 ```bash
-cd services/web
-vercel link                                         # link to the `verity` project
-vercel env add NEXT_PUBLIC_API_URL production        # = https://api.verity.codes
-vercel --prod                                        # build + deploy from here
+# one-time
+vercel link                                       # link the repo to the `verity` project
+vercel env add NEXT_PUBLIC_API_URL production      # = https://api.verity.codes
+git push origin main                               # auto-deploys
 ```
 
-`NEXT_PUBLIC_API_URL` is inlined at **build time**, so always redeploy after
-changing it.
+`NEXT_PUBLIC_API_URL` is inlined at **build time**, so any change needs a fresh
+deploy (just push again).
 
-> **Do not deploy from the repo root.** The root holds `services/catalog/.verity`
-> — a multi-GB, GPL-sourced X3P data cache that must never leave the machine. It's
-> git-ignored, but if you ever do deploy from the root, add a `.vercelignore` that
-> excludes `**/.verity`, `**/target`, and `**/*.x3p`.
+For a manual deploy, run from the **repo ROOT** (so the Root Directory setting
+resolves — `services/web` is found inside the upload):
+
+```bash
+vercel --prod        # from the repo ROOT, not services/web
+```
+
+> The repo root holds `services/catalog/.verity` — a multi-GB, GPL-sourced X3P data
+> cache that must never ship. It's git-ignored (so Git deploys never see it), and
+> the root `.vercelignore` keeps it out of any manual CLI upload too.
 
 ## 3. Verify
 
