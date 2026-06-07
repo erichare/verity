@@ -189,16 +189,27 @@ def cmr_regions_2d(
     return regions_from_members(members, a.shape)
 
 
-def regions_from_members(members: list, shape: tuple[int, int]) -> list[dict]:
+def regions_from_members(
+    members: list, shape: tuple[int, int], *, shift: bool = False
+) -> list[dict]:
     """Format congruent-region votes as attribution dicts — pixel coords plus
-    [0,1]-normalized ``*_frac`` coords for overlaying on a rendered preview."""
+    [0,1]-normalized ``*_frac`` coords for overlaying on a rendered preview. With
+    ``shift`` the region is placed at its matched location in B (the cell's A
+    position translated by the vote's (dy, dx)), clamped to bounds, instead of its
+    position in A. ``shape`` should be B's shape when ``shift`` is set."""
     h, w = shape
     regions = []
-    for _transform, corr, (y, x, ch, cw) in members:
+    for transform, corr, (y, x, ch, cw) in members:
+        if shift:
+            yy = min(max(y + transform[0], 0.0), float(max(h - ch, 0)))
+            xx = min(max(x + transform[1], 0.0), float(max(w - cw, 0)))
+        else:
+            yy, xx = float(y), float(x)
         regions.append(
             {
-                "y": int(y), "x": int(x), "h": int(ch), "w": int(cw), "corr": float(corr),
-                "y_frac": y / h, "x_frac": x / w, "h_frac": ch / h, "w_frac": cw / w,
+                "y": int(round(yy)), "x": int(round(xx)), "h": int(ch), "w": int(cw),
+                "corr": float(corr),
+                "y_frac": yy / h, "x_frac": xx / w, "h_frac": ch / h, "w_frac": cw / w,
             }
         )
     return regions
