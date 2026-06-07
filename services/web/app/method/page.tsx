@@ -102,6 +102,9 @@ export default function MethodPage() {
             <span className="accent-text">Verity</span>
           </a>
           <div className="flex items-center gap-5">
+            <a href="/why" className="text-sm text-foreground/70 transition hover:text-foreground">
+              Why
+            </a>
             <a href="/#compare" className="text-sm text-foreground/70 transition hover:text-foreground">
               Compare
             </a>
