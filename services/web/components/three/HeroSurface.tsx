@@ -64,9 +64,9 @@ function Surface({ isDark }: { isDark: boolean }) {
   return (
     <mesh ref={meshRef} geometry={geo} rotation={[-Math.PI / 2.5, 0, 0]}>
       <meshStandardMaterial
-        color={isDark ? "#0e1320" : "#c4cee0"}
+        color={isDark ? "#0e1320" : "#aeb8cc"}
         metalness={0.72}
-        roughness={isDark ? 0.34 : 0.46}
+        roughness={isDark ? 0.34 : 0.5}
         envMapIntensity={0.5}
       />
     </mesh>
@@ -78,16 +78,18 @@ function Scene({ isDark }: { isDark: boolean }) {
   return (
     <>
       <fog attach="fog" args={[bg, 4.2, 9.5]} />
-      <ambientLight intensity={isDark ? 0.22 : 0.55} />
+      <ambientLight intensity={isDark ? 0.22 : 0.6} />
+      {/* Dark mode: dramatic brand-colored rake light. Light mode: neutral steel,
+          so the colored "Verity" wordmark reads cleanly over it. */}
       <directionalLight
         position={[-3, 2.6, 2]}
-        intensity={isDark ? 2.6 : 1.9}
-        color={isDark ? "#818cf8" : "#4f46e5"}
+        intensity={isDark ? 2.6 : 2.1}
+        color={isDark ? "#818cf8" : "#f4f6fb"}
       />
       <directionalLight
         position={[3.6, 1.1, -1.8]}
-        intensity={isDark ? 2.0 : 0.9}
-        color={isDark ? "#22d3ee" : "#0e7490"}
+        intensity={isDark ? 2.0 : 0.85}
+        color={isDark ? "#22d3ee" : "#cfd8e6"}
       />
       <Surface isDark={isDark} />
     </>

@@ -13,6 +13,24 @@ export async function getDomains(): Promise<string[]> {
   }
 }
 
+export interface Detection {
+  domain: string;
+  coherence: number;
+}
+
+/** Suggest a mark type from one scan (null if detection is unavailable). */
+export async function detectDomain(file: File): Promise<Detection | null> {
+  try {
+    const form = new FormData();
+    form.append("scan", file);
+    const res = await fetch(`${API_BASE}/detect`, { method: "POST", body: form });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
 export async function compareMarks(
   domain: string,
   marksA: File[],

@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
-import { compareMarks, getDomains } from "@/lib/api";
+import { compareMarks, detectDomain, getDomains, type Detection } from "@/lib/api";
 import type { ComparisonReport } from "@/lib/types";
 import ReportView from "@/components/ReportView";
 import { Reveal } from "@/components/Reveal";
@@ -85,6 +85,8 @@ export default function Home() {
   const [report, setReport] = useState<ComparisonReport | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [detected, setDetected] = useState<Detection | null>(null);
+  const [manualDomain, setManualDomain] = useState(false);
 
   useEffect(() => {
     getDomains().then((d) => {
@@ -107,6 +109,17 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
+  }
+
+  // Auto-detect the mark type from the first scan of Mark A and pre-select it
+  // (unless the user has manually chosen a type). Keeps the picked files.
+  async function onPickA(files: File[]) {
+    setMarkA(files);
+    if (!files.length) return;
+    const d = await detectDomain(files[0]);
+    if (!d) return;
+    setDetected(d);
+    if (!manualDomain && d.domain !== domain) setDomain(d.domain);
   }
 
   const shownDomains = domains.length ? domains : ["striated", "impressed"];
@@ -213,6 +226,8 @@ export default function Home() {
               value={domain}
               onChange={(e) => {
                 setDomain(e.target.value);
+                setManualDomain(true);
+                setDetected(null);
                 setMarkA([]);
                 setMarkB([]);
                 setReport(null);
@@ -226,8 +241,15 @@ export default function Home() {
               ))}
             </select>
           </div>
+          {detected && (
+            <p className="text-xs text-muted">
+              Auto-detected from your scan:{" "}
+              <span className="text-foreground/80">{DOMAIN_LABELS[detected.domain] ?? detected.domain}</span>
+              {" "}— change it above if it&rsquo;s wrong.
+            </p>
+          )}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <FilePick label="Mark A" files={markA} onPick={setMarkA} multiple={domain === "striated"} />
+            <FilePick label="Mark A" files={markA} onPick={onPickA} multiple={domain === "striated"} />
             <FilePick label="Mark B" files={markB} onPick={setMarkB} multiple={domain === "striated"} />
           </div>
           <p className="text-xs text-muted">

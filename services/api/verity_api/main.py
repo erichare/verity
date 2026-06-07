@@ -20,6 +20,7 @@ from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
 from verity.compare import compare_bullets_with_previews, compare_with_previews
+from verity.detect import detect_domain
 from verity.surface import Surface
 
 from .references import available_domains, load_reference, load_striated_single_land
@@ -73,6 +74,15 @@ async def _read_surface(upload: UploadFile) -> Surface:
 @app.get("/health")
 def health() -> dict:
     return {"status": "ok", "engine_version": _engine_version(), "domains": available_domains()}
+
+
+@app.post("/detect")
+async def detect(scan: UploadFile = File(...)) -> dict:
+    """Suggest a mark type for one uploaded scan, from striation anisotropy. The UI
+    pre-selects it; the user confirms (the mark type picks the calibration reference)."""
+    surface = await _read_surface(scan)
+    domain, coherence = detect_domain(surface)
+    return {"domain": domain, "coherence": round(coherence, 3)}
 
 
 @app.post("/compare")
