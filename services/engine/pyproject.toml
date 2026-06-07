@@ -43,6 +43,7 @@ verity-toolmark-chumbley-proof = "verity.examples.toolmark_chumbley_proof:main"
 verity-toolmark-tmaRks = "verity.examples.toolmark_tmaRks:main"
 verity-cartridge-fadul = "verity.examples.cartridge_fadul:main"
 verity-cartridge-cmc-proof = "verity.examples.cartridge_cmc_proof:main"
+verity-cmr-cartridge = "verity.examples.cmr_cartridge:main"
 
 [build-system]
 requires = ["hatchling"]
