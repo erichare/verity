@@ -846,7 +846,7 @@ wheels = [
 [[package]]
 name = "verity"
 version = "0.1.0"
-source = { directory = "../engine" }
+source = { editable = "../engine" }
 dependencies = [
     { name = "numpy" },
     { name = "scikit-image" },
@@ -900,7 +900,7 @@ requires-dist = [
     { name = "python-multipart", specifier = ">=0.0.9" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.6" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.29" },
-    { name = "verity", directory = "../engine" },
+    { name = "verity", editable = "../engine" },
     { name = "verity-x3p", directory = "../../bindings/python" },
 ]
 provides-extras = ["dev"]
