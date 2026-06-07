@@ -1,0 +1,13 @@
+# Keep the build context lean (build from repo root).
+**/.venv/
+**/node_modules/
+**/.next/
+target/
+**/target/
+.git/
+**/__pycache__/
+**/*.pyc
+**/.pytest_cache/
+**/.ruff_cache/
+**/.verity/
+*.db
