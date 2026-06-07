@@ -83,9 +83,11 @@ def compare_with_previews(
     provenance: dict | None = None,
     preview_size: int = 120,
 ) -> tuple[ComparisonReport, dict]:
-    """Compare two surfaces → (report, previews). For impressed marks the report's
-    ``attribution`` holds the congruent matching regions and ``previews`` holds the
-    two grayscale signatures to overlay them on (empty for striated, for now)."""
+    """Compare two surfaces → (report, previews). The report's ``attribution`` holds
+    the matched regions (congruent cells for impressed, consecutive matching striae
+    for striated) and ``previews`` the two rendered surfaces to overlay them on. The
+    striated path here is a *single land* per mark (weakly diagnostic); a full bullet
+    uses :func:`compare_bullets_with_previews`."""
     attribution: list[dict] = []
     previews: dict = {}
     if domain == "impressed":
@@ -97,7 +99,11 @@ def compare_with_previews(
         attribution = regions_from_members(members, sig_a.shape)
         previews = {"a": _to_preview(sig_a, preview_size), "b": _to_preview(sig_b, preview_size)}
     elif domain == "striated":
-        score, score_kind = _striated_score(surface_a, surface_b), "ccf"
+        sig_a, band_a = _land_fields(surface_a)
+        sig_b, band_b = _land_fields(surface_b)
+        score, score_kind = float(align_1d(sig_a, sig_b)[1]), "ccf"
+        attribution = cmr_regions_1d(sig_a, sig_b, corr_thresh=_CMR_1D_CORR, lag_tol=_CMR_1D_LAG)
+        previews = {"a": _to_preview(band_a, preview_size), "b": _to_preview(band_b, preview_size)}
     else:
         raise ValueError(f"domain must be one of {DOMAINS}, got {domain!r}")
 

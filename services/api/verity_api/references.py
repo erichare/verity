@@ -20,9 +20,19 @@ _REFERENCES = {
     "striated": ("bullet_pooled.npz", "pooled bullet-land reference (Hamby-252 & 173, Beretta, Phoenix)"),
 }
 
+# A single striated land is a weaker comparison object than a whole bullet, scored on
+# one land-to-land CCF — it must be calibrated against single-land (not bullet) scores.
+_STRIATED_SINGLE = ("striated_land.npz", "pooled single-land reference (Hamby-252, Beretta)")
+
 
 def available_domains() -> list[str]:
     return sorted(_REFERENCES)
+
+
+def load_striated_single_land() -> tuple[np.ndarray, np.ndarray, str]:
+    """Return ``(scores, labels, name)`` for the single-land striated reference."""
+    data = np.load(_DIR / _STRIATED_SINGLE[0])
+    return data["scores"], data["labels"], _STRIATED_SINGLE[1]
 
 
 def load_reference(domain: str) -> tuple[np.ndarray, np.ndarray, str]:
