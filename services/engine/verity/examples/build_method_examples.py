@@ -70,7 +70,12 @@ def _example(a_paths: list[Path], b_paths: list[Path], scores, labels) -> dict:
     lag, _ccf = align_1d(sig_a, sig_b)
 
     def sig_list(s: np.ndarray) -> list[float]:
-        return [round(float(x), 4) for x in np.nan_to_num(s)]
+        # Roughness signatures are micron-scale (~1e-6 m); center + scale to ~[-1, 1]
+        # so the shape survives rounding (and the plot is amplitude-invariant anyway).
+        s = np.nan_to_num(s, nan=0.0)
+        s = s - s.mean()
+        scale = float(np.max(np.abs(s))) or 1.0
+        return [round(float(x / scale), 4) for x in s]
 
     same = rep["log10_lr"] > 0
     return {
