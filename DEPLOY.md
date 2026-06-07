@@ -11,6 +11,13 @@ The platform is two pieces:
 The web app calls the API at `NEXT_PUBLIC_API_URL`; the API allows the web origin
 via `VERITY_CORS_ORIGINS`. Deploy the API first, then point the web app at it.
 
+> **Live deployment**
+> - Web → Vercel (project `web`): https://web-dc9rr7ja7-erichare.vercel.app
+> - API → Railway (project `verity-api`): https://verity-api-production-b4c4.up.railway.app
+>
+> `railway.json` (repo root) pins the Dockerfile builder so `railway up` from the
+> repo root builds `services/api/Dockerfile` with the whole repo as context.
+
 ## 1. API (container)
 
 ```bash
@@ -22,15 +29,29 @@ docker run -p 8000:8000 -e VERITY_CORS_ORIGINS="*" verity-api
 curl localhost:8000/health        # {"status":"ok","domains":["impressed","striated"]}
 ```
 
-Deploy that image to any container host and note its public URL, e.g.
+Deploy that image to any container host and note its public URL.
+
+**Railway (what this repo uses)** — `railway.json` at the root selects the
+Dockerfile builder, so deploy from the **repo root**:
+
+```bash
+railway init --name verity-api      # once
+railway up                          # builds services/api/Dockerfile, repo as context
+railway domain                      # mint the public https URL
+```
+
+Railway injects `$PORT` automatically; the image's `CMD` binds it. CORS defaults
+to `*` (baked into the image), so the API answers any origin out of the box — to
+lock it down, set `VERITY_CORS_ORIGINS=https://<your-vercel-app>.vercel.app` as a
+Railway service variable.
+
+Other hosts work the same way — point them at `services/api/Dockerfile` with the
+repo root as build context:
 
 ```bash
 fly launch --dockerfile services/api/Dockerfile     # Fly.io
-# or: render.com / railway.app / Cloud Run — point them at services/api/Dockerfile
+# or: render.com / Google Cloud Run
 ```
-
-Set on the host: `VERITY_CORS_ORIGINS=https://<your-vercel-app>.vercel.app`
-(hosts that inject `$PORT`, e.g. Cloud Run/Render, are handled — the image binds `$PORT`).
 
 ## 2. Web (Vercel)
 
