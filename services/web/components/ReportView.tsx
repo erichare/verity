@@ -87,6 +87,7 @@ export default function ReportView({ report }: { report: ComparisonReport }) {
         <AttributionView
           previews={report.previews}
           regions={report.attribution}
+          regionsB={report.attribution_b}
           domain={report.domain}
         />
       )}

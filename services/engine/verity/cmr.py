@@ -91,29 +91,37 @@ def striated_votes(a: np.ndarray, b: np.ndarray, *, window: int = 0, step: int =
     ]
 
 
-def regions_from_1d_members(members: list, length: int) -> list[dict]:
+def regions_from_1d_members(members: list, length: int, *, lag_shift: bool = False) -> list[dict]:
     """Format congruent 1-D windows as attribution: full-height vertical bands over
-    the across-striae axis, with [0,1]-normalized ``*_frac`` coords for overlaying
-    on a rendered striae field."""
+    the across-striae axis, with [0,1]-normalized ``*_frac`` coords for overlaying on
+    a rendered striae field. With ``lag_shift`` the band is placed at the window's
+    matched position in B (its home + lag) instead of its home in A."""
     regions = []
-    for _transform, corr, (home, window) in members:
+    for transform, corr, (home, window) in members:
+        x = home + (transform[0] if lag_shift else 0.0)  # B match position = A home + lag
         regions.append(
             {
-                "x": int(home), "y": 0, "w": int(window), "h": 1, "corr": float(corr),
-                "x_frac": home / length, "y_frac": 0.0,
+                "x": int(round(x)), "y": 0, "w": int(window), "h": 1, "corr": float(corr),
+                "x_frac": x / length, "y_frac": 0.0,
                 "w_frac": window / length, "h_frac": 1.0,
             }
         )
     return regions
 
 
-def cmr_regions_1d(a, b, *, corr_thresh: float = 0.5, lag_tol: float = 10.0, **kw) -> list[dict]:
-    """The congruent matching striae of profile ``a`` (windows agreeing on a common
-    lag) as attribution bands — the 1-D counterpart of :func:`cmr_regions_2d`."""
+def cmr_regions_1d_pair(
+    a, b, *, corr_thresh: float = 0.5, lag_tol: float = 10.0, **kw
+) -> tuple[list[dict], list[dict]]:
+    """The congruent matching striae (windows agreeing on a common lag) as attribution
+    bands on *both* profiles: ``(regions_a, regions_b)``. Each Mark-B band sits at the
+    matching window's position in B (the Mark-A window's home + its lag)."""
     members = consensus_members(
         striated_votes(a, b, **kw), corr_thresh=corr_thresh, transform_tol=(lag_tol,)
     )
-    return regions_from_1d_members(members, len(a))
+    return (
+        regions_from_1d_members(members, len(a)),
+        regions_from_1d_members(members, len(b), lag_shift=True),
+    )
 
 
 # --- 2-D vote producer: impressed/areal marks (region = cell, group = shift+rot) ---

@@ -13,10 +13,12 @@ const VIEWER_CLASS =
 export default function AttributionView({
   previews,
   regions,
+  regionsB,
   domain,
 }: {
   previews: { a: number[][]; b: number[][] };
   regions: AttributionRegion[];
+  regionsB?: AttributionRegion[];
   domain?: string;
 }) {
   const striated = domain === "striated";
@@ -43,7 +45,7 @@ export default function AttributionView({
           <span className="text-xs text-muted">{labelA}</span>
         </div>
         <div className="flex flex-col items-center gap-1.5">
-          <SurfaceViewer grid={previews.b} className={VIEWER_CLASS} />
+          <SurfaceViewer grid={previews.b} regions={regionsB} className={VIEWER_CLASS} />
           <span className="text-xs text-muted">{labelB}</span>
         </div>
       </div>

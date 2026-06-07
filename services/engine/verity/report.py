@@ -59,7 +59,8 @@ class ComparisonReport:
     verbal: str
     lr_bound_log10: float | None  # the ELUB cap applied, if any
     reference: dict  # {name, n_km, n_knm, cllr, cllr_min, auc}
-    attribution: list[dict] = field(default_factory=list)
+    attribution: list[dict] = field(default_factory=list)  # matched regions on Mark A
+    attribution_b: list[dict] = field(default_factory=list)  # the same matches on Mark B
     provenance: dict = field(default_factory=dict)
     scope_note: str = ""
 
@@ -76,6 +77,7 @@ def build_comparison_report(
     reference_name: str,
     score_kind: str = "cmr",
     attribution: list[dict] | None = None,
+    attribution_b: list[dict] | None = None,
     provenance: dict | None = None,
     lr_bound: str | float | None = "auto",
 ) -> ComparisonReport:
@@ -114,6 +116,7 @@ def build_comparison_report(
         lr_bound_log10=model._log_bound,
         reference=reference,
         attribution=list(attribution or []),
+        attribution_b=list(attribution_b or []),
         provenance=dict(provenance or {}),
         scope_note=scope_note,
     )
