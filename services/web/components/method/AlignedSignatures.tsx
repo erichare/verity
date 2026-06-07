@@ -7,36 +7,32 @@ interface Band {
   w_frac: number;
 }
 
-function extent(...arrs: number[][]): [number, number] {
+function extent(arr: number[]): [number, number] {
   let lo = Infinity;
   let hi = -Infinity;
-  for (const arr of arrs) {
-    for (const v of arr) {
-      if (!Number.isFinite(v)) continue;
-      if (v < lo) lo = v;
-      if (v > hi) hi = v;
-    }
+  for (const v of arr) {
+    if (!Number.isFinite(v)) continue;
+    if (v < lo) lo = v;
+    if (v > hi) hi = v;
   }
   return [lo, hi];
 }
 
 /**
- * Signature A and signature B overlaid at their best alignment, with the matched
- * striae bands highlighted. B is shifted onto A's frame using the offset implied by
- * the matched bands (correct by construction). On scroll-in it assembles: A draws,
- * then B, then the matched bands light up.
+ * Signature A (top) and signature B (bottom) on a *shared pixel scale*, so their real
+ * lengths show honestly. The matched striae are highlighted on each and linked by
+ * connectors: near-vertical, parallel links = a real, consistent correspondence;
+ * few or crossed links = no match. On scroll-in the traces draw, then the links light up.
  */
 export function AlignedSignatures({
   a,
   b,
-  lag,
   bandsA,
   bandsB,
   className,
 }: {
   a: number[];
   b: number[];
-  lag: number;
   bandsA: Band[];
   bandsB: Band[];
   className?: string;
@@ -66,44 +62,56 @@ export function AlignedSignatures({
 
   if (!a?.length || !b?.length) return null;
   const W = 1000;
-  const H = 190;
-  const [lo, hi] = extent(a, b);
-  const span = hi - lo || 1;
-  const yv = (v: number) => H - 12 - ((v - lo) / span) * (H - 24);
+  const H = 210;
+  const laneH = 74;
+  const gap = 30;
+  const aY0 = 10;
+  const aY1 = aY0 + laneH;
+  const bY0 = aY1 + gap;
+  const bY1 = bY0 + laneH;
+  const maxLen = Math.max(a.length, b.length);
+  const xs = (px: number) => (px / maxLen) * W;
 
-  let shift = -lag / a.length;
-  const m = Math.min(bandsA.length, bandsB.length);
-  if (m > 0) {
-    let s = 0;
-    for (let i = 0; i < m; i++) s += bandsA[i].x_frac - bandsB[i].x_frac;
-    shift = s / m;
-  }
-
-  const pathA = "M " + a.map((v, i) => `${((i / (a.length - 1)) * W).toFixed(1)},${yv(v).toFixed(1)}`).join(" L ");
-  const pathB =
-    "M " + b.map((v, k) => `${((k / (b.length - 1) + shift) * W).toFixed(1)},${yv(v).toFixed(1)}`).join(" L ");
+  const curve = (arr: number[], y0: number, y1: number) => {
+    const [lo, hi] = extent(arr);
+    const span = hi - lo || 1;
+    const yv = (v: number) => y1 - 5 - ((v - lo) / span) * (y1 - y0 - 10);
+    return "M " + arr.map((v, i) => `${xs(i).toFixed(1)},${yv(v).toFixed(1)}`).join(" L ");
+  };
 
   const draw = (delay: number) => ({
     strokeDasharray: 1,
     strokeDashoffset: shown ? 0 : 1,
     transition: `stroke-dashoffset 1.1s cubic-bezier(0.4, 0, 0.2, 1) ${delay}s`,
   });
+  const fade = (delay: number) => ({ opacity: shown ? 1 : 0, transition: `opacity 0.5s ease ${delay}s` });
+  const m = Math.min(bandsA.length, bandsB.length);
 
   return (
-    <svg ref={ref} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className={className} style={{ width: "100%" }}>
+    <svg ref={ref} viewBox={`0 0 ${W} ${H}`} className={className} style={{ width: "100%" }}>
       {bandsA.map((r, i) => (
-        <rect
-          key={i}
-          x={r.x_frac * W}
-          y={0}
-          width={r.w_frac * W}
-          height={H}
-          fill="#10b981"
-          style={{ opacity: shown ? 0.16 : 0, transition: "opacity 0.6s ease 0.7s" }}
+        <rect key={`a${i}`} x={xs(r.x_frac * a.length)} y={aY0} width={xs(r.w_frac * a.length)} height={laneH} fill="#10b981" fillOpacity={0.16} style={fade(0.7)} />
+      ))}
+      {bandsB.map((r, i) => (
+        <rect key={`b${i}`} x={xs(r.x_frac * b.length)} y={bY0} width={xs(r.w_frac * b.length)} height={laneH} fill="#10b981" fillOpacity={0.16} style={fade(0.7)} />
+      ))}
+      {Array.from({ length: m }).map((_, i) => (
+        <line
+          key={`c${i}`}
+          x1={xs((bandsA[i].x_frac + bandsA[i].w_frac / 2) * a.length)}
+          y1={aY1}
+          x2={xs((bandsB[i].x_frac + bandsB[i].w_frac / 2) * b.length)}
+          y2={bY0}
+          stroke="#10b981"
+          strokeWidth={1}
+          opacity={0.55}
+          style={fade(0.9)}
         />
       ))}
-      <path d={pathB} fill="none" stroke="var(--accent-2)" strokeWidth={1.4} vectorEffect="non-scaling-stroke" opacity={0.8} pathLength={1} style={draw(0.35)} />
-      <path d={pathA} fill="none" stroke="var(--accent)" strokeWidth={1.6} vectorEffect="non-scaling-stroke" pathLength={1} style={draw(0)} />
+      <path d={curve(a, aY0, aY1)} fill="none" stroke="var(--accent)" strokeWidth={1.6} vectorEffect="non-scaling-stroke" pathLength={1} style={draw(0)} />
+      <path d={curve(b, bY0, bY1)} fill="none" stroke="var(--accent-2)" strokeWidth={1.6} vectorEffect="non-scaling-stroke" pathLength={1} style={draw(0.35)} />
+      <text x={6} y={aY0 + 12} fontSize="11" fill="var(--muted)">Mark A</text>
+      <text x={6} y={bY0 + 12} fontSize="11" fill="var(--muted)">Mark B</text>
     </svg>
   );
 }
