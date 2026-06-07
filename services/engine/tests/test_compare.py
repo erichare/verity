@@ -38,6 +38,20 @@ def test_compare_striated_returns_valid_report():
     assert rep.provenance["scorer"] == "ccf"
 
 
+def test_compare_with_previews_striated_has_previews_and_attribution():
+    """A single-land striated comparison renders both surfaces + matched-striae bands."""
+    from verity.compare import compare_with_previews
+
+    scores, labels = _ref()
+    report, previews = compare_with_previews(
+        _striated(0), _striated(0), domain="striated",  # identical -> congruent striae
+        reference_scores=scores, reference_labels=labels, reference_name="synthetic",
+    )
+    assert report.score_kind == "ccf"
+    assert set(previews) == {"a", "b"} and len(previews["a"]) > 0
+    assert len(report.attribution) > 0
+
+
 def test_compare_impressed_returns_valid_report():
     scores, labels = _ref()
     rep = compare_surfaces(

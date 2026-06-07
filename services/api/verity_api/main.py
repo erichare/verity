@@ -22,7 +22,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from verity.compare import compare_bullets_with_previews, compare_with_previews
 from verity.surface import Surface
 
-from .references import available_domains, load_reference
+from .references import available_domains, load_reference, load_striated_single_land
 
 
 def _engine_version() -> str:
@@ -101,14 +101,28 @@ async def compare(
     if domain == "striated":
         surfaces_a = [await _read_surface(f) for f in mark_a]
         surfaces_b = [await _read_surface(f) for f in mark_b]
-        report, previews = compare_bullets_with_previews(
-            surfaces_a,
-            surfaces_b,
-            reference_scores=scores,
-            reference_labels=labels,
-            reference_name=reference_name,
-            provenance=provenance,
-        )
+        if len(surfaces_a) == 1 and len(surfaces_b) == 1:
+            # One land per mark is weakly diagnostic and has no land×land structure —
+            # calibrate against the single-land reference, not the bullet reference.
+            s_scores, s_labels, s_name = load_striated_single_land()
+            report, previews = compare_with_previews(
+                surfaces_a[0],
+                surfaces_b[0],
+                domain="striated",
+                reference_scores=s_scores,
+                reference_labels=s_labels,
+                reference_name=s_name,
+                provenance={**provenance, "n_lands_a": 1, "n_lands_b": 1},
+            )
+        else:
+            report, previews = compare_bullets_with_previews(
+                surfaces_a,
+                surfaces_b,
+                reference_scores=scores,
+                reference_labels=labels,
+                reference_name=reference_name,
+                provenance=provenance,
+            )
         return {**report.to_dict(), "previews": previews}
     # impressed: a single breech-face scan per mark
     surface_a = await _read_surface(mark_a[0])
