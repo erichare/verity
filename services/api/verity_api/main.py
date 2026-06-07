@@ -17,6 +17,7 @@ from pathlib import Path
 import numpy as np
 import verity_x3p
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 
 from verity.compare import compare_with_previews
 from verity.surface import Surface
@@ -35,6 +36,23 @@ app = FastAPI(
     title="Verity comparison API",
     version="0.1.0",
     summary="Calibrated, bounded likelihood ratios for forensic surface comparison.",
+)
+
+# The Next.js UI is a separate origin, so the browser needs CORS. Defaults cover
+# local dev (localhost / 127.0.0.1 :3000); override with VERITY_CORS_ORIGINS
+# (comma-separated) for a deployed front end.
+_cors_origins = [
+    o.strip()
+    for o in os.environ.get(
+        "VERITY_CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000"
+    ).split(",")
+    if o.strip()
+]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_cors_origins,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["*"],
 )
 
 
