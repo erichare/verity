@@ -20,7 +20,7 @@ def test_health_lists_domains():
     assert r.status_code == 200
     body = r.json()
     assert body["status"] == "ok"
-    assert "impressed" in body["domains"]
+    assert {"impressed", "striated"} <= set(body["domains"])
 
 
 def test_compare_rejects_unknown_domain():
