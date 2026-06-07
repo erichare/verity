@@ -15,7 +15,7 @@ import numpy as np
 
 from .aggregate import bullet_comparison
 from .areal import areal_signature
-from .cmr import areal_votes, cmr_regions_1d, consensus_members, regions_from_members
+from .cmr import areal_votes, cmr_regions_1d_pair, consensus_members, regions_from_members
 from .preprocess import isolate_roughness, remove_form
 from .region import DEFAULT_KEEP, extract_region
 from .registration.align import align_1d
@@ -89,6 +89,7 @@ def compare_with_previews(
     striated path here is a *single land* per mark (weakly diagnostic); a full bullet
     uses :func:`compare_bullets_with_previews`."""
     attribution: list[dict] = []
+    attribution_b: list[dict] = []
     previews: dict = {}
     if domain == "impressed":
         sig_a, sig_b = areal_signature(surface_a), areal_signature(surface_b)
@@ -102,7 +103,9 @@ def compare_with_previews(
         sig_a, band_a = _land_fields(surface_a)
         sig_b, band_b = _land_fields(surface_b)
         score, score_kind = float(align_1d(sig_a, sig_b)[1]), "ccf"
-        attribution = cmr_regions_1d(sig_a, sig_b, corr_thresh=_CMR_1D_CORR, lag_tol=_CMR_1D_LAG)
+        attribution, attribution_b = cmr_regions_1d_pair(
+            sig_a, sig_b, corr_thresh=_CMR_1D_CORR, lag_tol=_CMR_1D_LAG
+        )
         previews = {"a": _to_preview(band_a, preview_size), "b": _to_preview(band_b, preview_size)}
     else:
         raise ValueError(f"domain must be one of {DOMAINS}, got {domain!r}")
@@ -115,6 +118,7 @@ def compare_with_previews(
         reference_name=reference_name,
         score_kind=score_kind,
         attribution=attribution,
+        attribution_b=attribution_b,
         provenance={"scorer": score_kind, "domain": domain, **(provenance or {})},
     )
     return report, previews
@@ -175,6 +179,7 @@ def compare_bullets_with_previews(
     score = float("nan") if cmp is None else cmp.diag_contrast
 
     attribution: list[dict] = []
+    attribution_b: list[dict] = []
     previews: dict = {}
     best: dict = {}
     if cmp is not None:
@@ -182,7 +187,7 @@ def compare_bullets_with_previews(
         j = (i + cmp.offset) % len(sigs_b)  # its partner land in B
         sig_a, band_a = fields_a[i]
         sig_b, band_b = fields_b[j]
-        attribution = cmr_regions_1d(
+        attribution, attribution_b = cmr_regions_1d_pair(
             sig_a, sig_b, corr_thresh=_CMR_1D_CORR, lag_tol=_CMR_1D_LAG
         )
         previews = {"a": _to_preview(band_a, preview_size), "b": _to_preview(band_b, preview_size)}
@@ -196,6 +201,7 @@ def compare_bullets_with_previews(
         reference_name=reference_name,
         score_kind="bullet-contrast",
         attribution=attribution,
+        attribution_b=attribution_b,
         provenance={
             "scorer": "bullet-contrast",
             "domain": "striated",

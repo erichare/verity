@@ -29,7 +29,8 @@ export interface ComparisonReport {
     cllr_min: number;
     auc: number;
   };
-  attribution: AttributionRegion[];
+  attribution: AttributionRegion[]; // matched regions on Mark A
+  attribution_b?: AttributionRegion[]; // the same matches on Mark B
   provenance: Record<string, unknown>;
   scope_note: string;
   // API presentation: small grayscale previews of each mark to overlay regions on
