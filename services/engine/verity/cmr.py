@@ -77,12 +77,43 @@ def _best_lag(segment: np.ndarray, target: np.ndarray, home: int) -> Vote:
     return ((float(pos - home),), float(corr[pos]))  # lag relative to the window's home
 
 
-def striated_votes(a: np.ndarray, b: np.ndarray, *, window: int = 0, step: int = 0) -> list[Vote]:
-    """Slide windows of profile ``a`` against ``b``; each votes its best lag. A
-    same-source pair's windows share a common lag (the global alignment)."""
+def striated_votes(a: np.ndarray, b: np.ndarray, *, window: int = 0, step: int = 0) -> list:
+    """Slide windows of profile ``a`` against ``b``; each votes its best lag, with
+    its ``(home, window)`` location as a 3rd element — preserved by
+    :func:`consensus_members` for attribution, the 1-D counterpart of the cell
+    location :func:`areal_votes` carries. A same-source pair's windows share a
+    common lag (the global alignment)."""
     window = window or max(16, len(a) // 6)
     step = step or max(1, window // 2)
-    return [_best_lag(a[s : s + window], b, s) for s in range(0, len(a) - window + 1, step)]
+    return [
+        (*_best_lag(a[s : s + window], b, s), (s, window))
+        for s in range(0, len(a) - window + 1, step)
+    ]
+
+
+def regions_from_1d_members(members: list, length: int) -> list[dict]:
+    """Format congruent 1-D windows as attribution: full-height vertical bands over
+    the across-striae axis, with [0,1]-normalized ``*_frac`` coords for overlaying
+    on a rendered striae field."""
+    regions = []
+    for _transform, corr, (home, window) in members:
+        regions.append(
+            {
+                "x": int(home), "y": 0, "w": int(window), "h": 1, "corr": float(corr),
+                "x_frac": home / length, "y_frac": 0.0,
+                "w_frac": window / length, "h_frac": 1.0,
+            }
+        )
+    return regions
+
+
+def cmr_regions_1d(a, b, *, corr_thresh: float = 0.5, lag_tol: float = 10.0, **kw) -> list[dict]:
+    """The congruent matching striae of profile ``a`` (windows agreeing on a common
+    lag) as attribution bands — the 1-D counterpart of :func:`cmr_regions_2d`."""
+    members = consensus_members(
+        striated_votes(a, b, **kw), corr_thresh=corr_thresh, transform_tol=(lag_tol,)
+    )
+    return regions_from_1d_members(members, len(a))
 
 
 # --- 2-D vote producer: impressed/areal marks (region = cell, group = shift+rot) ---

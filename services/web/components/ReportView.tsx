@@ -2,8 +2,13 @@ import type { ComparisonReport } from "@/lib/types";
 import AttributionView from "@/components/AttributionView";
 
 function formatLR(lr: number): string {
-  if (lr >= 1) return lr >= 100 ? lr.toExponential(1) : lr.toFixed(1);
-  return `${lr.toExponential(1)} (1 / ${(1 / lr).toFixed(1)})`;
+  // Human-readable, no scientific notation: "146", "1,500", "7.1", or "1 / 100".
+  const human = (x: number): string => {
+    if (x >= 100) return Math.round(x).toLocaleString("en-US");
+    const s = x.toFixed(1);
+    return s.endsWith(".0") ? s.slice(0, -2) : s;
+  };
+  return lr >= 1 ? human(lr) : `1 / ${human(1 / lr)}`;
 }
 
 function strengthColor(verbal: string): string {
@@ -79,7 +84,11 @@ export default function ReportView({ report }: { report: ComparisonReport }) {
       </div>
 
       {report.previews && report.attribution.length > 0 && (
-        <AttributionView previews={report.previews} regions={report.attribution} />
+        <AttributionView
+          previews={report.previews}
+          regions={report.attribution}
+          domain={report.domain}
+        />
       )}
 
       <p className="rounded-lg border border-border bg-foreground/[0.03] p-3 text-sm italic leading-relaxed text-muted">
