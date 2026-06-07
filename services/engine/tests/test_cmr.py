@@ -5,7 +5,12 @@ from __future__ import annotations
 import numpy as np
 from scipy.ndimage import gaussian_filter, rotate
 
-from verity.cmr import cmr_count, cmr_score_1d, cmr_score_2d
+from verity.cmr import cmr_count, cmr_regions_2d, cmr_score_1d, cmr_score_2d
+
+
+def _unit2d(z):
+    z = z - z.mean()
+    return z / (np.linalg.norm(z) + 1e-12)
 
 
 def test_cmr_count_is_largest_congruent_cluster():
@@ -39,3 +44,21 @@ def test_cmr_2d_same_source_more_congruent_than_different():
     sb = cmr_score_2d(a, same, grid=5, angles=range(-15, 16, 5))
     sc = cmr_score_2d(a, diff, grid=5, angles=range(-15, 16, 5))
     assert sb > sc
+
+
+def test_cmr_regions_2d_returns_located_congruent_regions():
+    rng = np.random.default_rng(3)
+    base = gaussian_filter(rng.normal(size=(140, 140)), 3)
+    same = cmr_regions_2d(
+        _unit2d(base), _unit2d(rotate(base, 10.0, reshape=False, order=1)),
+        grid=5, angles=range(-15, 16, 5),
+    )
+    diff = cmr_regions_2d(
+        _unit2d(base), _unit2d(gaussian_filter(rng.normal(size=(140, 140)), 3)),
+        grid=5, angles=range(-15, 16, 5),
+    )
+    assert len(same) >= len(diff)  # same-source agrees on more regions
+    assert len(same) >= 1
+    r = same[0]
+    assert {"x_frac", "y_frac", "w_frac", "h_frac", "corr"} <= set(r)
+    assert 0.0 <= r["x_frac"] <= 1.0

@@ -18,7 +18,7 @@ import numpy as np
 import verity_x3p
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 
-from verity.compare import compare_surfaces
+from verity.compare import compare_with_previews
 from verity.surface import Surface
 
 from .references import available_domains, load_reference
@@ -71,7 +71,7 @@ async def compare(
     surface_a = await _read_surface(mark_a)
     surface_b = await _read_surface(mark_b)
     scores, labels, reference_name = load_reference(domain)
-    report = compare_surfaces(
+    report, previews = compare_with_previews(
         surface_a,
         surface_b,
         domain=domain,
@@ -81,7 +81,7 @@ async def compare(
         provenance={"api_version": app.version, "engine_version": _engine_version(),
                     "mark_a": mark_a.filename, "mark_b": mark_b.filename},
     )
-    return report.to_dict()
+    return {**report.to_dict(), "previews": previews}
 
 
 def run() -> None:
