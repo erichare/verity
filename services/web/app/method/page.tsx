@@ -234,10 +234,9 @@ export default function MethodPage() {
               <AlignedSignatures
                 a={ex.signatureA}
                 b={ex.signatureB}
-                lag={ex.lag}
                 bandsA={ex.bandsA}
                 bandsB={ex.bandsB}
-                className="h-44"
+                className="h-48"
               />
               <p className="mt-1 px-1 text-xs text-muted">
                 {ex.bandsA.length} congruent matching {ex.bandsA.length === 1 ? "region" : "regions"}
@@ -256,8 +255,8 @@ export default function MethodPage() {
           </p>
           <p className="text-muted">
             {positive
-              ? "Here the two signatures ride on top of each other across many bands — a real match."
-              : "Here they never settle on a shared shift — only a couple of accidental bands."}
+              ? "Here many regions link up with near-parallel connectors — a consistent, real correspondence."
+              : "Here only a couple of regions weakly link, at scattered offsets — no consistent match."}
           </p>
         </Stage>
 
