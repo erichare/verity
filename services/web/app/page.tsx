@@ -145,6 +145,9 @@ export default function Home() {
             <span className="accent-text">Verity</span>
           </a>
           <div className="flex items-center gap-5">
+            <a href="/method" className="text-sm text-foreground/70 transition hover:text-foreground">
+              Method
+            </a>
             <a
               href="https://api.verity.codes/scalar"
               target="_blank"
