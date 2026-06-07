@@ -19,7 +19,8 @@ dev = ["pytest>=8", "ruff>=0.6", "httpx>=0.27"]
 verity-api = "verity_api.main:run"
 
 [tool.uv.sources]
-verity = { path = "../engine" }
+# Editable so engine edits are picked up live in this monorepo (no stale copy).
+verity = { path = "../engine", editable = true }
 verity-x3p = { path = "../../bindings/python" }
 
 [tool.ruff]
