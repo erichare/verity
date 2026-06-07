@@ -17,7 +17,7 @@ _DIR = Path(__file__).parent / "references"
 # domain -> (file, human-readable reference name)
 _REFERENCES = {
     "impressed": ("cartridge_fadul.npz", "Fadul cartridge cases (10 consecutively-manufactured slides)"),
-    "striated": ("bullet_hamby252.npz", "Hamby-252 bullets (barrel-disjoint reference)"),
+    "striated": ("bullet_pooled.npz", "pooled bullet-land reference (Hamby-252 & 173, Beretta, Phoenix)"),
 }
 
 
