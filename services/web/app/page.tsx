@@ -144,7 +144,17 @@ export default function Home() {
           <a href="#top" className="font-display text-xl font-semibold tracking-tight">
             <span className="accent-text">Verity</span>
           </a>
-          <ThemeToggle />
+          <div className="flex items-center gap-5">
+            <a
+              href="https://api.verity.codes/scalar"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-foreground/70 transition hover:text-foreground"
+            >
+              API
+            </a>
+            <ThemeToggle />
+          </div>
         </div>
       </header>
 
