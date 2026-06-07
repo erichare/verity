@@ -30,10 +30,10 @@ export default function AttributionView({
 
   const blurb = striated
     ? "The glowing bands mark consecutive matching striae on the best-matching land of each bullet — windows that locked onto the same shift (the consecutive-matching-striae evidence). Drag to rotate the rendered surfaces."
-    : "The glowing cells on Mark A independently agreed on a common registration with Mark B — the regions that drove the match (the CMC evidence). Drag to rotate the rendered surfaces.";
+    : "The glowing cells agreed on a common registration — the same congruent regions are highlighted on both marks, at their matched positions (the CMC evidence). Drag to rotate the rendered surfaces.";
 
   const labelA = striated ? "Mark A — best-matching land" : "Mark A — congruent regions";
-  const labelB = striated ? "Mark B — best-matching land" : "Mark B";
+  const labelB = striated ? "Mark B — best-matching land" : "Mark B — congruent regions";
 
   return (
     <div className="space-y-3 border-t border-border pt-5">

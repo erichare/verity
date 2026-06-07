@@ -98,6 +98,7 @@ def compare_with_previews(
         )
         score, score_kind = float(len(members)), "cmr-2d"
         attribution = regions_from_members(members, sig_a.shape)
+        attribution_b = regions_from_members(members, sig_b.shape, shift=True)
         previews = {"a": _to_preview(sig_a, preview_size), "b": _to_preview(sig_b, preview_size)}
     elif domain == "striated":
         sig_a, band_a = _land_fields(surface_a)
