@@ -44,8 +44,23 @@ def test_compare_impressed_returns_valid_report():
         _areal(0), _areal(1), domain="impressed",
         reference_scores=scores, reference_labels=labels, reference_name="synthetic",
     )
-    assert rep.domain == "impressed" and rep.score_kind == "areal-ccf"
+    assert rep.domain == "impressed" and rep.score_kind == "cmr-2d"
     assert np.isfinite(rep.likelihood_ratio)
+    assert isinstance(rep.attribution, list)  # CMR congruent regions (may be empty on noise)
+
+
+def test_compare_with_previews_impressed_has_attribution_and_previews():
+    from verity.compare import compare_with_previews
+
+    scores, labels = _ref()
+    report, previews = compare_with_previews(
+        _areal(0), _areal(0), domain="impressed",  # identical -> strongly congruent
+        reference_scores=scores, reference_labels=labels, reference_name="synthetic",
+    )
+    assert set(previews) == {"a", "b"} and len(previews["a"]) > 0
+    assert len(report.attribution) > 0  # a mark vs itself is congruent everywhere
+    region = report.attribution[0]
+    assert {"x_frac", "y_frac", "w_frac", "h_frac", "corr"} <= set(region)
 
 
 def test_unknown_domain_raises():

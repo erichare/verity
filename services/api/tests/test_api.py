@@ -47,3 +47,6 @@ def test_compare_impressed_known_match():
     assert rep["domain"] == "impressed"
     assert "likelihood_ratio" in rep and "verbal" in rep and "scope_note" in rep
     assert rep["reference"]["name"].startswith("Fadul")
+    # attribution overlay: previews + congruent regions for a known match
+    assert "previews" in rep and "a" in rep["previews"] and "b" in rep["previews"]
+    assert len(rep["attribution"]) > 0 and "x_frac" in rep["attribution"][0]

@@ -1,4 +1,5 @@
 import type { ComparisonReport } from "@/lib/types";
+import AttributionView from "@/components/AttributionView";
 
 function formatLR(lr: number): string {
   if (lr >= 1) return lr >= 100 ? lr.toExponential(1) : lr.toFixed(1);
@@ -71,6 +72,10 @@ export default function ReportView({ report }: { report: ComparisonReport }) {
         <Stat label="KM / KNM" value={`${report.reference.n_km} / ${report.reference.n_knm}`} />
         <Stat label="Reference" value={report.reference.name} />
       </div>
+
+      {report.previews && report.attribution.length > 0 && (
+        <AttributionView previews={report.previews} regions={report.attribution} />
+      )}
 
       <p className="rounded-lg bg-slate-50 p-3 text-sm italic text-slate-600">{report.scope_note}</p>
     </div>

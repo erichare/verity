@@ -39,18 +39,24 @@ def _congruent(t1: tuple[float, ...], t2: tuple[float, ...], tol: tuple[float, .
     return all(abs(a - b) <= d for a, b, d in zip(t1, t2, tol, strict=True))
 
 
-def cmr_count(votes: list[Vote], *, corr_thresh: float, transform_tol: tuple[float, ...]) -> int:
-    """The congruent-matching-region count: among well-registered regions
-    (``corr >= corr_thresh``), the size of the largest cluster whose transforms
-    all agree to within ``transform_tol``. This is the CMC count, generalized to
-    arbitrary regions/transforms."""
-    strong = [t for (t, c) in votes if c >= corr_thresh]
-    if not strong:
-        return 0
-    best = 0
+def consensus_members(votes: list, *, corr_thresh: float, transform_tol: tuple[float, ...]) -> list:
+    """The largest cluster of well-registered regions whose transforms agree —
+    the congruent matching regions themselves (votes carry ``(transform, corr,
+    ...)``; any trailing element, e.g. a location, is preserved for attribution)."""
+    strong = [v for v in votes if v[1] >= corr_thresh]
+    best: list = []
     for anchor in strong:  # greedy consensus: the most-agreed-upon transform
-        best = max(best, sum(1 for t in strong if _congruent(t, anchor, transform_tol)))
+        members = [v for v in strong if _congruent(v[0], anchor[0], transform_tol)]
+        if len(members) > len(best):
+            best = members
     return best
+
+
+def cmr_count(votes: list[Vote], *, corr_thresh: float, transform_tol: tuple[float, ...]) -> int:
+    """The congruent-matching-region count: the size of the largest cluster whose
+    transforms all agree. This is the CMC count, generalized to arbitrary
+    regions/transforms."""
+    return len(consensus_members(votes, corr_thresh=corr_thresh, transform_tol=transform_tol))
 
 
 # --- 1-D vote producer: striated marks (region = profile window, group = lag) ---
@@ -109,14 +115,54 @@ def areal_votes(
     rotated = {
         float(t): (b if t == 0 else rotate(b, float(t), reshape=False, order=1)) for t in angles
     }
-    votes: list[Vote] = []
+    votes: list = []
     for gi in range(grid):
         for gj in range(grid):
-            cell = a[gi * gh : (gi + 1) * gh, gj * gw : (gj + 1) * gw]
+            y, x = gi * gh, gj * gw
+            cell = a[y : y + gh, x : x + gw]
             if cell.size == 0 or float(np.sum(cell**2)) < min_energy:
                 continue  # masked / empty region casts no vote
-            votes.append(_cell_vote(cell, rotated, gi * gh, gj * gw))
+            transform, corr = _cell_vote(cell, rotated, y, x)
+            votes.append((transform, corr, (y, x, gh, gw)))  # 3rd element: cell location
     return votes
+
+
+def cmr_regions_2d(
+    a: np.ndarray,
+    b: np.ndarray,
+    *,
+    grid: int = 7,
+    angles=_DEFAULT_ANGLES,
+    corr_thresh: float = 0.3,
+    xy_tol: float = 20.0,
+    theta_tol: float = 6.0,
+) -> list[dict]:
+    """The congruent matching regions of ``a`` (cells agreeing on a common
+    registration) as attribution: ``{y, x, h, w, corr}`` in ``a``'s pixel coords,
+    plus ``x_frac``/``y_frac``/``w_frac``/``h_frac`` normalized to [0, 1] for
+    overlaying on a rendered preview. This is the examiner-facing CMS evidence —
+    *which* regions drove the match."""
+    members = consensus_members(
+        areal_votes(a, b, grid=grid, angles=angles),
+        corr_thresh=corr_thresh,
+        transform_tol=(xy_tol, xy_tol, theta_tol),
+    )
+    return regions_from_members(members, a.shape)
+
+
+def regions_from_members(members: list, shape: tuple[int, int]) -> list[dict]:
+    """Format congruent-region votes as attribution dicts — pixel coords plus
+    [0,1]-normalized ``*_frac`` coords for overlaying on a rendered preview."""
+    h, w = shape
+    regions = []
+    for _transform, corr, (y, x, ch, cw) in members:
+        regions.append(
+            {
+                "y": int(y), "x": int(x), "h": int(ch), "w": int(cw), "corr": float(corr),
+                "y_frac": y / h, "x_frac": x / w, "h_frac": ch / h, "w_frac": cw / w,
+            }
+        )
+    return regions
 
 
 # --- convenience scorers ----------------------------------------------------

@@ -1,4 +1,17 @@
 // Mirror of verity.report.ComparisonReport (the API serves this verbatim).
+export interface AttributionRegion {
+  x: number;
+  y: number;
+  h: number;
+  w: number;
+  corr: number;
+  // normalized [0,1] coords for overlaying on a rendered preview
+  x_frac: number;
+  y_frac: number;
+  w_frac: number;
+  h_frac: number;
+}
+
 export interface ComparisonReport {
   domain: string;
   score: number;
@@ -16,7 +29,9 @@ export interface ComparisonReport {
     cllr_min: number;
     auc: number;
   };
-  attribution: Array<Record<string, unknown>>;
+  attribution: AttributionRegion[];
   provenance: Record<string, unknown>;
   scope_note: string;
+  // API presentation: small grayscale previews of each mark to overlay regions on
+  previews?: { a: number[][]; b: number[][] };
 }
