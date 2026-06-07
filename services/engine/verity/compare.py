@@ -161,7 +161,12 @@ def compare_bullets_with_previews(
     sigs_b = [f[0] for f in fields_b]
 
     cmp = bullet_comparison(sigs_a, sigs_b)
-    score = float("nan") if cmp is None else cmp.diag_mean
+    # Score on diag_contrast (diagonal minus off-diagonal), NOT the raw diagonal mean:
+    # the bullet reference is built on this margin. KNM bullets get a high diagonal by
+    # the luck of the max over cyclic rotations, but their whole matrix is high (flat,
+    # low contrast); KM bullets stand *above* their background. diag_mean fails to
+    # separate KM/KNM here (both ~0.4–0.5); diag_contrast separates them cleanly.
+    score = float("nan") if cmp is None else cmp.diag_contrast
 
     attribution: list[dict] = []
     previews: dict = {}
@@ -183,10 +188,10 @@ def compare_bullets_with_previews(
         reference_labels=reference_labels,
         domain="striated",
         reference_name=reference_name,
-        score_kind="bullet-ccf",
+        score_kind="bullet-contrast",
         attribution=attribution,
         provenance={
-            "scorer": "bullet-ccf",
+            "scorer": "bullet-contrast",
             "domain": "striated",
             "n_lands_a": len(sigs_a),
             "n_lands_b": len(sigs_b),
