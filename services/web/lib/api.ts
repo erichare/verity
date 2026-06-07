@@ -15,13 +15,14 @@ export async function getDomains(): Promise<string[]> {
 
 export async function compareMarks(
   domain: string,
-  markA: File,
-  markB: File,
+  marksA: File[],
+  marksB: File[],
 ): Promise<ComparisonReport> {
   const form = new FormData();
   form.append("domain", domain);
-  form.append("mark_a", markA);
-  form.append("mark_b", markB);
+  // each mark may be several scans (a bullet's lands); the field repeats
+  for (const f of marksA) form.append("mark_a", f);
+  for (const f of marksB) form.append("mark_b", f);
   const res = await fetch(`${API_BASE}/compare`, { method: "POST", body: form });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: res.statusText }));

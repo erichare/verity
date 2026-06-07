@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import numpy as np
 
+from .aggregate import bullet_score
 from .areal import areal_signature
 from .cmr import areal_votes, consensus_members, regions_from_members
 from .registration.align import align_1d
@@ -119,3 +120,39 @@ def compare_surfaces(
         provenance=provenance,
     )
     return report
+
+
+def compare_bullets(
+    surfaces_a: list[Surface],
+    surfaces_b: list[Surface],
+    *,
+    reference_scores: np.ndarray,
+    reference_labels: np.ndarray,
+    reference_name: str,
+    provenance: dict | None = None,
+) -> ComparisonReport:
+    """Compare two *bullets* — each a set of land scans — into a calibrated report.
+
+    A single striated land is only weakly diagnostic; firearms identification gets
+    its power from aggregating a bullet's lands. ``bullet_score`` takes the best
+    mean land-to-land cross-correlation over cyclic land rotations (the AUC≈1.0
+    Phase-1 score), so this is the strong striated path. Calibrated against the
+    bullet-level reference (same scorer)."""
+    sigs_a = [striation_signature(s, lambda_s=_LAMBDA_S, lambda_c=_LAMBDA_C) for s in surfaces_a]
+    sigs_b = [striation_signature(s, lambda_s=_LAMBDA_S, lambda_c=_LAMBDA_C) for s in surfaces_b]
+    score = bullet_score(sigs_a, sigs_b)
+    return build_comparison_report(
+        score=float(score),
+        reference_scores=reference_scores,
+        reference_labels=reference_labels,
+        domain="striated",
+        reference_name=reference_name,
+        score_kind="bullet-ccf",
+        provenance={
+            "scorer": "bullet-ccf",
+            "domain": "striated",
+            "n_lands_a": len(sigs_a),
+            "n_lands_b": len(sigs_b),
+            **(provenance or {}),
+        },
+    )

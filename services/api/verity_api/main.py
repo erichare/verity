@@ -19,7 +19,7 @@ import verity_x3p
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
-from verity.compare import compare_with_previews
+from verity.compare import compare_bullets, compare_with_previews
 from verity.surface import Surface
 
 from .references import available_domains, load_reference
@@ -78,17 +78,41 @@ def health() -> dict:
 @app.post("/compare")
 async def compare(
     domain: str = Form(...),
-    mark_a: UploadFile = File(...),
-    mark_b: UploadFile = File(...),
+    mark_a: list[UploadFile] = File(...),
+    mark_b: list[UploadFile] = File(...),
 ) -> dict:
+    """Compare two marks. For ``striated`` each mark may be a *bullet* — several
+    land scans aggregated (the strong path); for ``impressed`` each is one
+    breech-face scan."""
     if domain not in available_domains():
         raise HTTPException(
             status_code=400,
             detail=f"domain {domain!r} has no calibrated reference; available: {available_domains()}",
         )
-    surface_a = await _read_surface(mark_a)
-    surface_b = await _read_surface(mark_b)
+    if not mark_a or not mark_b:
+        raise HTTPException(status_code=400, detail="provide at least one scan per mark")
     scores, labels, reference_name = load_reference(domain)
+    provenance = {
+        "api_version": app.version,
+        "engine_version": _engine_version(),
+        "mark_a": [f.filename for f in mark_a],
+        "mark_b": [f.filename for f in mark_b],
+    }
+    if domain == "striated":
+        surfaces_a = [await _read_surface(f) for f in mark_a]
+        surfaces_b = [await _read_surface(f) for f in mark_b]
+        report = compare_bullets(
+            surfaces_a,
+            surfaces_b,
+            reference_scores=scores,
+            reference_labels=labels,
+            reference_name=reference_name,
+            provenance=provenance,
+        )
+        return report.to_dict()
+    # impressed: a single breech-face scan per mark
+    surface_a = await _read_surface(mark_a[0])
+    surface_b = await _read_surface(mark_b[0])
     report, previews = compare_with_previews(
         surface_a,
         surface_b,
@@ -96,8 +120,7 @@ async def compare(
         reference_scores=scores,
         reference_labels=labels,
         reference_name=reference_name,
-        provenance={"api_version": app.version, "engine_version": _engine_version(),
-                    "mark_a": mark_a.filename, "mark_b": mark_b.filename},
+        provenance=provenance,
     )
     return {**report.to_dict(), "previews": previews}
 

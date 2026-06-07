@@ -66,3 +66,16 @@ def test_compare_with_previews_impressed_has_attribution_and_previews():
 def test_unknown_domain_raises():
     with pytest.raises(ValueError, match="domain"):
         comparison_score(_striated(), _striated(), domain="footwear")
+
+
+def test_compare_bullets_aggregates_lands():
+    from verity.compare import compare_bullets
+
+    bullet = [_striated(shift=k * 3) for k in range(4)]  # a 4-land "bullet"
+    scores, labels = _ref()
+    rep = compare_bullets(
+        bullet, bullet, reference_scores=scores, reference_labels=labels, reference_name="synthetic",
+    )
+    assert rep.domain == "striated" and rep.score_kind == "bullet-ccf"
+    assert np.isfinite(rep.likelihood_ratio)
+    assert rep.provenance["n_lands_a"] == 4 and rep.provenance["n_lands_b"] == 4
