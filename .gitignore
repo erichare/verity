@@ -30,3 +30,4 @@ diag/
 *.swp
 .idea/
 .vscode/
+.vercel
