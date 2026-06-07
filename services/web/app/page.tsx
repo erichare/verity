@@ -64,6 +64,7 @@ function Citations() {
     ["PCAST (2016)", "Forensic Science in Criminal Courts: Ensuring Scientific Validity of Feature-Comparison Methods."],
     ["Cuellar, Vanderplas, Luby & Rosenblum (2024)", "Methodological problems in every black-box study of forensic firearm comparisons."],
     ["Song (2013)", "Proposed congruent matching cells (CMC) method for ballistic identification."],
+    ["Hare, Hofmann & Carriquiry (2017)", "Automatic matching of bullet land impressions. Annals of Applied Statistics."],
     ["Brümmer & du Preez (2006)", "Application-independent evaluation of speaker detection — the Cllr cost."],
   ];
   return (
