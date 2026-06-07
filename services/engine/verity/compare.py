@@ -13,9 +13,11 @@ from __future__ import annotations
 
 import numpy as np
 
-from .aggregate import bullet_score
+from .aggregate import bullet_comparison
 from .areal import areal_signature
-from .cmr import areal_votes, consensus_members, regions_from_members
+from .cmr import areal_votes, cmr_regions_1d, consensus_members, regions_from_members
+from .preprocess import isolate_roughness, remove_form
+from .region import DEFAULT_KEEP, extract_region
 from .registration.align import align_1d
 from .report import ComparisonReport, build_comparison_report
 from .signature import striation_signature
@@ -23,6 +25,7 @@ from .surface import Surface
 
 _LAMBDA_S, _LAMBDA_C = 4e-6, 250e-6  # striated roughness band (m)
 _CMR_CORR, _CMR_TOL = 0.3, (20.0, 20.0, 6.0)  # CMR congruence thresholds (match the reference)
+_CMR_1D_CORR, _CMR_1D_LAG = 0.5, 10.0  # 1-D striae-band congruence (matches cmr_score_1d)
 
 DOMAINS = ("striated", "impressed")
 
@@ -42,6 +45,18 @@ def _to_preview(sig: np.ndarray, size: int) -> list[list[float]]:
         lo, hi = np.percentile(finite, [2, 98])
         small = np.clip((small - lo) / (hi - lo + 1e-9), 0.0, 1.0)
     return np.nan_to_num(small).round(4).tolist()
+
+
+def _land_fields(surface: Surface) -> tuple[np.ndarray, np.ndarray]:
+    """A land's ``(signature, oriented striae band)``. Mirrors
+    :func:`striation_signature` exactly (so the score is unchanged) but also returns
+    the 2-D oriented+cropped striae field to render the matched striae on."""
+    s = remove_form(surface, degree=2)
+    s = isolate_roughness(s, _LAMBDA_S, _LAMBDA_C)
+    z = s.heights
+    w = (~np.isnan(z)).astype(np.float64)
+    zr, _wr, prof, (lo, hi), _tilt = extract_region(z, w, keep=DEFAULT_KEEP)
+    return prof[lo:hi], zr[:, lo:hi]
 
 
 def comparison_score(surface_a: Surface, surface_b: Surface, *, domain: str) -> tuple[float, str]:
@@ -122,6 +137,66 @@ def compare_surfaces(
     return report
 
 
+def compare_bullets_with_previews(
+    surfaces_a: list[Surface],
+    surfaces_b: list[Surface],
+    *,
+    reference_scores: np.ndarray,
+    reference_labels: np.ndarray,
+    reference_name: str,
+    provenance: dict | None = None,
+    preview_size: int = 140,
+) -> tuple[ComparisonReport, dict]:
+    """Compare two *bullets* (each a set of land scans) → ``(report, previews)``.
+
+    A single striated land is only weakly diagnostic; firearms identification gets
+    its power from aggregating a bullet's lands. The score is the best mean
+    land-to-land cross-correlation over cyclic land rotations (the AUC≈1.0 Phase-1
+    score) — unchanged. For attribution, the strongest-matching land of each bullet
+    is rendered (its oriented striae field), and the **consecutive matching striae**
+    (windows agreeing on the common lag) are returned as overlay bands on Mark A."""
+    fields_a = [_land_fields(s) for s in surfaces_a]
+    fields_b = [_land_fields(s) for s in surfaces_b]
+    sigs_a = [f[0] for f in fields_a]
+    sigs_b = [f[0] for f in fields_b]
+
+    cmp = bullet_comparison(sigs_a, sigs_b)
+    score = float("nan") if cmp is None else cmp.diag_mean
+
+    attribution: list[dict] = []
+    previews: dict = {}
+    best: dict = {}
+    if cmp is not None:
+        i = int(np.argmax(cmp.diag_ccf))  # strongest land of A on the winning diagonal
+        j = (i + cmp.offset) % len(sigs_b)  # its partner land in B
+        sig_a, band_a = fields_a[i]
+        sig_b, band_b = fields_b[j]
+        attribution = cmr_regions_1d(
+            sig_a, sig_b, corr_thresh=_CMR_1D_CORR, lag_tol=_CMR_1D_LAG
+        )
+        previews = {"a": _to_preview(band_a, preview_size), "b": _to_preview(band_b, preview_size)}
+        best = {"best_land_a": i, "best_land_b": j, "best_land_ccf": float(cmp.diag_ccf[i])}
+
+    report = build_comparison_report(
+        score=float(score),
+        reference_scores=reference_scores,
+        reference_labels=reference_labels,
+        domain="striated",
+        reference_name=reference_name,
+        score_kind="bullet-ccf",
+        attribution=attribution,
+        provenance={
+            "scorer": "bullet-ccf",
+            "domain": "striated",
+            "n_lands_a": len(sigs_a),
+            "n_lands_b": len(sigs_b),
+            **best,
+            **(provenance or {}),
+        },
+    )
+    return report, previews
+
+
 def compare_bullets(
     surfaces_a: list[Surface],
     surfaces_b: list[Surface],
@@ -131,28 +206,13 @@ def compare_bullets(
     reference_name: str,
     provenance: dict | None = None,
 ) -> ComparisonReport:
-    """Compare two *bullets* — each a set of land scans — into a calibrated report.
-
-    A single striated land is only weakly diagnostic; firearms identification gets
-    its power from aggregating a bullet's lands. ``bullet_score`` takes the best
-    mean land-to-land cross-correlation over cyclic land rotations (the AUC≈1.0
-    Phase-1 score), so this is the strong striated path. Calibrated against the
-    bullet-level reference (same scorer)."""
-    sigs_a = [striation_signature(s, lambda_s=_LAMBDA_S, lambda_c=_LAMBDA_C) for s in surfaces_a]
-    sigs_b = [striation_signature(s, lambda_s=_LAMBDA_S, lambda_c=_LAMBDA_C) for s in surfaces_b]
-    score = bullet_score(sigs_a, sigs_b)
-    return build_comparison_report(
-        score=float(score),
+    """:func:`compare_bullets_with_previews` without the previews."""
+    report, _ = compare_bullets_with_previews(
+        surfaces_a,
+        surfaces_b,
         reference_scores=reference_scores,
         reference_labels=reference_labels,
-        domain="striated",
         reference_name=reference_name,
-        score_kind="bullet-ccf",
-        provenance={
-            "scorer": "bullet-ccf",
-            "domain": "striated",
-            "n_lands_a": len(sigs_a),
-            "n_lands_b": len(sigs_b),
-            **(provenance or {}),
-        },
+        provenance=provenance,
     )
+    return report

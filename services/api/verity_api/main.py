@@ -19,7 +19,7 @@ import verity_x3p
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
-from verity.compare import compare_bullets, compare_with_previews
+from verity.compare import compare_bullets_with_previews, compare_with_previews
 from verity.surface import Surface
 
 from .references import available_domains, load_reference
@@ -101,7 +101,7 @@ async def compare(
     if domain == "striated":
         surfaces_a = [await _read_surface(f) for f in mark_a]
         surfaces_b = [await _read_surface(f) for f in mark_b]
-        report = compare_bullets(
+        report, previews = compare_bullets_with_previews(
             surfaces_a,
             surfaces_b,
             reference_scores=scores,
@@ -109,7 +109,7 @@ async def compare(
             reference_name=reference_name,
             provenance=provenance,
         )
-        return report.to_dict()
+        return {**report.to_dict(), "previews": previews}
     # impressed: a single breech-face scan per mark
     surface_a = await _read_surface(mark_a[0])
     surface_b = await _read_surface(mark_b[0])
