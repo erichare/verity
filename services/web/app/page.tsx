@@ -1,14 +1,27 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import { compareMarks, getDomains } from "@/lib/api";
 import type { ComparisonReport } from "@/lib/types";
 import ReportView from "@/components/ReportView";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
+
+const HeroSurface = dynamic(() => import("@/components/three/HeroSurface"), {
+  ssr: false,
+});
 
 const DOMAIN_LABELS: Record<string, string> = {
   impressed: "Impressed — cartridge breech face",
   striated: "Striated — bullet land / toolmark",
 };
+
+const CAPABILITIES = [
+  "Striated · bullets & toolmarks",
+  "Impressed · cartridge cases",
+  "Calibrated LR + Cllr",
+  "Region attribution",
+];
 
 function FilePick({
   label,
@@ -30,9 +43,9 @@ function FilePick({
         ? files[0].name
         : `${files.length} scans selected`;
   return (
-    <label className="group flex cursor-pointer flex-col gap-1.5 rounded-xl border border-dashed border-white/15 bg-white/[0.03] p-4 text-sm transition hover:border-cyan-400/50 hover:bg-white/[0.06]">
-      <span className="font-medium text-slate-200">{label}</span>
-      <span className="truncate text-slate-400 group-hover:text-slate-300">{summary}</span>
+    <label className="group flex cursor-pointer flex-col gap-1.5 rounded-xl border border-dashed border-border bg-foreground/[0.02] p-4 text-sm transition hover:border-accent/60 hover:bg-foreground/[0.05]">
+      <span className="font-medium text-foreground">{label}</span>
+      <span className="truncate text-muted group-hover:text-foreground/80">{summary}</span>
       <input
         type="file"
         accept=".x3p"
@@ -53,10 +66,10 @@ function Citations() {
     ["Brümmer & du Preez (2006)", "Application-independent evaluation of speaker detection — the Cllr cost."],
   ];
   return (
-    <ul className="mt-4 space-y-1.5 text-xs text-slate-400">
+    <ul className="mt-4 space-y-1.5 text-xs text-muted">
       {refs.map(([who, what]) => (
         <li key={who} className="leading-relaxed">
-          <span className="text-slate-300">{who}</span> — <span className="italic">{what}</span>
+          <span className="text-foreground/80">{who}</span> — <span className="italic">{what}</span>
         </li>
       ))}
     </ul>
@@ -98,113 +111,152 @@ export default function Home() {
   const shownDomains = domains.length ? domains : ["striated", "impressed"];
 
   return (
-    <main className="mx-auto w-full max-w-4xl px-6 py-16 sm:py-24">
-      {/* Hero */}
-      <header className="rise text-center">
-        <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs text-slate-300">
-          <span className="h-1.5 w-1.5 rounded-full bg-cyan-400" />
-          Open-science forensic surface comparison
-        </span>
-        <h1 className="mt-6 text-6xl font-semibold tracking-tight sm:text-7xl">
-          <span className="accent-text">Verity</span>
-        </h1>
-        <p className="mx-auto mt-4 max-w-2xl text-lg leading-relaxed text-slate-300">
-          One calibrated, explainable method for comparing forensic surface marks — a{" "}
-          <strong className="text-white">likelihood ratio with a characterized cost</strong>, and a map
-          of <strong className="text-white">exactly which regions drove the match</strong>.
-        </p>
-        <div className="mt-6 flex flex-wrap justify-center gap-2 text-xs text-slate-300">
-          {[
-            "Striated · bullets & toolmarks",
-            "Impressed · cartridge cases",
-            "Calibrated LR + Cllr",
-            "Region attribution",
-          ].map((t) => (
-            <span key={t} className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1">
-              {t}
-            </span>
-          ))}
+    <>
+      {/* Top bar */}
+      <header className="fixed inset-x-0 top-0 z-30">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+          <a href="#top" className="text-lg font-semibold tracking-tight">
+            <span className="accent-text">Verity</span>
+          </a>
+          <ThemeToggle />
         </div>
       </header>
 
-      {/* Scientific contribution */}
-      <section className="glass rise mt-14 rounded-2xl p-6 sm:p-8">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-cyan-300/90">
-          The scientific contribution
-        </h2>
-        <p className="mt-3 text-sm leading-relaxed text-slate-300">
-          Two decades of review — the National Research Council&rsquo;s 2009 report and the 2016 PCAST
-          report — found that most pattern-evidence disciplines lack demonstrated foundational validity,
-          and Cuellar et&nbsp;al. (2024) showed that <em>no</em> discipline has a characterized error
-          rate. Existing tools are bespoke to one mark type and stop at an uncalibrated score. Verity
-          answers this directly:{" "}
-          <strong className="text-slate-100">a single, transparent method</strong> that reports a{" "}
-          <strong className="text-slate-100">calibrated likelihood ratio with a quantified cost (Cllr)</strong>{" "}
-          and <strong className="text-slate-100">region-level attribution</strong>, spanning striated
-          marks (bullets, toolmarks) and impressed marks (cartridge breech faces) by generalizing the
-          Congruent Matching Cells method (Song, 2013) to arbitrary toolmarks. The representation only
-          produces a score; the reportable decision is a monotone, bounded likelihood ratio — auditable
-          no matter how the score was computed.
-        </p>
-        <Citations />
-      </section>
+      {/* Cinematic hero */}
+      <section
+        id="top"
+        className="relative isolate flex min-h-[92svh] items-center justify-center overflow-hidden px-6"
+      >
+        <div className="absolute inset-0 -z-20">
+          <HeroSurface />
+        </div>
+        {/* legibility scrim + fade into the content below */}
+        <div
+          className="pointer-events-none absolute inset-0 -z-10"
+          style={{
+            background:
+              "radial-gradient(58% 50% at 50% 42%, color-mix(in srgb, var(--background) 62%, transparent), transparent 76%), linear-gradient(to bottom, color-mix(in srgb, var(--background) 40%, transparent) 0%, transparent 22%, transparent 60%, var(--background) 100%)",
+          }}
+        />
 
-      {/* Comparison tool */}
-      <section className="glass rise mt-8 space-y-5 rounded-2xl p-6 sm:p-8">
-        <h2 className="text-lg font-medium text-white">Compare two marks</h2>
-        <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-slate-300">Mark type</label>
-          <select
-            value={domain}
-            onChange={(e) => {
-              setDomain(e.target.value);
-              setMarkA([]);
-              setMarkB([]);
-              setReport(null);
-            }}
-            className="w-full rounded-lg border border-white/10 bg-slate-900/60 px-3 py-2 text-sm text-slate-100 outline-none focus:border-cyan-400/60"
-          >
-            {shownDomains.map((d) => (
-              <option key={d} value={d} className="bg-slate-900">
-                {DOMAIN_LABELS[d] ?? d}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <FilePick label="Mark A" files={markA} onPick={setMarkA} multiple={domain === "striated"} />
-          <FilePick label="Mark B" files={markB} onPick={setMarkB} multiple={domain === "striated"} />
-        </div>
-        <p className="text-xs text-slate-500">
-          {domain === "striated"
-            ? "Each mark is a bullet — select all of its land scans (e.g. 6). A single land is only weakly diagnostic; the strength comes from aggregating the lands."
-            : "One breech-face scan per mark."}
-        </p>
-        <button
-          onClick={onCompare}
-          disabled={!markA.length || !markB.length || loading}
-          className="w-full rounded-lg bg-gradient-to-r from-indigo-500 via-sky-500 to-cyan-400 px-4 py-3 font-semibold text-slate-950 shadow-lg shadow-cyan-500/20 transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          {loading ? "Comparing…" : "Compute likelihood ratio"}
-        </button>
-        {error && (
-          <p className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-sm text-rose-200">
-            {error}
+        <div className="rise mx-auto max-w-3xl text-center">
+          <span className="glass inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs text-foreground/70">
+            <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+            Open-science forensic surface comparison
+          </span>
+          <h1 className="mt-6 text-7xl font-semibold tracking-tight sm:text-8xl">
+            <span className="accent-text">Verity</span>
+          </h1>
+          <p className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-foreground/80 sm:text-xl">
+            One calibrated, explainable method for comparing forensic surface marks — a{" "}
+            <strong className="text-foreground">likelihood ratio with a characterized cost</strong>, and a
+            map of <strong className="text-foreground">exactly which regions drove the match</strong>.
           </p>
-        )}
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+            <a
+              href="#compare"
+              className="rounded-full bg-gradient-to-r from-indigo-500 via-sky-500 to-cyan-400 px-6 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-cyan-500/20 transition hover:opacity-90"
+            >
+              Try a comparison →
+            </a>
+            <a
+              href="#science"
+              className="glass rounded-full px-6 py-3 text-sm font-medium text-foreground/80 transition hover:text-foreground"
+            >
+              The science
+            </a>
+          </div>
+          <div className="mt-10 flex flex-wrap justify-center gap-2 text-xs text-foreground/70">
+            {CAPABILITIES.map((t) => (
+              <span key={t} className="glass rounded-full px-3 py-1">
+                {t}
+              </span>
+            ))}
+          </div>
+        </div>
       </section>
 
-      {report && (
-        <section className="rise mt-8">
-          <ReportView report={report} />
+      {/* Content */}
+      <main className="mx-auto -mt-12 w-full max-w-4xl px-6 pb-24">
+        {/* Scientific contribution */}
+        <section id="science" className="glass rise scroll-mt-20 rounded-2xl p-6 sm:p-8">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-accent">
+            The scientific contribution
+          </h2>
+          <p className="mt-3 text-sm leading-relaxed text-foreground/80">
+            Two decades of review — the National Research Council&rsquo;s 2009 report and the 2016 PCAST
+            report — found that most pattern-evidence disciplines lack demonstrated foundational validity,
+            and Cuellar et&nbsp;al. (2024) showed that <em>no</em> discipline has a characterized error
+            rate. Existing tools are bespoke to one mark type and stop at an uncalibrated score. Verity
+            answers this directly: <strong className="text-foreground">a single, transparent method</strong>{" "}
+            that reports a{" "}
+            <strong className="text-foreground">calibrated likelihood ratio with a quantified cost (Cllr)</strong>{" "}
+            and <strong className="text-foreground">region-level attribution</strong>, spanning striated
+            marks (bullets, toolmarks) and impressed marks (cartridge breech faces) by generalizing the
+            Congruent Matching Cells method (Song, 2013) to arbitrary toolmarks. The representation only
+            produces a score; the reportable decision is a monotone, bounded likelihood ratio — auditable
+            no matter how the score was computed.
+          </p>
+          <Citations />
         </section>
-      )}
 
-      <footer className="mt-16 text-center text-xs leading-relaxed text-slate-500">
-        The representation reports a calibrated likelihood ratio; it never makes the decision.
-        <br />
-        Not a claim about the error rate of forensic examination, which remains unknown.
-      </footer>
-    </main>
+        {/* Comparison tool */}
+        <section id="compare" className="glass rise mt-8 scroll-mt-20 space-y-5 rounded-2xl p-6 sm:p-8">
+          <h2 className="text-lg font-medium text-foreground">Compare two marks</h2>
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium text-foreground/80">Mark type</label>
+            <select
+              value={domain}
+              onChange={(e) => {
+                setDomain(e.target.value);
+                setMarkA([]);
+                setMarkB([]);
+                setReport(null);
+              }}
+              className="w-full rounded-lg border border-border bg-background/60 px-3 py-2 text-sm text-foreground outline-none focus:border-accent/60"
+            >
+              {shownDomains.map((d) => (
+                <option key={d} value={d}>
+                  {DOMAIN_LABELS[d] ?? d}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <FilePick label="Mark A" files={markA} onPick={setMarkA} multiple={domain === "striated"} />
+            <FilePick label="Mark B" files={markB} onPick={setMarkB} multiple={domain === "striated"} />
+          </div>
+          <p className="text-xs text-muted">
+            {domain === "striated"
+              ? "Each mark is a bullet — select all of its land scans (e.g. 6). A single land is only weakly diagnostic; the strength comes from aggregating the lands."
+              : "One breech-face scan per mark."}
+          </p>
+          <button
+            onClick={onCompare}
+            disabled={!markA.length || !markB.length || loading}
+            className="w-full rounded-lg bg-gradient-to-r from-indigo-500 via-sky-500 to-cyan-400 px-4 py-3 font-semibold text-slate-950 shadow-lg shadow-cyan-500/20 transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {loading ? "Comparing…" : "Compute likelihood ratio"}
+          </button>
+          {error && (
+            <p className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-sm text-rose-500 dark:text-rose-200">
+              {error}
+            </p>
+          )}
+        </section>
+
+        {report && (
+          <section className="rise mt-8">
+            <ReportView report={report} />
+          </section>
+        )}
+
+        <footer className="mt-16 text-center text-xs leading-relaxed text-muted">
+          The representation reports a calibrated likelihood ratio; it never makes the decision.
+          <br />
+          Not a claim about the error rate of forensic examination, which remains unknown.
+        </footer>
+      </main>
+    </>
   );
 }
