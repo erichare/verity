@@ -199,10 +199,10 @@ export default function Home() {
               Try a comparison →
             </a>
             <a
-              href="#science"
+              href="/method"
               className="glass rounded-full px-6 py-3 text-sm font-medium text-foreground/80 transition hover:text-foreground"
             >
-              The science
+              How it works
             </a>
           </div>
           <div className="mt-10 flex flex-wrap justify-center gap-2 text-xs text-foreground/70">
