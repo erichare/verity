@@ -42,6 +42,7 @@ verity-trace-pairs = "verity.examples.trace_cli:pairs_main"
 verity-toolmark-chumbley-proof = "verity.examples.toolmark_chumbley_proof:main"
 verity-toolmark-tmaRks = "verity.examples.toolmark_tmaRks:main"
 verity-cartridge-fadul = "verity.examples.cartridge_fadul:main"
+verity-cartridge-cmc-proof = "verity.examples.cartridge_cmc_proof:main"
 
 [build-system]
 requires = ["hatchling"]
