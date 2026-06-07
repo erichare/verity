@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { compareMarks, getDomains } from "@/lib/api";
 import type { ComparisonReport } from "@/lib/types";
 import ReportView from "@/components/ReportView";
+import { Reveal } from "@/components/Reveal";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
 const HeroSurface = dynamic(() => import("@/components/three/HeroSurface"), {
@@ -115,7 +116,7 @@ export default function Home() {
       {/* Top bar */}
       <header className="fixed inset-x-0 top-0 z-30">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <a href="#top" className="text-lg font-semibold tracking-tight">
+          <a href="#top" className="font-display text-xl font-semibold tracking-tight">
             <span className="accent-text">Verity</span>
           </a>
           <ThemeToggle />
@@ -144,7 +145,7 @@ export default function Home() {
             <span className="h-1.5 w-1.5 rounded-full bg-accent" />
             Open-science forensic surface comparison
           </span>
-          <h1 className="mt-6 text-7xl font-semibold tracking-tight sm:text-8xl">
+          <h1 className="mt-6 font-display text-7xl font-semibold tracking-tight sm:text-8xl">
             <span className="accent-text">Verity</span>
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-foreground/80 sm:text-xl">
@@ -179,7 +180,8 @@ export default function Home() {
       {/* Content */}
       <main className="mx-auto -mt-12 w-full max-w-4xl px-6 pb-24">
         {/* Scientific contribution */}
-        <section id="science" className="glass rise scroll-mt-20 rounded-2xl p-6 sm:p-8">
+        <Reveal>
+        <section id="science" className="glass scroll-mt-20 rounded-2xl p-6 sm:p-8">
           <h2 className="text-sm font-semibold uppercase tracking-wider text-accent">
             The scientific contribution
           </h2>
@@ -199,10 +201,12 @@ export default function Home() {
           </p>
           <Citations />
         </section>
+        </Reveal>
 
         {/* Comparison tool */}
-        <section id="compare" className="glass rise mt-8 scroll-mt-20 space-y-5 rounded-2xl p-6 sm:p-8">
-          <h2 className="text-lg font-medium text-foreground">Compare two marks</h2>
+        <Reveal className="mt-8">
+        <section id="compare" className="glass scroll-mt-20 space-y-5 rounded-2xl p-6 sm:p-8">
+          <h2 className="font-display text-xl font-medium text-foreground">Compare two marks</h2>
           <div className="flex flex-col gap-2">
             <label className="text-sm font-medium text-foreground/80">Mark type</label>
             <select
@@ -244,6 +248,7 @@ export default function Home() {
             </p>
           )}
         </section>
+        </Reveal>
 
         {report && (
           <section className="rise mt-8">
