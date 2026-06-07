@@ -12,24 +12,33 @@ const DOMAIN_LABELS: Record<string, string> = {
 
 function FilePick({
   label,
-  file,
+  files,
   onPick,
+  multiple,
 }: {
   label: string;
-  file: File | null;
-  onPick: (f: File | null) => void;
+  files: File[];
+  onPick: (f: File[]) => void;
+  multiple?: boolean;
 }) {
+  const summary =
+    files.length === 0
+      ? multiple
+        ? "Choose .x3p land scans…"
+        : "Choose an .x3p scan…"
+      : files.length === 1
+        ? files[0].name
+        : `${files.length} scans selected`;
   return (
     <label className="group flex cursor-pointer flex-col gap-1.5 rounded-xl border border-dashed border-white/15 bg-white/[0.03] p-4 text-sm transition hover:border-cyan-400/50 hover:bg-white/[0.06]">
       <span className="font-medium text-slate-200">{label}</span>
-      <span className="truncate text-slate-400 group-hover:text-slate-300">
-        {file ? file.name : "Choose an .x3p scan…"}
-      </span>
+      <span className="truncate text-slate-400 group-hover:text-slate-300">{summary}</span>
       <input
         type="file"
         accept=".x3p"
+        multiple={multiple}
         className="hidden"
-        onChange={(e) => onPick(e.target.files?.[0] ?? null)}
+        onChange={(e) => onPick(Array.from(e.target.files ?? []))}
       />
     </label>
   );
@@ -57,8 +66,8 @@ function Citations() {
 export default function Home() {
   const [domains, setDomains] = useState<string[]>([]);
   const [domain, setDomain] = useState("striated");
-  const [markA, setMarkA] = useState<File | null>(null);
-  const [markB, setMarkB] = useState<File | null>(null);
+  const [markA, setMarkA] = useState<File[]>([]);
+  const [markB, setMarkB] = useState<File[]>([]);
   const [report, setReport] = useState<ComparisonReport | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -73,7 +82,7 @@ export default function Home() {
   }, []);
 
   async function onCompare() {
-    if (!markA || !markB) return;
+    if (!markA.length || !markB.length) return;
     setLoading(true);
     setError(null);
     setReport(null);
@@ -147,7 +156,12 @@ export default function Home() {
           <label className="text-sm font-medium text-slate-300">Mark type</label>
           <select
             value={domain}
-            onChange={(e) => setDomain(e.target.value)}
+            onChange={(e) => {
+              setDomain(e.target.value);
+              setMarkA([]);
+              setMarkB([]);
+              setReport(null);
+            }}
             className="w-full rounded-lg border border-white/10 bg-slate-900/60 px-3 py-2 text-sm text-slate-100 outline-none focus:border-cyan-400/60"
           >
             {shownDomains.map((d) => (
@@ -158,12 +172,17 @@ export default function Home() {
           </select>
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <FilePick label="Mark A" file={markA} onPick={setMarkA} />
-          <FilePick label="Mark B" file={markB} onPick={setMarkB} />
+          <FilePick label="Mark A" files={markA} onPick={setMarkA} multiple={domain === "striated"} />
+          <FilePick label="Mark B" files={markB} onPick={setMarkB} multiple={domain === "striated"} />
         </div>
+        <p className="text-xs text-slate-500">
+          {domain === "striated"
+            ? "Each mark is a bullet — select all of its land scans (e.g. 6). A single land is only weakly diagnostic; the strength comes from aggregating the lands."
+            : "One breech-face scan per mark."}
+        </p>
         <button
           onClick={onCompare}
-          disabled={!markA || !markB || loading}
+          disabled={!markA.length || !markB.length || loading}
           className="w-full rounded-lg bg-gradient-to-r from-indigo-500 via-sky-500 to-cyan-400 px-4 py-3 font-semibold text-slate-950 shadow-lg shadow-cyan-500/20 transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
         >
           {loading ? "Comparing…" : "Compute likelihood ratio"}
