@@ -200,7 +200,7 @@ export default function Home() {
       </section>
 
       {/* Content */}
-      <main className="mx-auto -mt-10 w-full max-w-4xl px-6 pb-24 sm:-mt-16">
+      <main className="mx-auto mt-6 w-full max-w-4xl px-6 pb-24 sm:-mt-16">
         {/* Live proof — the same method, opposite verdicts */}
         <Reveal>
           <LiveProof />
