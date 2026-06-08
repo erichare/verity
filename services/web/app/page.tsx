@@ -3,9 +3,10 @@
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import { compareMarks, detectDomain, getDomains, type Detection } from "@/lib/api";
-import type { ComparisonReport } from "@/lib/types";
+import { isRefusal, type CompareResponse } from "@/lib/types";
 import { buildSampleReport } from "@/lib/sample-report";
 import ReportView from "@/components/ReportView";
+import RefusalView from "@/components/RefusalView";
 import { Reveal } from "@/components/Reveal";
 import { StatBand } from "@/components/home/StatBand";
 import { LiveProof } from "@/components/home/LiveProof";
@@ -23,7 +24,7 @@ const DOMAIN_LABELS: Record<string, string> = {
 };
 
 interface Result {
-  data: ComparisonReport;
+  data: CompareResponse;
   sample: boolean;
 }
 
@@ -276,7 +277,11 @@ export default function Home() {
                 Sample — a precomputed real Hamby-252 same-source comparison
               </p>
             )}
-            <ReportView report={result.data} />
+            {isRefusal(result.data) ? (
+              <RefusalView result={result.data} />
+            ) : (
+              <ReportView report={result.data} />
+            )}
           </section>
         )}
 

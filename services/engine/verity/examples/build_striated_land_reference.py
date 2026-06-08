@@ -16,16 +16,20 @@ from __future__ import annotations
 
 import csv
 import random
+import sys
 from collections import defaultdict
 from pathlib import Path
 
 import numpy as np
 
+from verity.decision.scorer_config import DEFAULT_SCORER_CONFIG
 from verity.registration.align import align_1d
 from verity.signature import striation_signature
 from verity.surface import Surface
 
-_LAMBDA_S, _LAMBDA_C = 4e-6, 250e-6
+from ._reference_io import write_reference
+
+_LAMBDA_S, _LAMBDA_C = DEFAULT_SCORER_CONFIG.lambda_s, DEFAULT_SCORER_CONFIG.lambda_c
 _ROOT = Path(__file__).resolve().parents[4]  # repo root, regardless of CWD
 _CACHE = _ROOT / "services/catalog/.verity/cache/bulletxtrctr"
 _OUT = _ROOT / "services/api/verity_api/references/striated_land.npz"
@@ -88,18 +92,32 @@ def main() -> None:
     def ccf(a: int, b: int) -> float:
         return float(align_1d(lands[a][2], lands[b][2])[1])
 
-    km = np.array([ccf(a, b) for a, b in km_pairs])
-    knm = np.array([ccf(a, b) for a, b in knm_pairs])
-    scores = np.r_[km, knm]
-    labels = np.r_[np.ones(len(km)), np.zeros(len(knm))]
+    def cluster_key(a: int, b: int) -> str:
+        ka, kb = f"{lands[a][0]}:{lands[a][1]}", f"{lands[b][0]}:{lands[b][1]}"
+        return "|".join(sorted((ka, kb)))
 
-    from sklearn.metrics import roc_auc_score
+    pairs = km_pairs + knm_pairs
+    scores = np.array([ccf(a, b) for a, b in pairs])
+    labels = np.r_[np.ones(len(km_pairs)), np.zeros(len(knm_pairs))]
+    clusters = [cluster_key(a, b) for a, b in pairs]
 
-    print(f"KM n={len(km)} mean={km.mean():.3f} | KNM n={len(knm)} mean={knm.mean():.3f}")
-    print(f"AUC={roc_auc_score(labels, scores):.3f}")
-    _OUT.parent.mkdir(parents=True, exist_ok=True)
-    np.savez(_OUT, scores=scores, labels=labels)
-    print(f"wrote {_OUT}")
+    art = write_reference(
+        _OUT,
+        scores=scores,
+        labels=labels,
+        cluster_ids=clusters,
+        name="pooled single-land reference (Hamby-252, Beretta)",
+        generator="build_striated_land_reference",
+        seed=0,
+        datasets=[{"source": "bulletxtrctr-cache", "tag": "single-land", "n_lands": len(lands)}],
+        write="--write" in sys.argv,
+    )
+    d = art.provenance["diagnostics"]
+    print(
+        f"n_km={d['n_km']} n_knm={d['n_knm']} n_sources={art.provenance['n_sources']} "
+        f"AUC={d['auc']:.3f} Cllr_min={d['cllr_min']:.3f}"
+    )
+    print(f"{'WROTE' if '--write' in sys.argv else 'DRY-RUN (pass --write to save)'}: {_OUT}")
 
 
 if __name__ == "__main__":

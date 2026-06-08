@@ -1,0 +1,48 @@
+{
+  "format_version": 1,
+  "name": "pooled bullet-land reference (Hamby-252 & 173, Beretta, Phoenix)",
+  "generator": "build_bullet_pooled_reference",
+  "git_commit": "cdec955",
+  "seed": null,
+  "scorer": {
+    "lambda_s": 4e-06,
+    "lambda_c": 0.00025,
+    "cmr_corr": 0.3,
+    "cmr_tol": [
+      20.0,
+      20.0,
+      6.0
+    ],
+    "cmr_1d_corr": 0.5,
+    "cmr_1d_lag": 10.0,
+    "name": "bullet-contrast"
+  },
+  "scorer_config_hash": "ea4ddd513b57ce8a3dd117dabc6d539432f7ddfab382c425837ead8199a6e127",
+  "cluster_scheme": "pair-source-set",
+  "n_sources": 201,
+  "datasets": [
+    {
+      "external_id": "c09aaa86-5d60-4acb-9031-46dad2c0ad32",
+      "tag": "Hamby-252"
+    },
+    {
+      "external_id": "fcafffb1-b96c-49c7-9a9f-b1ec9849f884",
+      "tag": "PGPD-Beretta"
+    },
+    {
+      "external_id": "bc68296a-f4b0-4afd-b767-4dbfa2961780",
+      "tag": "Phoenix-Ruger"
+    },
+    {
+      "external_id": "b5fbda3e-d889-4211-be7e-654e19b7cd40",
+      "tag": "Hamby-173"
+    }
+  ],
+  "diagnostics": {
+    "n_km": 146,
+    "n_knm": 1755,
+    "auc": 0.9837919057097139,
+    "cllr": 0.19307688922129662,
+    "cllr_min": 0.16809429627262562
+  }
+}

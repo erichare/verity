@@ -49,8 +49,9 @@ COPY --from=builder /app/services/engine /app/services/engine
 COPY --from=builder /app/services/api /app/services/api
 
 # Put the venv on PATH so uvicorn runs without uv or an activate step.
+# NB: CORS defaults to localhost only (see main.py); set VERITY_CORS_ORIGINS to the
+# real front-end origin(s) at deploy time. Do NOT bake "*" into the image.
 ENV PATH="/app/services/api/.venv/bin:${PATH}" \
-    VERITY_CORS_ORIGINS="*" \
     PORT=8000
 EXPOSE 8000
 CMD ["sh", "-c", "uvicorn verity_api.main:app --host 0.0.0.0 --port ${PORT}"]

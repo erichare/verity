@@ -1,0 +1,37 @@
+{
+  "format_version": 1,
+  "name": "Fadul cartridge cases (10 consecutively-manufactured slides)",
+  "generator": "build_cartridge_fadul_reference",
+  "git_commit": "cdec955",
+  "seed": null,
+  "scorer": {
+    "lambda_s": 4e-06,
+    "lambda_c": 0.00025,
+    "cmr_corr": 0.3,
+    "cmr_tol": [
+      20.0,
+      20.0,
+      6.0
+    ],
+    "cmr_1d_corr": 0.5,
+    "cmr_1d_lag": 10.0,
+    "name": "bullet-contrast"
+  },
+  "scorer_config_hash": "ea4ddd513b57ce8a3dd117dabc6d539432f7ddfab382c425837ead8199a6e127",
+  "cluster_scheme": "pair-source-set",
+  "n_sources": 55,
+  "datasets": [
+    {
+      "external_id": "fadul-cartridge-cases",
+      "tag": "Fadul-2011",
+      "source": "CSAFE-ISU/cartridgeCaseScans (fadulMasked, CC-BY 4.0)"
+    }
+  ],
+  "diagnostics": {
+    "n_km": 10,
+    "n_knm": 180,
+    "auc": 0.9966666666666667,
+    "cllr": 0.21990482744889428,
+    "cllr_min": 0.0701083132199902
+  }
+}

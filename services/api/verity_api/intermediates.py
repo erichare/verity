@@ -14,11 +14,11 @@ import numpy as np
 
 from verity import land_trace
 from verity.aggregate import bullet_comparison
-from verity.decision import ScoreLRModel, eer, roc_auc, tippett
+from verity.decision import DEFAULT_SCORER_CONFIG, ScoreLRModel, eer, roc_auc, tippett
 from verity.surface import Surface
 from verity.trace import LandTrace
 
-_LAMBDA_S, _LAMBDA_C = 4e-6, 250e-6
+_LAMBDA_S, _LAMBDA_C = DEFAULT_SCORER_CONFIG.lambda_s, DEFAULT_SCORER_CONFIG.lambda_c
 VALID_INCLUDES = frozenset({"calibration", "features", "perland", "trace"})
 
 

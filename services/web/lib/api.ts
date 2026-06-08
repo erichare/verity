@@ -1,4 +1,4 @@
-import type { ComparisonReport } from "./types";
+import type { CompareResponse } from "./types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 
@@ -35,7 +35,7 @@ export async function compareMarks(
   domain: string,
   marksA: File[],
   marksB: File[],
-): Promise<ComparisonReport> {
+): Promise<CompareResponse> {
   const form = new FormData();
   form.append("domain", domain);
   // each mark may be several scans (a bullet's lands); the field repeats

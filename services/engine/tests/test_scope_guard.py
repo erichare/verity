@@ -71,6 +71,32 @@ def test_flat_surface_signal_refused():
     assert not rep.admissible
 
 
+def test_blocking_limits_refusal_to_named_checks():
+    # Low coverage is a refuse-severity failure, but with blocking restricted to the
+    # hard checks the comparison stays admissible (coverage becomes a warning). This is
+    # what keeps a legitimately-masked cartridge scan from being rejected.
+    s = _striated_surface()
+    z = s.heights.copy()
+    z[: z.shape[0] // 2] = np.nan  # 50% missing → coverage refuse-severity
+    rep = check_applicability(
+        s.with_heights(z),
+        domain="striated",
+        mode="refuse",
+        blocking=frozenset({"resolution", "modality"}),
+    )
+    assert rep.admissible  # coverage no longer blocks the comparison
+    assert _check(rep, "coverage").severity == "refuse"  # but the shortfall is recorded
+
+
+def test_blocking_still_refuses_named_hard_failures():
+    s = _striated_surface(dx=5e-6)  # coarse pitch → resolution refuse
+    rep = check_applicability(
+        s, domain="striated", mode="refuse", blocking=frozenset({"resolution", "modality"})
+    )
+    assert not rep.admissible
+    assert _check(rep, "resolution").severity == "refuse"
+
+
 def test_warn_mode_never_blocks_but_records_failures():
     s = _striated_surface(dx=5e-6)
     rep = check_applicability(s, domain="striated", mode="warn")

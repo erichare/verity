@@ -36,9 +36,11 @@ import numpy as np
 from ..detect import detect_domain
 from ..preprocess import isolate_roughness, remove_form
 from ..surface import Surface
+from .scorer_config import DEFAULT_SCORER_CONFIG
 
-# Striated roughness band (m) — must match the comparison pipeline.
-_LAMBDA_S, _LAMBDA_C = 4e-6, 250e-6
+# Striated roughness band (m) — sourced from the one scorer config so the guard and the
+# comparison pipeline can never drift apart.
+_LAMBDA_S, _LAMBDA_C = DEFAULT_SCORER_CONFIG.lambda_s, DEFAULT_SCORER_CONFIG.lambda_c
 # Coherence threshold separating striated/impressed, with a hysteresis half-width.
 _COH_THRESHOLD, _COH_BAND = 0.6, 0.1
 
@@ -213,13 +215,19 @@ def check_applicability(
     reference_meta: dict | None = None,
     requested_domain: str | None = None,
     mode: str = "warn",
+    blocking: frozenset[str] | None = None,
 ) -> ScopeReport:
     """Check one scan against the validated domain.
 
     ``mode="warn"`` always returns ``admissible=True`` and only annotates;
-    ``mode="refuse"`` returns ``admissible=False`` if any ``"refuse"``-severity
-    check fails. ``requested_domain`` (defaults to ``domain``) is the mark type the
-    caller intends to compare under, used by the modality check."""
+    ``mode="refuse"`` returns ``admissible=False`` if a *blocking* ``"refuse"``-severity
+    check fails. ``blocking`` names which checks can block (``None`` = all four — the
+    strict default used by ``/v1/scope``); pass e.g. ``frozenset({"resolution",
+    "modality"})`` to refuse only on the hard, unrecoverable failures while leaving
+    coverage/signal shortfalls as non-blocking warnings (a masked cartridge scan is
+    legitimately sparse, so coverage should warn, not refuse, on the comparison path).
+    ``requested_domain`` (defaults to ``domain``) is the mark type the caller intends to
+    compare under, used by the modality check."""
     if mode not in ("warn", "refuse"):
         raise ValueError(f"mode must be 'warn' or 'refuse', got {mode!r}")
     requested = requested_domain or domain
@@ -230,7 +238,11 @@ def check_applicability(
     checks = [res, modality, cov, sig]
 
     failed = [c for c in checks if not c.passed]
-    would_refuse = [c for c in failed if c.severity == "refuse"]
+    would_refuse = [
+        c
+        for c in failed
+        if c.severity == "refuse" and (blocking is None or c.name in blocking)
+    ]
     admissible = True if mode == "warn" else not would_refuse
     if not failed:
         overall = "in scope: the scan matches the validated domain"

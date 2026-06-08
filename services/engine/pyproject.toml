@@ -46,6 +46,10 @@ verity-cartridge-fadul = "verity.examples.cartridge_fadul:main"
 verity-cartridge-cmc-proof = "verity.examples.cartridge_cmc_proof:main"
 verity-cmr-cartridge = "verity.examples.cmr_cartridge:main"
 verity-cmr-fusion = "verity.examples.cmr_fusion:main"
+verity-build-references = "verity.examples.build_references:main"
+verity-build-bullet-reference = "verity.examples.build_bullet_pooled_reference:build"
+verity-build-cartridge-reference = "verity.examples.build_cartridge_fadul_reference:build"
+verity-build-striated-reference = "verity.examples.build_striated_land_reference:main"
 
 [build-system]
 requires = ["hatchling"]
