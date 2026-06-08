@@ -121,6 +121,9 @@ export default function WhyPage() {
             <a href="/method" className="text-sm text-foreground/70 transition hover:text-foreground">
               Method
             </a>
+            <a href="/docs" className="text-sm text-foreground/70 transition hover:text-foreground">
+              Docs
+            </a>
             <a href="/#compare" className="text-sm text-foreground/70 transition hover:text-foreground">
               Compare
             </a>

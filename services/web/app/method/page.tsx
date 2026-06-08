@@ -180,6 +180,9 @@ export default function MethodPage() {
             <a href="/why" className="text-sm text-foreground/70 transition hover:text-foreground">
               Why
             </a>
+            <a href="/docs" className="text-sm text-foreground/70 transition hover:text-foreground">
+              Docs
+            </a>
             <a href="/#compare" className="text-sm text-foreground/70 transition hover:text-foreground">
               Compare
             </a>
