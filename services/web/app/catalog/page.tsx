@@ -22,6 +22,7 @@ const MARK_FILTERS: { value: MarkClass; label: string }[] = [
   { value: "all", label: "All marks" },
   { value: "bullet", label: "Bullet lands" },
   { value: "cartridge", label: "Cartridge breech faces" },
+  { value: "toolmark", label: "Tool marks" },
 ];
 
 function shortHash(h: string): string {
@@ -70,9 +71,10 @@ export default function CatalogPage() {
             The <span className="accent-text">benchmark catalog</span>
           </h1>
           <p className="mt-5 text-lg leading-relaxed text-foreground/80">
-            The public NBTRD scans Verity is validated against &mdash; normalized into a
-            queryable catalog where every scan carries its SHA-256 content hash and a link back
-            to its source. This is a live, read-only view of the hosted data.
+            The public benchmark data Verity is validated against &mdash; bullet lands, cartridge
+            breech faces, and screwdriver tool marks, normalized into one queryable catalog where
+            every scan carries its SHA-256 content hash and a link back to its source. This is a
+            live, read-only view of the hosted data.
           </p>
         </section>
 
@@ -111,7 +113,7 @@ export default function CatalogPage() {
             <div>
               <h2 className="font-display text-2xl font-medium text-foreground">Scans</h2>
               <p className="mt-1 text-sm text-muted">
-                {loading ? "Loading…" : `${total.toLocaleString()} scans`} · 3-D surface topography (X3P)
+                {loading ? "Loading…" : `${total.toLocaleString()} scans`} · 3-D surface scans (X3P) + 1-D tool-mark profiles
               </p>
             </div>
             <input

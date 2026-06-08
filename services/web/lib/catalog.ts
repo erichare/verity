@@ -27,12 +27,14 @@ export interface Scan {
   lateral_resolution_x: number | null;
   source: string;
   source_ref: string;
-  // A scan hangs off exactly one of a bullet land or a cartridge-case mark.
+  // A scan hangs off exactly one of a bullet land, a cartridge-case mark, or a
+  // tool mark (e.g. a screwdriver striation profile).
   land: { id: number } | null;
   mark: { mark_type: string } | null;
+  toolmark: { edge: string | null } | null;
 }
 
-export type MarkClass = "all" | "bullet" | "cartridge";
+export type MarkClass = "all" | "bullet" | "cartridge" | "toolmark";
 
 const MARK_TYPE_LABELS: Record<string, string> = {
   breech_face: "Cartridge breech face",
@@ -41,9 +43,10 @@ const MARK_TYPE_LABELS: Record<string, string> = {
   aperture_shear: "Aperture shear",
 };
 
-/** The human-readable mark type for a scan (bullet land vs cartridge mark). */
+/** The human-readable mark type for a scan (bullet land, cartridge mark, or tool mark). */
 export function scanMarkType(scan: Scan): string {
   if (scan.mark) return MARK_TYPE_LABELS[scan.mark.mark_type] ?? scan.mark.mark_type;
+  if (scan.toolmark) return "Tool mark";
   if (scan.land) return "Bullet land";
   return "—";
 }
@@ -51,6 +54,7 @@ export function scanMarkType(scan: Scan): string {
 const SOURCE_LABELS: Record<string, string> = {
   nbtrd: "NBTRD",
   "csafe-isu": "CSAFE-ISU",
+  tmarks: "tmaRks",
 };
 
 /** The display label for a scan's source repository (e.g. NBTRD, CSAFE-ISU). */
@@ -78,7 +82,7 @@ export async function getScans(opts: {
   const { search = "", markClass = "all", limit = 50, offset = 0 } = opts;
   const params = new URLSearchParams({
     select:
-      "id,filename,modality,content_hash,lateral_resolution_x,source,source_ref,land(id),mark(mark_type)",
+      "id,filename,modality,content_hash,lateral_resolution_x,source,source_ref,land(id),mark(mark_type),toolmark(edge)",
     order: "id",
     limit: String(limit),
     offset: String(offset),
@@ -86,6 +90,7 @@ export async function getScans(opts: {
   if (search.trim()) params.set("filename", `ilike.*${search.trim()}*`);
   if (markClass === "bullet") params.set("land_id", "not.is.null");
   if (markClass === "cartridge") params.set("mark_id", "not.is.null");
+  if (markClass === "toolmark") params.set("toolmark_id", "not.is.null");
   const res = await fetch(`${SB_URL}/rest/v1/scan?${params.toString()}`, {
     headers: { ...authHeaders(), Prefer: "count=exact" },
     cache: "no-store",

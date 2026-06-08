@@ -6,6 +6,7 @@ validation harness::
 
     Study ─< Firearm ─< Bullet ─< Land(LEA) ─< Scan
                        └< CartridgeCase ─< Mark ─< Scan
+          └< Tool ─< Toolmark ─< Scan
 
 ``Instrument`` is a shared reference entity. Every ``Scan`` carries a
 ``content_hash`` into the blob store plus source provenance, so the catalog +
@@ -21,7 +22,7 @@ from datetime import datetime, timezone
 from sqlmodel import Field, Relationship, SQLModel, UniqueConstraint
 
 # Allowed string values (kept as plain strings for SQLite/Postgres portability).
-MODALITIES = ("x3p_3d", "png_2d")
+MODALITIES = ("x3p_3d", "png_2d", "profile_1d")
 MARK_TYPES = ("breech_face", "firing_pin", "ejector", "aperture_shear")
 TWIST = ("left", "right")
 
@@ -45,6 +46,7 @@ class Study(SQLModel, table=True):
     created_at: datetime = Field(default_factory=_utcnow)
 
     firearms: list["Firearm"] = Relationship(back_populates="study")
+    tools: list["Tool"] = Relationship(back_populates="study")
 
 
 class Firearm(SQLModel, table=True):
@@ -112,6 +114,36 @@ class Mark(SQLModel, table=True):
     scans: list["Scan"] = Relationship(back_populates="mark")
 
 
+class Tool(SQLModel, table=True):
+    """A mark-making tool (e.g. a screwdriver) — the source of a striated
+    toolmark, the analog of a ``Firearm`` for bullets. Hangs off a ``Study``."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    study_id: int = Field(foreign_key="study.id", index=True)
+    external_id: str | None = Field(default=None, index=True)  # e.g. "T01"
+    kind: str | None = Field(default=None, index=True)  # e.g. "slotted screwdriver"
+    brand: str | None = None
+
+    study: Study | None = Relationship(back_populates="tools")
+    toolmarks: list["Toolmark"] = Relationship(back_populates="tool")
+
+
+class Toolmark(SQLModel, table=True):
+    """A single striated mark made by one tool edge — the analog of a bullet
+    ``Land`` or a cartridge ``Mark``. Same-source (KM) is the mark-generating
+    edge; the parent ``Tool`` is the coarser physical source."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    tool_id: int = Field(foreign_key="tool.id", index=True)
+    external_id: str | None = Field(default=None, index=True)  # full mark id, e.g. "T01LA-F80-01"
+    edge: str | None = Field(default=None, index=True)  # mark-generating edge, e.g. "T01LA"
+    side: str | None = None  # tool face / side, e.g. "A" / "B"
+    angle_deg: float | None = None  # angle of attack, if recorded
+
+    tool: Tool | None = Relationship(back_populates="toolmarks")
+    scans: list["Scan"] = Relationship(back_populates="toolmark")
+
+
 class Instrument(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     external_id: str | None = Field(default=None, index=True)
@@ -123,12 +155,14 @@ class Instrument(SQLModel, table=True):
 
 
 class Scan(SQLModel, table=True):
-    """A single measurement: an X3P 3D scan or a 2D image. Attached to exactly
-    one parent — a ``Land`` (bullet) or a ``Mark`` (cartridge case)."""
+    """A single measurement: an X3P 3D scan, a 2D image, or a 1D profile.
+    Attached to exactly one parent — a ``Land`` (bullet), a ``Mark`` (cartridge
+    case), or a ``Toolmark`` (tool)."""
 
     id: int | None = Field(default=None, primary_key=True)
     land_id: int | None = Field(default=None, foreign_key="land.id", index=True)
     mark_id: int | None = Field(default=None, foreign_key="mark.id", index=True)
+    toolmark_id: int | None = Field(default=None, foreign_key="toolmark.id", index=True)
     instrument_id: int | None = Field(default=None, foreign_key="instrument.id", index=True)
 
     modality: str = Field(default="x3p_3d", index=True)  # one of MODALITIES
@@ -148,6 +182,7 @@ class Scan(SQLModel, table=True):
 
     land: Land | None = Relationship(back_populates="scans")
     mark: Mark | None = Relationship(back_populates="scans")
+    toolmark: Toolmark | None = Relationship(back_populates="scans")
     instrument: Instrument | None = Relationship(back_populates="scans")
     traces: list["ScanTrace"] = Relationship(back_populates="scan")
 
@@ -225,6 +260,8 @@ ALL_MODELS = (
     Land,
     CartridgeCase,
     Mark,
+    Tool,
+    Toolmark,
     Instrument,
     Scan,
     ScanTrace,
