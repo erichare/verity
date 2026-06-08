@@ -11,7 +11,7 @@ import { StatBand } from "@/components/home/StatBand";
 import { LiveProof } from "@/components/home/LiveProof";
 import { MarkBreadth } from "@/components/home/MarkBreadth";
 import { WhyTeaser } from "@/components/home/WhyTeaser";
-import { ThemeToggle } from "@/components/theme/ThemeToggle";
+import { SiteNav } from "@/components/SiteNav";
 
 const HeroSurface = dynamic(() => import("@/components/three/HeroSurface"), {
   ssr: false,
@@ -115,45 +115,8 @@ export default function Home() {
 
   return (
     <>
-      {/* Top bar */}
-      <header className="fixed inset-x-0 top-0 z-30 backdrop-blur-md [mask-image:linear-gradient(to_bottom,black_55%,transparent)] bg-[color-mix(in_srgb,var(--background)_45%,transparent)]">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
-          <a href="#top" className="font-display text-xl font-semibold tracking-tight">
-            <span className="accent-text">Verity</span>
-          </a>
-          <div className="flex items-center gap-4 overflow-x-auto sm:gap-5">
-            <a href="/method" className="text-sm text-foreground/70 transition hover:text-foreground">
-              Method
-            </a>
-            <a href="/why" className="text-sm text-foreground/70 transition hover:text-foreground">
-              Why
-            </a>
-            <a href="/docs" className="text-sm text-foreground/70 transition hover:text-foreground">
-              Docs
-            </a>
-            <a href="/references" className="text-sm text-foreground/70 transition hover:text-foreground">
-              References
-            </a>
-            <a
-              href="/whitepaper.pdf"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm text-foreground/70 transition hover:text-foreground"
-            >
-              White paper
-            </a>
-            <a
-              href="https://api.verity.codes/scalar"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm text-foreground/70 transition hover:text-foreground"
-            >
-              API
-            </a>
-            <ThemeToggle />
-          </div>
-        </div>
-      </header>
+      {/* Top bar — the shared fixed nav (cinematic scrim variant on the home hero) */}
+      <SiteNav cinematic />
 
       {/* Cinematic hero */}
       <section
