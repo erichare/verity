@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Reveal } from "@/components/Reveal";
+import { Benchmarks } from "@/components/why/Benchmarks";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
 export const metadata: Metadata = {
@@ -147,6 +148,31 @@ export default function WhyPage() {
 
         <Reveal className="mt-12">
           <Matrix />
+        </Reveal>
+
+        <Reveal className="mt-16">
+          <h2 className="font-display text-2xl font-medium text-foreground sm:text-3xl">
+            Measured against the specialists
+          </h2>
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-foreground/80">
+            A capability table is a claim; this is the measurement. On each specialist&rsquo;s home
+            turf — the <em>same</em> scans, the same source-disjoint split — Verity is scored on two
+            axes: <strong className="text-foreground">AUC</strong> (can it tell same-source from
+            different-source apart?) and the forensic{" "}
+            <strong className="text-foreground">
+              C<sub>llr</sub>
+            </strong>{" "}
+            (is the weight of evidence well-calibrated? 0 is perfect, 1 is useless). These are real
+            results — including where Verity trails.
+          </p>
+          <Benchmarks />
+          <p className="mt-4 max-w-2xl text-xs leading-relaxed text-muted">
+            Higher AUC and lower C<sub>llr</sub> are better; the stronger figure in each pair is
+            highlighted. One Verity pipeline produces every row. The cartridge (10 slides) and toolmark
+            (7 tools) sets are deliberately small, hardest-case benchmarks, and bulletxtrctr&rsquo;s
+            random forest was trained on Hamby-family data, so its Hamby figure is near in-sample — the
+            honest comparison is out-of-domain, where an untrained, stable calibration shows its worth.
+          </p>
         </Reveal>
 
         <Reveal className="mt-16">
