@@ -116,7 +116,7 @@ export default function Home() {
   return (
     <>
       {/* Top bar */}
-      <header className="fixed inset-x-0 top-0 z-30">
+      <header className="fixed inset-x-0 top-0 z-30 backdrop-blur-md [mask-image:linear-gradient(to_bottom,black_55%,transparent)] bg-[color-mix(in_srgb,var(--background)_45%,transparent)]">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
           <a href="#top" className="font-display text-xl font-semibold tracking-tight">
             <span className="accent-text">Verity</span>
