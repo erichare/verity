@@ -6,11 +6,23 @@ import {
   catalogConfigured,
   getScans,
   getStudies,
+  scanMarkType,
+  sourceLabel,
+  type MarkClass,
   type Scan,
   type Study,
 } from "@/lib/catalog";
 
 const PAGE = 25;
+
+// The mark-class filter chips. "all" shows every scan; the others narrow to a
+// surface family so striated (bullet land) and impressed (cartridge) marks are
+// distinguishable — the catalog is multi-modal, not bullet-only.
+const MARK_FILTERS: { value: MarkClass; label: string }[] = [
+  { value: "all", label: "All marks" },
+  { value: "bullet", label: "Bullet lands" },
+  { value: "cartridge", label: "Cartridge breech faces" },
+];
 
 function shortHash(h: string): string {
   return `${h.slice(0, 10)}…${h.slice(-6)}`;
@@ -21,6 +33,7 @@ export default function CatalogPage() {
   const [scans, setScans] = useState<Scan[]>([]);
   const [total, setTotal] = useState(0);
   const [search, setSearch] = useState("");
+  const [markClass, setMarkClass] = useState<MarkClass>("all");
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(true);
 
@@ -31,7 +44,7 @@ export default function CatalogPage() {
   useEffect(() => {
     let active = true;
     setLoading(true);
-    getScans({ search, limit: PAGE, offset: page * PAGE }).then((r) => {
+    getScans({ search, markClass, limit: PAGE, offset: page * PAGE }).then((r) => {
       if (!active) return;
       setScans(r.scans);
       setTotal(r.total);
@@ -40,7 +53,7 @@ export default function CatalogPage() {
     return () => {
       active = false;
     };
-  }, [search, page]);
+  }, [search, markClass, page]);
 
   const maxPage = Math.max(0, Math.ceil(total / PAGE) - 1);
 
@@ -113,12 +126,35 @@ export default function CatalogPage() {
             />
           </div>
 
+          <div className="mt-5 flex flex-wrap gap-2">
+            {MARK_FILTERS.map((f) => {
+              const active = markClass === f.value;
+              return (
+                <button
+                  key={f.value}
+                  onClick={() => {
+                    setMarkClass(f.value);
+                    setPage(0);
+                  }}
+                  aria-pressed={active}
+                  className={`rounded-full px-4 py-1.5 text-xs font-medium transition ${
+                    active
+                      ? "bg-accent text-background"
+                      : "glass text-foreground/70 hover:text-foreground"
+                  }`}
+                >
+                  {f.label}
+                </button>
+              );
+            })}
+          </div>
+
           <div className="mt-5 overflow-x-auto rounded-2xl border border-border">
             <table className="w-full min-w-[40rem] text-left text-sm">
               <thead className="border-b border-border bg-foreground/[0.03] text-[11px] uppercase tracking-wider text-muted">
                 <tr>
                   <th className="px-4 py-3 font-medium">Filename</th>
-                  <th className="px-4 py-3 font-medium">Modality</th>
+                  <th className="px-4 py-3 font-medium">Mark type</th>
                   <th className="px-4 py-3 font-medium">Pitch (µm)</th>
                   <th className="px-4 py-3 font-medium">SHA-256</th>
                   <th className="px-4 py-3 font-medium">Source</th>
@@ -128,7 +164,7 @@ export default function CatalogPage() {
                 {scans.map((sc) => (
                   <tr key={sc.id} className="border-b border-border/60 last:border-0">
                     <td className="px-4 py-2.5 text-foreground/90">{sc.filename ?? `scan ${sc.id}`}</td>
-                    <td className="px-4 py-2.5 text-muted">{sc.modality}</td>
+                    <td className="px-4 py-2.5 text-muted">{scanMarkType(sc)}</td>
                     <td className="px-4 py-2.5 font-mono text-foreground/70">
                       {sc.lateral_resolution_x != null ? sc.lateral_resolution_x.toFixed(3) : "—"}
                     </td>
@@ -144,7 +180,7 @@ export default function CatalogPage() {
                         rel="noopener noreferrer"
                         className="text-xs text-accent underline decoration-border underline-offset-2 hover:decoration-accent"
                       >
-                        NBTRD ↗
+                        {sourceLabel(sc)} ↗
                       </a>
                     </td>
                   </tr>
