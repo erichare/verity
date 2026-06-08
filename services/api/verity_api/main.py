@@ -99,7 +99,12 @@ def _warm_caches() -> None:
 
 @asynccontextmanager
 async def _lifespan(_app: FastAPI):
-    _warm_caches()
+    # Warm the bootstrap-CI caches off the request path AND off startup: run in a
+    # daemon thread so the server is ready immediately (the first comparison during
+    # warmup simply computes its ensemble on demand).
+    import threading
+
+    threading.Thread(target=_warm_caches, daemon=True).start()
     yield
 
 
