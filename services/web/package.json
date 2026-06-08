@@ -24,5 +24,10 @@
     "@types/three": "^0.184.1",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "pnpm": {
+    "overrides": {
+      "postcss": "^8.5.10"
+    }
   }
 }
