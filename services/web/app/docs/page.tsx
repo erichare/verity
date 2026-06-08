@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { Reveal } from "@/components/Reveal";
-import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { CodeBlock } from "@/components/docs/CodeBlock";
 import { CodeTabs } from "@/components/docs/CodeTabs";
 import { DocsNav, type NavSection } from "@/components/docs/DocsNav";
+import { SiteNav } from "@/components/SiteNav";
 
 export const metadata: Metadata = {
   title: "Verity Docs — REST API, X3P codec, and method",
@@ -166,30 +166,7 @@ write_x3p(s, tempfile(fileext = ".x3p"))`,
 export default function DocsPage() {
   return (
     <>
-      <header className="fixed inset-x-0 top-0 z-30 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <a href="/" className="font-display text-xl font-semibold tracking-tight">
-            <span className="accent-text">Verity</span>
-          </a>
-          <div className="flex items-center gap-5">
-            <a href="/method" className="text-sm text-foreground/70 transition hover:text-foreground">
-              Method
-            </a>
-            <a href="/why" className="text-sm text-foreground/70 transition hover:text-foreground">
-              Why
-            </a>
-            <a
-              href="https://github.com/erichare/verity"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm text-foreground/70 transition hover:text-foreground"
-            >
-              GitHub
-            </a>
-            <ThemeToggle />
-          </div>
-        </div>
-      </header>
+      <SiteNav />
 
       <main className="mx-auto w-full max-w-6xl px-6 pb-24 pt-28 sm:pt-32">
         {/* Intro */}
