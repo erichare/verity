@@ -66,7 +66,7 @@ population, an **ELUB bound** on how strong a claim the data can support, and th
   "likelihood_ratio": 146.0,
   "verbal": "moderately strong support for same source",
   "lr_bound_log10": 2.16,
-  "reference": { "name": "pooled bullet-land", "n_km": 146, "n_knm": 1755, "auc": 0.984, "cllr": 0.09 },
+  "reference": { "name": "pooled bullet-land", "n_km": 146, "n_knm": 1755, "auc": 0.984, "cllr": 0.193 },
   "attribution": [ /* the matched regions — the explanation */ ],
   "scope_note": "Not a claim about the error rate of examination, which remains unknown."
 }
@@ -106,7 +106,7 @@ Full write-up: [`docs/congruent-matching-regions.md`](docs/congruent-matching-re
   source-disjoint summary — as a court-ready PDF.
 - **Learned representation (Phase-2b).** Trained barrel-disjoint on 210 Hamby
   scans, it **does not beat the cross-correlation baseline** — it overfits
-  (held-out AUC 0.92 → 0.67). Synthetic tests confirm the pipeline *does* learn
+  (held-out AUC collapses to ≈ 0.67). Synthetic tests confirm the pipeline *does* learn
   given enough signal: a **data limit, not a defect**. Next: expand the dataset
   and retest.
 
