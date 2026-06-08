@@ -32,17 +32,20 @@ plan for the full method.
 
 **Phase-2a validation** (`examples/hamby_validation.py`, `uv run verity-validate-hamby`)
 turns the Phase-1 scores into calibrated LRs and characterizes them with a
-**barrel-disjoint** (source-disjoint) protocol on Hamby 252: **AUC ≈ 0.92**,
-**`Cllr` ≈ 0.60**, `Cllr_min` ≈ 0.38 on held-out barrels — informative, calibrated
+**barrel-disjoint** (source-disjoint) protocol on Hamby 252, scored with the
+production `diag_contrast` statistic: **AUC ≈ 1.0**, **`Cllr` ≈ 0.113**,
+`Cllr_min` ≈ 0.004 over 10 held-out-barrel folds — informative, calibrated
 weight of evidence from first-principles metrology, with *no learned
-representation yet*. (`Cllr` < 1 = informative; the `Cllr` − `Cllr_min` gap is the
-calibration loss the source-disjoint split exposes — answering the Cuellar et al.
-2024 critique on its own terms.)
+representation yet*. It generalizes across studies (e.g. Phoenix PD Ruger P-95
+AUC 0.972 / `Cllr` 0.354, Hamby-173 AUC 0.971 / `Cllr` 0.338, both NBTRD).
+(`Cllr` < 1 = informative; the `Cllr` − `Cllr_min` gap is the calibration loss
+the source-disjoint split exposes — answering the Cuellar et al. 2024 critique on
+its own terms.)
 
 **Phase-2b finding** (`examples/hamby_learned.py`, `verity-learn-hamby`): a
 learned representation, trained barrel-disjoint on labels bootstrapped from the
 Phase-1 matcher, **does *not* beat the cross-correlation baseline on 210 scans** —
-it overfits (held-out AUC 0.92 → 0.67, `Cllr` ≈ 1). The synthetic
+it overfits (held-out AUC collapses to ≈ 0.67, `Cllr` ≈ 1). The synthetic
 `test_representation` tests confirm the pipeline *does* learn when given enough
 signal, so this is a **data limit, not a defect** — an empirical confirmation
 that the learned representation needs more data than Hamby alone, and that the
