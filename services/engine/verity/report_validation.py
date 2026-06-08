@@ -19,6 +19,7 @@ engine has no hard matplotlib dependency.
 from __future__ import annotations
 
 import json
+import textwrap
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
@@ -156,11 +157,11 @@ def _cover_page(pdf, summary: ValidationSummary) -> None:
     fig.text(
         0.12,
         0.40,
-        scope,
+        textwrap.fill(scope, width=92),
         fontsize=10,
-        wrap=True,
         va="top",
-        bbox={"boxstyle": "round", "facecolor": "#f2f2f2", "edgecolor": "#cccccc"},
+        linespacing=1.5,
+        bbox={"boxstyle": "round,pad=0.5", "facecolor": "#f2f2f2", "edgecolor": "#cccccc"},
     )
     fig.text(
         0.5,
@@ -351,7 +352,15 @@ def _disjoint_page(pdf, summary) -> None:
             "characterization that answers Cuellar et al. (2024): a Cllr on a "
             "named dataset under a source-disjoint protocol."
         )
-        ax.text(0.05, 0.84, intro, fontsize=10, va="top", wrap=True, transform=ax.transAxes)
+        ax.text(
+            0.05,
+            0.84,
+            textwrap.fill(intro, width=82),
+            fontsize=10,
+            va="top",
+            linespacing=1.5,
+            transform=ax.transAxes,
+        )
         lines = [
             ("test Cllr", f"{bd['cllr_mean']:.3f} ± {bd['cllr_std']:.3f}"),
             ("test Cllr_min", f"{bd['cllr_min_mean']:.3f} ± {bd['cllr_min_std']:.3f}"),

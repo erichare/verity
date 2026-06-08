@@ -12,6 +12,8 @@ Rendering uses matplotlib (the ``viz`` extra); imported lazily.
 
 from __future__ import annotations
 
+import hashlib
+import textwrap
 from pathlib import Path
 
 from .viz.attribution import render_attribution_axes
@@ -101,22 +103,39 @@ def _findings_page(pdf, report: dict, *, case_id: str | None, examiner: str | No
         fig.text(0.12, y, k, fontsize=10)
         fig.text(0.46, y, str(v), fontsize=10, family="monospace")
         y -= 0.03
+    # Input provenance: a count + a single combined hash that pins the exact set
+    # of scans (per-scan hashes live in the JSON record). Scales to any number of
+    # lands without overrunning the page.
     hashes = prov.get("input_hashes", {})
-    for side in ("mark_a", "mark_b"):
-        for h in hashes.get(side, []):
-            fig.text(0.12, y, f"{side} SHA-256", fontsize=9, color="#555555")
-            fig.text(0.46, y, h, fontsize=8, family="monospace", color="#555555")
-            y -= 0.025
+    a_h, b_h = hashes.get("mark_a", []), hashes.get("mark_b", [])
+    if a_h or b_h:
+        fig.text(0.12, y, "Input scans", fontsize=10)
+        fig.text(0.46, y, f"Mark A: {len(a_h)}   ·   Mark B: {len(b_h)}", fontsize=10)
+        y -= 0.03
+        combined = hashlib.sha256("".join(sorted(a_h + b_h)).encode()).hexdigest()
+        fig.text(0.12, y, "Combined SHA-256", fontsize=10)
+        fig.text(0.46, y, combined, fontsize=8, family="monospace")
+        y -= 0.024
+        fig.text(
+            0.46,
+            y,
+            "pins the exact input set; per-scan hashes in the data record",
+            fontsize=7.5,
+            color="#999999",
+        )
+        y -= 0.03
 
-    scope = report.get("scope_note", "")
+    # Scope note — manually wrapped (matplotlib's wrap=True is unreliable) so it
+    # never runs past the margin or into the footer.
+    scope = textwrap.fill("Scope.  " + report.get("scope_note", ""), width=96)
     fig.text(
         0.12,
-        max(y - 0.02, 0.08),
-        "Scope.  " + scope,
-        fontsize=9.5,
+        y - 0.02,
+        scope,
+        fontsize=9,
         va="top",
-        wrap=True,
-        bbox={"boxstyle": "round", "facecolor": "#f2f2f2", "edgecolor": "#cccccc"},
+        linespacing=1.5,
+        bbox={"boxstyle": "round,pad=0.5", "facecolor": "#f2f2f2", "edgecolor": "#cccccc"},
     )
     fig.text(
         0.5,
