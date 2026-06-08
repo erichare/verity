@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Verity">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0a1020"/>
+      <stop offset="1" stop-color="#050509"/>
+    </linearGradient>
+    <radialGradient id="glowI" cx="0.3" cy="0.22" r="0.6">
+      <stop offset="0" stop-color="#4f46e5" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#4f46e5" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowC" cx="0.5" cy="0.92" r="0.6">
+      <stop offset="0" stop-color="#22d3ee" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#22d3ee" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="brand" x1="0.05" y1="0.1" x2="0.95" y2="0.5">
+      <stop offset="0" stop-color="#a5b4fc"/>
+      <stop offset="0.45" stop-color="#818cf8"/>
+      <stop offset="1" stop-color="#22d3ee"/>
+    </linearGradient>
+    <clipPath id="squircle"><rect x="0" y="0" width="512" height="512" rx="118"/></clipPath>
+  </defs>
+
+  <g clip-path="url(#squircle)">
+    <rect x="0" y="0" width="512" height="512" fill="url(#bg)"/>
+    <rect x="0" y="0" width="512" height="512" fill="url(#glowI)"/>
+    <rect x="0" y="0" width="512" height="512" fill="url(#glowC)"/>
+
+    <!-- The "V": two marks converging to one — the brand wordmark gradient. -->
+    <path d="M 150 148 L 256 366 L 362 148"
+      fill="none" stroke="url(#brand)" stroke-width="72"
+      stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- a small bright node at the vertex: the point of agreement -->
+    <circle cx="256" cy="360" r="9" fill="#e8fbff" opacity="0.9"/>
+  </g>
+
+  <!-- crisp inner hairline so the squircle reads on dark tab bars -->
+  <rect x="1.5" y="1.5" width="509" height="509" rx="116.5" fill="none" stroke="#ffffff" stroke-opacity="0.10" stroke-width="3"/>
+</svg>
