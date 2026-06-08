@@ -159,6 +159,9 @@ export default function Home() {
             <a href="/why" className="text-sm text-foreground/70 transition hover:text-foreground">
               Why
             </a>
+            <a href="/docs" className="text-sm text-foreground/70 transition hover:text-foreground">
+              Docs
+            </a>
             <a
               href="https://api.verity.codes/scalar"
               target="_blank"
