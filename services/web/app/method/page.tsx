@@ -13,6 +13,10 @@ import { ThemeToggle } from "@/components/theme/ThemeToggle";
 const SurfaceViewer = dynamic(() => import("@/components/three/SurfaceViewer"), { ssr: false });
 
 interface Region {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
   x_frac: number;
   y_frac: number;
   w_frac: number;
@@ -49,7 +53,29 @@ interface Calibration {
   nKm: number;
   nKnm: number;
 }
-const data = methodData as unknown as { km: Example; knm: Example; calibration: Calibration };
+interface OtherEx {
+  domain: "impressed" | "striated";
+  bandsA: Region[];
+  bandsB: Region[];
+  scanA?: number[][];
+  scanB?: number[][];
+  signatureA?: number[];
+  signatureB?: number[];
+  score: number;
+  lr: number;
+  verbal: string;
+  reference: { name: string; auc: number };
+}
+interface Others {
+  cartridge?: OtherEx;
+  screwdriver?: OtherEx;
+}
+const data = methodData as unknown as {
+  km: Example;
+  knm: Example;
+  calibration: Calibration;
+  others?: Others;
+};
 
 function formatLR(lr: number): string {
   const human = (x: number) =>
@@ -88,10 +114,59 @@ function Stage({
   );
 }
 
+function OtherMark({
+  badge,
+  title,
+  lr,
+  verbal,
+  reference,
+  bandLabel,
+  children,
+}: {
+  badge: string;
+  title: string;
+  lr: number;
+  verbal: string;
+  reference: { name: string; auc: number };
+  bandLabel: string;
+  children: ReactNode;
+}) {
+  const positive = lr >= 1;
+  return (
+    <div className="glass flex flex-col rounded-2xl p-5 sm:p-6">
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="font-display text-lg font-medium text-foreground">{title}</h3>
+        <span className="shrink-0 rounded-full bg-foreground/[0.06] px-2.5 py-1 text-[11px] uppercase tracking-wider text-muted">
+          {badge}
+        </span>
+      </div>
+      <div className="mt-4">{children}</div>
+      <p className="mt-3 text-xs text-muted">{bandLabel}</p>
+      <div className="mt-auto flex items-end justify-between gap-4 border-t border-border pt-4">
+        <div>
+          <p className="text-[11px] uppercase tracking-wider text-muted">Likelihood ratio</p>
+          <p
+            className={`font-mono text-3xl font-semibold ${positive ? "accent-text" : "text-rose-500 dark:text-rose-300"}`}
+          >
+            {formatLR(lr)}
+          </p>
+        </div>
+        <p className="max-w-[58%] text-right text-xs leading-snug text-foreground/70">
+          {verbal}.
+          <span className="mt-1 block text-[11px] text-muted">
+            {reference.name} · AUC {reference.auc}
+          </span>
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default function MethodPage() {
   const [mode, setMode] = useState<"km" | "knm">("km");
   const ex = data[mode];
   const cal = data.calibration;
+  const others = data.others;
   const positive = ex.log10_lr > 0;
 
   return (
@@ -313,6 +388,78 @@ export default function MethodPage() {
             <em>regardless of how the score was computed</em> — the firewall against the black box.
           </p>
         </Stage>
+
+        {/* The same method, other marks */}
+        {(others?.cartridge || others?.screwdriver) && (
+          <Reveal className="mt-20 sm:mt-28">
+            <div className="text-center">
+              <span className="glass inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs text-foreground/70">
+                <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+                Same pipeline, zero re-tuning
+              </span>
+              <h2 className="mt-5 font-display text-2xl font-medium text-foreground sm:text-3xl">
+                Watch it generalize
+              </h2>
+              <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-foreground/80">
+                Everything above was a bullet. Here is the <em>same</em> six-step machine — same
+                calibration code, no mark-specific feature engineering — run on a cartridge breech face
+                and a screwdriver toolmark. Only the registration group changes: a 2-D shift-and-rotate
+                for the impression, a 1-D shift for the striae.
+              </p>
+            </div>
+
+            <div className="mt-8 grid items-stretch gap-5 lg:grid-cols-2">
+              {others.cartridge?.scanA && others.cartridge.scanB && (
+                <OtherMark
+                  badge="Impressed · breech face"
+                  title="Cartridge case"
+                  lr={others.cartridge.lr}
+                  verbal={others.cartridge.verbal}
+                  reference={others.cartridge.reference}
+                  bandLabel={`${others.cartridge.bandsA.length} congruent matching cells across the two breech-face impressions — drag to rotate`}
+                >
+                  <div className="grid grid-cols-2 gap-3">
+                    <Frame className="h-44">
+                      <SurfaceViewer
+                        grid={others.cartridge.scanA}
+                        regions={others.cartridge.bandsA}
+                        className="h-full w-full"
+                      />
+                    </Frame>
+                    <Frame className="h-44">
+                      <SurfaceViewer
+                        grid={others.cartridge.scanB}
+                        regions={others.cartridge.bandsB}
+                        className="h-full w-full"
+                      />
+                    </Frame>
+                  </div>
+                </OtherMark>
+              )}
+
+              {others.screwdriver?.signatureA && others.screwdriver.signatureB && (
+                <OtherMark
+                  badge="Striated · toolmark"
+                  title="Screwdriver"
+                  lr={others.screwdriver.lr}
+                  verbal={others.screwdriver.verbal}
+                  reference={others.screwdriver.reference}
+                  bandLabel={`${others.screwdriver.bandsA.length} matched striae aligned down both marks`}
+                >
+                  <Frame className="px-3 py-3">
+                    <AlignedSignatures
+                      a={others.screwdriver.signatureA}
+                      b={others.screwdriver.signatureB}
+                      bandsA={others.screwdriver.bandsA}
+                      bandsB={others.screwdriver.bandsB}
+                      className="h-44"
+                    />
+                  </Frame>
+                </OtherMark>
+              )}
+            </div>
+          </Reveal>
+        )}
 
         {/* Closing */}
         <Reveal className="mt-20 sm:mt-28">
