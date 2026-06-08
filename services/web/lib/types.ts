@@ -18,6 +18,10 @@ export interface ComparisonReport {
   score_kind: string;
   likelihood_ratio: number;
   log10_lr: number;
+  // Bootstrap credible interval on log10 LR (the finite-reference uncertainty).
+  log10_lr_ci_lo?: number | null;
+  log10_lr_ci_hi?: number | null;
+  lr_ci_method?: string | null;
   direction: string;
   verbal: string;
   lr_bound_log10: number | null;
