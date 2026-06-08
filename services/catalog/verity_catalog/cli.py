@@ -58,6 +58,31 @@ def ingest(
     typer.echo(f"ingested '{manifest_obj.name}': {stats}")
 
 
+@app.command("ingest-toolmarks")
+def ingest_toolmarks_cmd(
+    dataset: str = typer.Argument("tmarks", help="Toolmark dataset (currently: tmarks)"),
+    cache_dir: Path | None = typer.Option(
+        None, help="Profile cache dir (default ~/.cache/verity/tmaRks)"
+    ),
+) -> None:
+    """Ingest 1-D toolmark profiles (the tmaRks screwdriver set) as profile_1d scans."""
+    from .toolmarks import TMARKS_CACHE, ingest_tmaRks
+
+    if dataset != "tmarks":
+        raise typer.BadParameter(f"unknown toolmark dataset: {dataset!r} (only 'tmarks')")
+    store = get_store()
+
+    def _progress(index: int, total: int, tid: str) -> None:
+        if index % 50 == 0 or index == total:
+            typer.echo(f"  [{index}/{total}] {tid}")
+
+    with Session(engine) as session:
+        stats = ingest_tmaRks(
+            session, store, cache_dir=cache_dir or TMARKS_CACHE, on_progress=_progress
+        )
+    typer.echo(f"ingested tmaRks toolmarks: {stats}")
+
+
 @app.command("manifests")
 def list_manifests() -> None:
     """List the bundled dataset manifests."""
