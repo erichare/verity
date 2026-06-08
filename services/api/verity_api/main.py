@@ -27,7 +27,7 @@ import numpy as np
 import verity_x3p
 from fastapi import APIRouter, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from pydantic import BaseModel
 
 from verity import land_trace
@@ -295,7 +295,7 @@ _COMPARE_EXAMPLE = {
     "score_kind": "bullet-contrast",
     "likelihood_ratio": 146.0,
     "log10_lr": 2.16,
-    "log10_lr_ci_lo": 1.71,
+    "log10_lr_ci_lo": 1.83,
     "log10_lr_ci_hi": 2.16,
     "lr_ci_method": "bootstrap-row-stratified",
     "direction": "same source",
@@ -305,8 +305,8 @@ _COMPARE_EXAMPLE = {
         "name": "pooled bullet-land reference (Hamby-252 & 173, Beretta, Phoenix)",
         "n_km": 146,
         "n_knm": 1755,
-        "cllr": 0.09,
-        "cllr_min": 0.06,
+        "cllr": 0.193,
+        "cllr_min": 0.168,
         "auc": 0.984,
     },
     "attribution": [
@@ -400,6 +400,40 @@ async def scope_v1(
         raise HTTPException(status_code=400, detail=f"unknown domain {domain!r}")
     surface = await _read_surface(scan)
     return check_applicability(surface, domain=domain, mode=mode).to_dict()
+
+
+@v1.post(
+    "/compare/report.pdf",
+    tags=["v1"],
+    summary="Court-ready per-comparison PDF report",
+    response_class=Response,
+)
+async def compare_report_pdf(
+    domain: str = Form(...),
+    mark_a: list[UploadFile] = File(...),
+    mark_b: list[UploadFile] = File(...),
+    case_id: str | None = Form(None),
+    examiner: str | None = Form(None),
+) -> Response:
+    """Run the comparison and return a court-ready PDF: the calibrated LR with its
+    credible interval and verbal weight, the named-scope statement, the reference
+    and its cost, the method/pipeline version, the SHA-256 provenance of the input
+    scans, and the attribution overlay."""
+    report = await _run_compare(domain, mark_a, mark_b, include=set())
+    from verity.report_pdf import render_comparison_pdf
+
+    fd, path = tempfile.mkstemp(suffix=".pdf")
+    os.close(fd)
+    try:
+        render_comparison_pdf(report, path, case_id=case_id, examiner=examiner)
+        data = Path(path).read_bytes()
+    finally:
+        os.remove(path)
+    return Response(
+        content=data,
+        media_type="application/pdf",
+        headers={"Content-Disposition": "attachment; filename=verity-comparison-report.pdf"},
+    )
 
 
 app.include_router(v1)

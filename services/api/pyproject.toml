@@ -8,6 +8,7 @@ dependencies = [
     "uvicorn[standard]>=0.29",
     "python-multipart>=0.0.9",
     "numpy>=1.26",
+    "matplotlib>=3.7",
     "verity",
     "verity-x3p",
 ]
