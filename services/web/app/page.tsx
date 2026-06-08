@@ -61,37 +61,6 @@ function FilePick({
   );
 }
 
-function Citations() {
-  const refs: [string, string, string][] = [
-    ["National Research Council (2009)", "Strengthening Forensic Science in the United States: A Path Forward.", "https://doi.org/10.17226/12589"],
-    ["PCAST (2016)", "Forensic Science in Criminal Courts: Ensuring Scientific Validity of Feature-Comparison Methods.", "https://obamawhitehouse.archives.gov/sites/default/files/microsites/ostp/PCAST/pcast_forensic_science_report_final.pdf"],
-    ["Cuellar, Vanderplas, Luby & Rosenblum (2024)", "Methodological problems in every black-box study of forensic firearm comparisons.", "https://doi.org/10.1093/lpr/mgae015"],
-    ["Song (2013)", "Proposed congruent matching cells (CMC) method for ballistic identification.", "https://www.nist.gov/publications/proposed-congruent-matching-cells-cmc-method-ballistic-identifications-and-evidence"],
-    ["Hare, Hofmann & Carriquiry (2017)", "Automatic matching of bullet land impressions. Annals of Applied Statistics.", "https://doi.org/10.1214/17-AOAS1080"],
-    ["Brümmer & du Preez (2006)", "Application-independent evaluation of speaker detection — the Cllr cost.", "https://doi.org/10.1016/j.csl.2005.08.001"],
-  ];
-  return (
-    <ul className="mt-4 space-y-1.5 text-xs text-muted">
-      {refs.map(([who, what, href]) => (
-        <li key={who} className="leading-relaxed">
-          <a
-            href={href}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group inline transition hover:text-foreground/80"
-          >
-            <span className="text-foreground/80 underline decoration-border underline-offset-2 transition group-hover:decoration-accent group-hover:text-accent">
-              {who}
-            </span>{" "}
-            — <span className="italic">{what}</span>
-            <span aria-hidden className="ml-0.5 not-italic text-muted/60 transition group-hover:text-accent">↗</span>
-          </a>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
 export default function Home() {
   const [domains, setDomains] = useState<string[]>([]);
   const [domain, setDomain] = useState("striated");
@@ -239,45 +208,29 @@ export default function Home() {
           <MarkBreadth />
         </Reveal>
 
-        {/* Why it was necessary */}
+        {/* Why it was necessary + the scientific contribution */}
         <Reveal className="mt-20 sm:mt-28">
           <WhyTeaser />
         </Reveal>
 
-        {/* Scientific contribution */}
-        <Reveal className="mt-16">
-          <section id="science" className="glass scroll-mt-20 rounded-2xl p-6 sm:p-8">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-accent">
-              The scientific contribution
-            </h2>
-            <p className="mt-3 text-sm leading-relaxed text-foreground/80">
-              Two decades of review — the National Research Council&rsquo;s 2009 report and the 2016 PCAST
-              report — found that most pattern-evidence disciplines lack demonstrated foundational validity,
-              and Cuellar et&nbsp;al. (2024) showed that <em>no</em> discipline has a characterized error
-              rate. Existing tools are bespoke to one mark type and stop at an uncalibrated score. Verity
-              answers this directly: <strong className="text-foreground">a single, transparent method</strong>{" "}
-              that reports a{" "}
-              <strong className="text-foreground">calibrated likelihood ratio with a quantified cost (Cllr)</strong>{" "}
-              and <strong className="text-foreground">region-level attribution</strong>, spanning striated
-              marks (bullets, toolmarks) and impressed marks (cartridge breech faces) by generalizing the
-              Congruent Matching Cells method (Song, 2013) to arbitrary toolmarks. The representation only
-              produces a score; the reportable decision is a monotone, bounded likelihood ratio — auditable
-              no matter how the score was computed.
-            </p>
-            <details className="group mt-5">
-              <summary className="cursor-pointer list-none text-xs font-medium uppercase tracking-wider text-muted transition hover:text-foreground/80">
-                <span className="inline-block transition group-open:rotate-90">▸</span> References (6)
-              </summary>
-              <Citations />
-            </details>
-          </section>
-        </Reveal>
-
-        {/* Comparison tool */}
-        <Reveal className="mt-8">
-          <section id="compare" className="glass scroll-mt-20 space-y-5 rounded-2xl p-6 sm:p-8">
-            <div className="flex flex-wrap items-end justify-between gap-3">
-              <h2 className="font-display text-xl font-medium text-foreground">Compare two marks</h2>
+        {/* Comparison tool — the live app, given a gradient "spotlight" frame so it
+            reads as the interactive thing, not just another section. */}
+        <Reveal className="mt-12 sm:mt-16">
+          <div
+            id="compare"
+            className="scroll-mt-20 rounded-[1.45rem] bg-gradient-to-br from-indigo-500 via-sky-500 to-cyan-400 p-[1.5px] shadow-2xl shadow-indigo-500/25 dark:shadow-cyan-400/15"
+          >
+            <section className="space-y-5 rounded-[1.35rem] bg-background p-6 sm:p-8">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <span className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/[0.08] px-3 py-1 text-xs font-medium text-foreground/80">
+                  <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+                  The live tool
+                </span>
+                <h2 className="mt-3 font-display text-2xl font-medium text-foreground sm:text-3xl">
+                  Compare <span className="accent-text">two marks</span>
+                </h2>
+              </div>
               <button
                 onClick={onLoadSample}
                 className="rounded-full border border-border px-4 py-1.5 text-xs font-medium text-foreground/80 transition hover:border-accent/60 hover:text-foreground"
@@ -334,7 +287,8 @@ export default function Home() {
                 {error}
               </p>
             )}
-          </section>
+            </section>
+          </div>
         </Reveal>
 
         {result && (

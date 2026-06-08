@@ -47,7 +47,7 @@ export function LiveProof() {
           A real comparison, live
         </span>
         <h2 className="mt-5 font-display text-3xl font-medium text-foreground sm:text-4xl">
-          One method, <span className="accent-text">opposite conclusions</span>
+          Same method. <span className="accent-text">The evidence decides.</span>
         </h2>
         <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-foreground/80 sm:text-base">
           Two Hamby-252 bullets fired from the <em>same</em> barrel, and two from{" "}
