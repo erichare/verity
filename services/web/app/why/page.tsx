@@ -228,12 +228,6 @@ export default function WhyPage() {
             </p>
             <div className="mt-6 flex flex-wrap justify-center gap-3">
               <a
-                href="/partnership"
-                className="glass rounded-full px-6 py-3 text-sm font-medium text-foreground/80 transition hover:text-foreground"
-              >
-                A proposed CSAFE × Verity partnership
-              </a>
-              <a
                 href="/#compare"
                 className="rounded-full bg-gradient-to-r from-indigo-500 via-sky-500 to-cyan-400 px-6 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-cyan-500/20 transition hover:opacity-90"
               >

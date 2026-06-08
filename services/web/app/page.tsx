@@ -131,9 +131,6 @@ export default function Home() {
             <a href="/docs" className="text-sm text-foreground/70 transition hover:text-foreground">
               Docs
             </a>
-            <a href="/partnership" className="text-sm text-foreground/70 transition hover:text-foreground">
-              Partnership
-            </a>
             <a href="/references" className="text-sm text-foreground/70 transition hover:text-foreground">
               References
             </a>

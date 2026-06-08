@@ -19,8 +19,10 @@ export interface NavLink {
 export const NAV_LINKS: NavLink[] = [
   { href: "/method", label: "Method" },
   { href: "/why", label: "Why" },
+  { href: "/catalog", label: "Catalog" },
   { href: "/docs", label: "Docs" },
-  { href: "/partnership", label: "Partnership" },
+  // Partnership page exists at /partnership but is intentionally unlinked here
+  // (kept private — shared deliberately, not surfaced in the public nav).
   { href: "/references", label: "References" },
   { href: "/whitepaper.pdf", label: "White paper", external: true },
   { href: "https://api.verity.codes/scalar", label: "API", external: true },
