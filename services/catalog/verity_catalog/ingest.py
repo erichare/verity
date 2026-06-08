@@ -13,12 +13,13 @@ from collections.abc import Callable
 from pathlib import Path
 
 import yaml
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from sqlmodel import Session, select
 
 from . import models
 from .harvest.base import RemoteFile, Source, UrlListSource
 from .harvest.figshare import FigshareSource
+from .harvest.github import GithubSource
 from .store import BlobStore
 
 MANIFEST_DIR = Path(__file__).parent / "manifests"
@@ -39,14 +40,19 @@ class StudySpec(BaseModel):
     source: str
     external_id: str
     title: str | None = None
+    creator: str | None = None
+    references: str | None = None
     persistence: bool = False
     consecutively_manufactured: bool = False
     nist_measurement: bool = False
 
 
 class SourceSpec(BaseModel):
-    kind: str  # "url_list" | "figshare"
-    article_id: int | None = None
+    kind: str  # "url_list" | "figshare" | "github"
+    article_id: int | None = None  # figshare
+    repo: str | None = None  # github: "owner/name"
+    ref: str | None = None  # github: branch/tag (default "main")
+    path: str | None = None  # github: directory within the repo
 
 
 class FileEntry(BaseModel):
@@ -57,10 +63,25 @@ class FileEntry(BaseModel):
 class Manifest(BaseModel):
     name: str
     title: str | None = None
+    # The catalog entity these scans hang off: bullet lands (LEAs) or cartridge-case
+    # marks. Selects the containment path the ingest builds and the filename parser
+    # it applies. Defaults to "bullet" so existing manifests are unchanged.
+    entity: str = "bullet"  # "bullet" | "cartridge"
+    mark_type: str = "breech_face"  # cartridge only: one of models.MARK_TYPES
     study: StudySpec
     firearm_defaults: FirearmDefaults = Field(default_factory=FirearmDefaults)
     source: SourceSpec
     files: list[FileEntry] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def _check_entity(self) -> "Manifest":
+        if self.entity not in ("bullet", "cartridge"):
+            raise ValueError(f"entity must be 'bullet' or 'cartridge', got {self.entity!r}")
+        if self.entity == "cartridge" and self.mark_type not in models.MARK_TYPES:
+            raise ValueError(
+                f"mark_type must be one of {models.MARK_TYPES}, got {self.mark_type!r}"
+            )
+        return self
 
 
 def load_manifest(name_or_path: str | Path) -> Manifest:
@@ -74,13 +95,22 @@ def load_manifest(name_or_path: str | Path) -> Manifest:
 
 
 def build_source(manifest: Manifest) -> Source:
-    if manifest.source.kind == "url_list":
+    kind = manifest.source.kind
+    if kind == "url_list":
         return UrlListSource([RemoteFile(name=f.name, url=f.url) for f in manifest.files])
-    if manifest.source.kind == "figshare":
+    if kind == "figshare":
         if manifest.source.article_id is None:
             raise ValueError("figshare source requires 'article_id'")
         return FigshareSource(manifest.source.article_id)
-    raise ValueError(f"unknown source kind: {manifest.source.kind!r}")
+    if kind == "github":
+        if not manifest.source.repo:
+            raise ValueError("github source requires 'repo' (owner/name)")
+        return GithubSource(
+            manifest.source.repo,
+            ref=manifest.source.ref or "main",
+            path=manifest.source.path or "",
+        )
+    raise ValueError(f"unknown source kind: {kind!r}")
 
 
 # --------------------------------------------------------------------------- #
@@ -95,6 +125,20 @@ def parse_lea(name: str) -> tuple[int, int, int] | None:
     """Extract ``(barrel, bullet, land)`` from a scan filename, or ``None``."""
     m = _LEA_RE.search(name)
     return (int(m[1]), int(m[2]), int(m[3])) if m else None
+
+
+# Known-source cartridge scans follow a ``… {slide}-{case}.x3p`` convention
+# (e.g. ``Fadul 1-1.x3p``). Questioned cases are lettered (``Fadul A.x3p``) and
+# have no known source slide, so they fail this match and are skipped — mirroring
+# how the NBTRD harvester skips questioned firearm buckets.
+_SLIDE_CASE_RE = re.compile(r"(\d+)\s*-\s*(\d+)\.x3p$", re.IGNORECASE)
+
+
+def parse_slide_case(name: str) -> tuple[int, int] | None:
+    """Extract ``(slide, case)`` from a known-source cartridge scan filename, or
+    ``None`` for questioned/unlabelled cases."""
+    m = _SLIDE_CASE_RE.search(name)
+    return (int(m[1]), int(m[2])) if m else None
 
 
 # --------------------------------------------------------------------------- #
@@ -113,6 +157,8 @@ def get_or_create_study(session: Session, spec: StudySpec) -> models.Study:
         source=spec.source,
         external_id=spec.external_id,
         title=spec.title or spec.external_id,
+        creator=spec.creator,
+        references=spec.references,
         persistence=spec.persistence,
         consecutively_manufactured=spec.consecutively_manufactured,
         nist_measurement=spec.nist_measurement,
@@ -175,6 +221,44 @@ def get_or_create_land(
     session.commit()
     session.refresh(land)
     return land
+
+
+def get_or_create_cartridge_case(
+    session: Session, firearm: models.Firearm, external_id: str, *, label: str | None = None
+) -> models.CartridgeCase:
+    case = session.exec(
+        select(models.CartridgeCase).where(
+            models.CartridgeCase.firearm_id == firearm.id,
+            models.CartridgeCase.external_id == external_id,
+        )
+    ).first()
+    if case:
+        return case
+    case = models.CartridgeCase(firearm_id=firearm.id, external_id=external_id, label=label)
+    session.add(case)
+    session.commit()
+    session.refresh(case)
+    return case
+
+
+def get_or_create_mark(
+    session: Session, cartridge_case: models.CartridgeCase, external_id: str, mark_type: str
+) -> models.Mark:
+    mark = session.exec(
+        select(models.Mark).where(
+            models.Mark.cartridge_case_id == cartridge_case.id,
+            models.Mark.external_id == external_id,
+        )
+    ).first()
+    if mark:
+        return mark
+    mark = models.Mark(
+        cartridge_case_id=cartridge_case.id, external_id=external_id, mark_type=mark_type
+    )
+    session.add(mark)
+    session.commit()
+    session.refresh(mark)
+    return mark
 
 
 # --------------------------------------------------------------------------- #
@@ -259,6 +343,9 @@ def ingest_manifest(
     """Ingest a manifest's scans into the catalog. ``source`` may be injected
     (e.g. in tests) to avoid network access.
 
+    Dispatches on ``manifest.entity`` to build the bullet (Firearm → Bullet → Land)
+    or cartridge (Firearm → CartridgeCase → Mark) containment path.
+
     Idempotent and **resumable**: a scan already present (matched by its source
     URL) is skipped *without* re-downloading, so an interrupted pull can simply
     be re-run."""
@@ -269,6 +356,22 @@ def ingest_manifest(
     if limit is not None:
         files = files[:limit]
 
+    if manifest.entity == "cartridge":
+        return _ingest_cartridge(session, store, manifest, study, source, files, on_progress)
+    return _ingest_bullet(session, store, manifest, study, source, files, on_progress)
+
+
+def _ingest_bullet(
+    session: Session,
+    store: BlobStore,
+    manifest: Manifest,
+    study: models.Study,
+    source: Source,
+    files: list[RemoteFile],
+    on_progress: Callable[[int, int, str], None] | None,
+) -> dict:
+    """Build Study → Firearm(Barrel) → Bullet → Land(LEA) → Scan from LEA-named
+    files. Non-LEA filenames are counted in ``skipped_no_lea``."""
     stats = {"files": len(files), "ingested": 0, "already_present": 0, "skipped_no_lea": 0}
     total = len(files)
     for index, remote in enumerate(files, start=1):
@@ -293,6 +396,56 @@ def ingest_manifest(
                 source=manifest.study.source,
                 source_ref=remote.url,
                 land=land,
+            )
+            stats["ingested"] += 1
+        if on_progress:
+            on_progress(index, total, remote.name)
+    return stats
+
+
+def _ingest_cartridge(
+    session: Session,
+    store: BlobStore,
+    manifest: Manifest,
+    study: models.Study,
+    source: Source,
+    files: list[RemoteFile],
+    on_progress: Callable[[int, int, str], None] | None,
+) -> dict:
+    """Build Study → Firearm(Slide) → CartridgeCase → Mark(mark_type) → Scan from
+    ``{slide}-{case}.x3p`` files. Questioned/unlabelled files (no known source
+    slide) are counted in ``skipped_no_match``."""
+    stats = {"files": len(files), "ingested": 0, "already_present": 0, "skipped_no_match": 0}
+    total = len(files)
+    for index, remote in enumerate(files, start=1):
+        slide_case = parse_slide_case(remote.name)
+        if slide_case is None:
+            stats["skipped_no_match"] += 1
+        elif session.exec(select(models.Scan).where(models.Scan.source_ref == remote.url)).first():
+            stats["already_present"] += 1  # resume: don't re-download
+        else:
+            slide, case = slide_case
+            firearm = get_or_create_firearm(
+                session, study, f"Slide{slide}", manifest.firearm_defaults
+            )
+            cartridge_case = get_or_create_cartridge_case(
+                session, firearm, f"Slide{slide}-Case{case}", label=Path(remote.name).stem
+            )
+            mark = get_or_create_mark(
+                session,
+                cartridge_case,
+                f"Slide{slide}-Case{case}-{manifest.mark_type}",
+                manifest.mark_type,
+            )
+            data = source.fetch(remote)
+            ingest_scan(
+                session,
+                store,
+                data,
+                name=remote.name,
+                source=manifest.study.source,
+                source_ref=remote.url,
+                mark=mark,
             )
             stats["ingested"] += 1
         if on_progress:
