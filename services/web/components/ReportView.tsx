@@ -1,15 +1,6 @@
 import type { ComparisonReport } from "@/lib/types";
 import AttributionView from "@/components/AttributionView";
-
-function formatLR(lr: number): string {
-  // Human-readable, no scientific notation: "146", "1,500", "7.1", or "1 / 100".
-  const human = (x: number): string => {
-    if (x >= 100) return Math.round(x).toLocaleString("en-US");
-    const s = x.toFixed(1);
-    return s.endsWith(".0") ? s.slice(0, -2) : s;
-  };
-  return lr >= 1 ? human(lr) : `1 / ${human(1 / lr)}`;
-}
+import { formatLR } from "@/lib/format";
 
 function strengthColor(verbal: string): string {
   if (verbal.includes("no meaningful"))
