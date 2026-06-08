@@ -51,7 +51,14 @@ export default function ReportView({ report }: { report: ComparisonReport }) {
       {bound !== null && (
         <div>
           <div className="mb-1.5 flex justify-between text-xs text-muted">
-            <span>log₁₀ LR = {report.log10_lr.toFixed(2)}</span>
+            <span>
+              log₁₀ LR = {report.log10_lr.toFixed(2)}
+              {report.log10_lr_ci_lo != null && report.log10_lr_ci_hi != null && (
+                <span className="text-foreground/50">
+                  {" "}· 95% CI [{report.log10_lr_ci_lo.toFixed(2)}, {report.log10_lr_ci_hi.toFixed(2)}]
+                </span>
+              )}
+            </span>
             <span>bound ±{bound.toFixed(2)} (reference size)</span>
           </div>
           <div className="h-2 w-full overflow-hidden rounded-full bg-foreground/10">

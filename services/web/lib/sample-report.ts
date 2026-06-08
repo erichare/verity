@@ -9,6 +9,8 @@ interface KmExample {
   scoreKind: string;
   lr: number;
   log10_lr: number;
+  log10_lr_ci_lo: number;
+  log10_lr_ci_hi: number;
   verbal: string;
   lrBound: number | null;
   reference: { name: string; auc: number; cllr: number; nKm: number; nKnm: number };
@@ -34,6 +36,8 @@ export function buildSampleReport(): ComparisonReport {
     score_kind: km.scoreKind,
     likelihood_ratio: km.lr,
     log10_lr: km.log10_lr,
+    log10_lr_ci_lo: km.log10_lr_ci_lo,
+    log10_lr_ci_hi: km.log10_lr_ci_hi,
     direction: "same_source",
     verbal: km.verbal,
     lr_bound_log10: km.lrBound,
