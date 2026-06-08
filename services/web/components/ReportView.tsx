@@ -1,5 +1,6 @@
 import type { ComparisonReport } from "@/lib/types";
 import AttributionView from "@/components/AttributionView";
+import ScopeNotes, { scopeWarnings } from "@/components/ScopeNotes";
 import { formatLR } from "@/lib/format";
 
 function strengthColor(verbal: string): string {
@@ -25,9 +26,19 @@ export default function ReportView({ report }: { report: ComparisonReport }) {
   const supportsSame = report.log10_lr > 0;
   const bound = report.lr_bound_log10;
   const frac = bound ? Math.min(1, Math.abs(report.log10_lr) / bound) : 0;
+  const warnings = scopeWarnings(report.scope);
 
   return (
     <div className="glass space-y-6 rounded-2xl p-6 sm:p-8">
+      {report.evidence_note?.single_land && (
+        <div className="flex gap-2 rounded-lg border border-amber-400/30 bg-amber-400/[0.08] p-3 text-sm leading-relaxed text-amber-800 dark:text-amber-200">
+          <span aria-hidden className="select-none">⚠</span>
+          <p>
+            <strong className="font-semibold">Diagnostic only.</strong> {report.evidence_note.reason}
+          </p>
+        </div>
+      )}
+
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="text-xs uppercase tracking-wider text-muted">Likelihood ratio</p>
@@ -56,6 +67,7 @@ export default function ReportView({ report }: { report: ComparisonReport }) {
               {report.log10_lr_ci_lo != null && report.log10_lr_ci_hi != null && (
                 <span className="text-foreground/50">
                   {" "}· 95% CI [{report.log10_lr_ci_lo.toFixed(2)}, {report.log10_lr_ci_hi.toFixed(2)}]
+                  {report.n_sources ? ` across ${report.n_sources} sources` : ""}
                 </span>
               )}
             </span>
@@ -88,6 +100,15 @@ export default function ReportView({ report }: { report: ComparisonReport }) {
           regionsB={report.attribution_b}
           domain={report.domain}
         />
+      )}
+
+      {warnings.length > 0 && (
+        <div className="rounded-lg border border-amber-400/25 bg-amber-400/[0.05] p-3">
+          <p className="mb-2 text-[10px] uppercase tracking-wider text-amber-700/80 dark:text-amber-300/80">
+            Applicability warnings — the comparison proceeded, but note:
+          </p>
+          <ScopeNotes warnings={warnings} />
+        </div>
       )}
 
       <p className="rounded-lg border border-border bg-foreground/[0.03] p-3 text-sm italic leading-relaxed text-muted">

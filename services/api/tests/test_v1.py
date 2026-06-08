@@ -71,6 +71,15 @@ def test_v1_scope_endpoint_rejects_unknown_domain():
     assert r.status_code == 400
 
 
+def test_v1_scope_rejects_invalid_mode():
+    r = client.post(
+        "/v1/scope",
+        data={"domain": "striated", "mode": "bogus"},
+        files={"scan": ("a.x3p", b"x", "application/octet-stream")},
+    )
+    assert r.status_code == 400
+
+
 def test_v1_compare_rejects_unknown_domain():
     r = client.post(
         "/v1/compare",

@@ -1,26 +1,30 @@
 # verity-catalog
 
 The **Verity data catalog**: a normalized catalog + content-addressed store +
-ingestion (and soon a REST API) for forensic X3P surface scans harvested from
-NBTRD and Figshare. See [`docs/data-catalog-plan.md`](../../docs/data-catalog-plan.md)
+ingestion + a REST API for forensic X3P surface scans harvested from NBTRD,
+Figshare, and GitHub. See [`docs/data-catalog-plan.md`](../../docs/data-catalog-plan.md)
 for the full design.
 
 Local-first by default — SQLite + a local blob directory, no external services —
 and deployable to Postgres + object storage by setting `VERITY_CATALOG_*` env
 vars, with no code change.
 
-## What's here (Phases A–B)
+## What's here (Phases A–D)
 
 - **Schema** (`models.py`) — Study → Firearm → Bullet/CartridgeCase →
   Land/Mark → Scan, plus Instrument; same-source (KM/KNM) labels fall out of the hierarchy.
 - **Content-addressed store** (`store.py`) — blobs keyed by SHA-256, deduplicated,
-  atomic writes; the same hash the catalog records and the API will serve as `ETag`.
+  atomic writes; the same hash the catalog records and the API serves as `ETag`.
 - **Ingestion** (`ingest.py`, `harvest/`) — manifest-driven: fetch from Figshare or
   the NBTRD direct endpoints, validate every scan with `verity-x3p` (MD5 + metadata),
   hash into the store, and populate the catalog idempotently.
 - **CLI** — `verity-catalog init-db`, `info`, `manifests`, `ingest <name> [--limit N]`.
-
-Still to come: the FastAPI REST API (Phase C) and the NBTRD crawler (Phase D).
+- **REST API** (`api/`) — a FastAPI service (`verity-catalog-api`) with a uniform
+  `{success, data, error, meta}` envelope: browse `GET /studies`, `/firearms`,
+  `/bullets/{id}/lands`, faceted `/scans`, resolve a dataset by content hash via
+  `/datasets/{name}`, stream a scan with `/scans/{id}/x3p`, plus `/healthz` and `/version`.
+- **Harvesters** (`harvest/`) — Figshare, GitHub, and a polite NBTRD crawler that
+  resolves detail-page GUIDs and the measurement-download endpoint.
 
 > **Note on Hamby + Figshare:** the Hamby sets on Iowa State Figshare are
 > *metadata-only* records ("email csafe@iastate.edu to obtain the data"), so they
@@ -42,4 +46,7 @@ uv run pytest
 uv run verity-catalog init-db
 uv run verity-catalog ingest hamby252-barrel1-sample --limit 2
 uv run verity-catalog info
+
+# Serve the REST API (defaults to $PORT or 8001; browse the docs at /scalar):
+uv run verity-catalog-api
 ```

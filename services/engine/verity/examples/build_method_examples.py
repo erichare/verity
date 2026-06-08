@@ -22,7 +22,12 @@ from pathlib import Path
 import numpy as np
 
 from verity.cmr import cmr_regions_1d_pair
-from verity.compare import _land_fields, _to_preview, compare_bullets_with_previews, compare_with_previews
+from verity.compare import (
+    _land_fields,
+    _to_preview,
+    compare_bullets_with_previews,
+    compare_with_previews,
+)
 from verity.decision.lr import ScoreLRModel, cllr_min
 from verity.preprocess import isolate_roughness, remove_form
 from verity.registration.align import align_1d
@@ -196,7 +201,10 @@ def _screwdriver_example() -> dict | None:
         "score": round(score, 3),
         "lr": float(rep["likelihood_ratio"]),
         "verbal": rep["verbal"],
-        "reference": {"name": "tmaRks screwdriver toolmarks", "auc": round(float(rep["reference"]["auc"]), 3)},
+        "reference": {
+            "name": "tmaRks screwdriver toolmarks",
+            "auc": round(float(rep["reference"]["auc"]), 3),
+        },
     }
 
 
@@ -256,7 +264,10 @@ def main() -> None:
     _OUT.write_text(json.dumps(out))
     print(f"wrote {_OUT} ({_OUT.stat().st_size / 1024:.0f} KB)")
     print(f"  KM  score={km['score']} LR={km['lr']:.1f} '{km['verbal']}' bands={len(km['bandsA'])}")
-    print(f"  KNM score={knm['score']} LR={knm['lr']:.3f} '{knm['verbal']}' bands={len(knm['bandsA'])}")
+    print(
+        f"  KNM score={knm['score']} LR={knm['lr']:.3f} "
+        f"'{knm['verbal']}' bands={len(knm['bandsA'])}"
+    )
 
 
 if __name__ == "__main__":

@@ -20,6 +20,7 @@ from verity_catalog.api.app import app  # noqa: E402
 from verity_catalog.db import engine  # noqa: E402
 from verity_catalog.store import get_store  # noqa: E402
 
+
 def _catalog_scan_count() -> int:
     """The live scan count in the local catalog — the catalog grows (bullets,
     cartridges, tool marks), so assert against the real count, not a frozen one."""

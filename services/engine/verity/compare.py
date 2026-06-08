@@ -17,6 +17,7 @@ from .aggregate import bullet_comparison
 from .areal import areal_signature
 from .cmr import areal_votes, cmr_regions_1d_pair, consensus_members, regions_from_members
 from .decision.scorer import BulletScorer, ContrastScorer
+from .decision.scorer_config import DEFAULT_SCORER_CONFIG
 from .preprocess import isolate_roughness, remove_form
 from .region import DEFAULT_KEEP, extract_region
 from .registration.align import align_1d
@@ -24,9 +25,12 @@ from .report import ComparisonReport, build_comparison_report
 from .signature import striation_signature
 from .surface import Surface
 
-_LAMBDA_S, _LAMBDA_C = 4e-6, 250e-6  # striated roughness band (m)
-_CMR_CORR, _CMR_TOL = 0.3, (20.0, 20.0, 6.0)  # CMR congruence thresholds (match the reference)
-_CMR_1D_CORR, _CMR_1D_LAG = 0.5, 10.0  # 1-D striae-band congruence (matches cmr_score_1d)
+# Single source of truth for the scorer hyperparameters — bundled with each reference
+# and drift-checked at load time (see verity.decision.scorer_config).
+_CFG = DEFAULT_SCORER_CONFIG
+_LAMBDA_S, _LAMBDA_C = _CFG.lambda_s, _CFG.lambda_c  # striated roughness band (m)
+_CMR_CORR, _CMR_TOL = _CFG.cmr_corr, _CFG.cmr_tol  # 2-D CMR congruence thresholds
+_CMR_1D_CORR, _CMR_1D_LAG = _CFG.cmr_1d_corr, _CFG.cmr_1d_lag  # 1-D striae-band congruence
 
 DOMAINS = ("striated", "impressed")
 
@@ -83,6 +87,7 @@ def compare_with_previews(
     reference_name: str,
     provenance: dict | None = None,
     preview_size: int = 120,
+    cluster_ids: np.ndarray | None = None,
 ) -> tuple[ComparisonReport, dict]:
     """Compare two surfaces → (report, previews). The report's ``attribution`` holds
     the matched regions (congruent cells for impressed, consecutive matching striae
@@ -122,6 +127,7 @@ def compare_with_previews(
         attribution=attribution,
         attribution_b=attribution_b,
         provenance={"scorer": score_kind, "domain": domain, **(provenance or {})},
+        ci_clusters=cluster_ids,
     )
     return report, previews
 
@@ -135,6 +141,7 @@ def compare_surfaces(
     reference_labels: np.ndarray,
     reference_name: str,
     provenance: dict | None = None,
+    cluster_ids: np.ndarray | None = None,
 ) -> ComparisonReport:
     """Compare two surfaces into a calibrated :class:`ComparisonReport` (no previews)."""
     report, _ = compare_with_previews(
@@ -145,6 +152,7 @@ def compare_surfaces(
         reference_labels=reference_labels,
         reference_name=reference_name,
         provenance=provenance,
+        cluster_ids=cluster_ids,
     )
     return report
 
@@ -159,6 +167,7 @@ def compare_bullets_with_previews(
     provenance: dict | None = None,
     preview_size: int = 140,
     scorer: BulletScorer | None = None,
+    cluster_ids: np.ndarray | None = None,
 ) -> tuple[ComparisonReport, dict]:
     """Compare two *bullets* (each a set of land scans) → ``(report, previews)``.
 
@@ -217,6 +226,7 @@ def compare_bullets_with_previews(
             **best,
             **(provenance or {}),
         },
+        ci_clusters=cluster_ids,
     )
     return report, previews
 
@@ -229,6 +239,7 @@ def compare_bullets(
     reference_labels: np.ndarray,
     reference_name: str,
     provenance: dict | None = None,
+    cluster_ids: np.ndarray | None = None,
 ) -> ComparisonReport:
     """:func:`compare_bullets_with_previews` without the previews."""
     report, _ = compare_bullets_with_previews(
@@ -238,5 +249,6 @@ def compare_bullets(
         reference_labels=reference_labels,
         reference_name=reference_name,
         provenance=provenance,
+        cluster_ids=cluster_ids,
     )
     return report

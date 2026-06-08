@@ -12,6 +12,36 @@ export interface AttributionRegion {
   h_frac: number;
 }
 
+// Applicability-domain guard output (mirrors verity.decision.scope_guard).
+export interface ScopeCheck {
+  name: string;
+  passed: boolean;
+  severity: string; // "ok" | "warn" | "refuse"
+  value: number;
+  threshold: number;
+  reason: string;
+}
+
+export interface ScopeReport {
+  admissible: boolean;
+  mode: string;
+  domain: string;
+  checks: ScopeCheck[];
+  overall_reason: string;
+}
+
+export interface CompareScope {
+  mark_a: ScopeReport[];
+  mark_b: ScopeReport[];
+}
+
+// Single-land striated comparisons carry a diagnostic-only caution.
+export interface EvidenceNote {
+  single_land: boolean;
+  level: string; // "diagnostic_only"
+  reason: string;
+}
+
 export interface ComparisonReport {
   domain: string;
   score: number;
@@ -22,6 +52,8 @@ export interface ComparisonReport {
   log10_lr_ci_lo?: number | null;
   log10_lr_ci_hi?: number | null;
   lr_ci_method?: string | null;
+  // Distinct reference sources (barrels/slides) behind a clustered credible interval.
+  n_sources?: number | null;
   direction: string;
   verbal: string;
   lr_bound_log10: number | null;
@@ -37,6 +69,26 @@ export interface ComparisonReport {
   attribution_b?: AttributionRegion[]; // the same matches on Mark B
   provenance: Record<string, unknown>;
   scope_note: string;
+  // Applicability-domain annotation for each input (warnings ride along here).
+  scope?: CompareScope;
+  // Present only on the single-land striated route (marginal, diagnostic-only).
+  evidence_note?: EvidenceNote;
   // API presentation: small grayscale previews of each mark to overlay regions on
   previews?: { a: number[][]; b: number[][] };
+}
+
+// The structured out-of-scope result the API returns instead of a junk LR.
+export interface RefusalResponse {
+  refused: true;
+  domain: string;
+  reason: string;
+  scope: CompareScope;
+  scope_note: string;
+  provenance: Record<string, unknown>;
+}
+
+export type CompareResponse = ComparisonReport | RefusalResponse;
+
+export function isRefusal(r: CompareResponse): r is RefusalResponse {
+  return (r as RefusalResponse).refused === true;
 }

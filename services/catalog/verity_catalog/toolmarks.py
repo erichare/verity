@@ -58,7 +58,7 @@ def parse_tmarks_tid(tid: str) -> tuple[str, str, str] | None:
     return m.group(1), head, m.group(3)
 
 
-def load_tmarks_profiles(cache_dir: Path = TMARKS_CACHE) -> "OrderedDict[str, list[float]]":
+def load_tmarks_profiles(cache_dir: Path = TMARKS_CACHE) -> OrderedDict[str, list[float]]:
     """Group the long CSV (``TID,value``) into one profile per TID, in file order."""
     grouped: OrderedDict[str, list[float]] = OrderedDict()
     with (cache_dir / TMARKS_LONG_CSV).open() as fh:

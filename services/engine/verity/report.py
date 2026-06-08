@@ -69,6 +69,8 @@ class ComparisonReport:
     log10_lr_ci_lo: float | None = None
     log10_lr_ci_hi: float | None = None
     lr_ci_method: str | None = None
+    # Distinct reference sources (barrels/slides) behind a clustered credible interval.
+    n_sources: int | None = None
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -110,6 +112,7 @@ def build_comparison_report(
     ci_lo: float | None = None
     ci_hi: float | None = None
     ci_method: str | None = None
+    n_sources: int | None = None
     verbal = verbal_weight(log10_lr)
     if ci:
         interval = lr_credible_interval(
@@ -124,6 +127,7 @@ def build_comparison_report(
         )
         ci_lo, ci_hi = interval.lo_log10_lr, interval.hi_log10_lr
         ci_method = f"bootstrap-{interval.resample}"
+        n_sources = interval.n_sources
         if interval.straddles_zero:
             verbal += " (direction not resolved at the 95% level)"
 
@@ -158,4 +162,5 @@ def build_comparison_report(
         log10_lr_ci_lo=ci_lo,
         log10_lr_ci_hi=ci_hi,
         lr_ci_method=ci_method,
+        n_sources=n_sources,
     )
