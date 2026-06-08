@@ -117,11 +117,11 @@ export default function Home() {
     <>
       {/* Top bar */}
       <header className="fixed inset-x-0 top-0 z-30">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
           <a href="#top" className="font-display text-xl font-semibold tracking-tight">
             <span className="accent-text">Verity</span>
           </a>
-          <div className="flex items-center gap-5">
+          <div className="flex items-center gap-4 sm:gap-5">
             <a href="/method" className="text-sm text-foreground/70 transition hover:text-foreground">
               Method
             </a>
@@ -147,7 +147,7 @@ export default function Home() {
       {/* Cinematic hero */}
       <section
         id="top"
-        className="relative isolate flex min-h-[92svh] items-center justify-center overflow-hidden px-6"
+        className="relative isolate flex min-h-[92svh] items-center justify-center overflow-hidden px-6 pt-24 sm:pt-0"
       >
         <div className="absolute inset-0 -z-20">
           <HeroSurface />
