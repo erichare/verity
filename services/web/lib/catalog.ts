@@ -25,7 +25,37 @@ export interface Scan {
   modality: string;
   content_hash: string;
   lateral_resolution_x: number | null;
+  source: string;
   source_ref: string;
+  // A scan hangs off exactly one of a bullet land or a cartridge-case mark.
+  land: { id: number } | null;
+  mark: { mark_type: string } | null;
+}
+
+export type MarkClass = "all" | "bullet" | "cartridge";
+
+const MARK_TYPE_LABELS: Record<string, string> = {
+  breech_face: "Cartridge breech face",
+  firing_pin: "Cartridge firing pin",
+  ejector: "Cartridge ejector",
+  aperture_shear: "Aperture shear",
+};
+
+/** The human-readable mark type for a scan (bullet land vs cartridge mark). */
+export function scanMarkType(scan: Scan): string {
+  if (scan.mark) return MARK_TYPE_LABELS[scan.mark.mark_type] ?? scan.mark.mark_type;
+  if (scan.land) return "Bullet land";
+  return "—";
+}
+
+const SOURCE_LABELS: Record<string, string> = {
+  nbtrd: "NBTRD",
+  "csafe-isu": "CSAFE-ISU",
+};
+
+/** The display label for a scan's source repository (e.g. NBTRD, CSAFE-ISU). */
+export function sourceLabel(scan: Scan): string {
+  return SOURCE_LABELS[scan.source] ?? scan.source.toUpperCase();
 }
 
 export async function getStudies(): Promise<Study[]> {
@@ -40,18 +70,22 @@ export async function getStudies(): Promise<Study[]> {
 
 export async function getScans(opts: {
   search?: string;
+  markClass?: MarkClass;
   limit?: number;
   offset?: number;
 }): Promise<{ scans: Scan[]; total: number }> {
   if (!catalogConfigured) return { scans: [], total: 0 };
-  const { search = "", limit = 50, offset = 0 } = opts;
+  const { search = "", markClass = "all", limit = 50, offset = 0 } = opts;
   const params = new URLSearchParams({
-    select: "id,filename,modality,content_hash,lateral_resolution_x,source_ref",
+    select:
+      "id,filename,modality,content_hash,lateral_resolution_x,source,source_ref,land(id),mark(mark_type)",
     order: "id",
     limit: String(limit),
     offset: String(offset),
   });
   if (search.trim()) params.set("filename", `ilike.*${search.trim()}*`);
+  if (markClass === "bullet") params.set("land_id", "not.is.null");
+  if (markClass === "cartridge") params.set("mark_id", "not.is.null");
   const res = await fetch(`${SB_URL}/rest/v1/scan?${params.toString()}`, {
     headers: { ...authHeaders(), Prefer: "count=exact" },
     cache: "no-store",
