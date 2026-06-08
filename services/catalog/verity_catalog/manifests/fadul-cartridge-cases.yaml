@@ -1,0 +1,44 @@
+# Fadul (2011) — 10 consecutively-manufactured Glock slides (cartridge cases).
+#
+# Source: github.com/CSAFE-ISU/cartridgeCaseScans, directory `fadulMasked`,
+# published as plain X3P files served raw from GitHub (raw.githubusercontent.com).
+# Licence: CC-BY 4.0. Makes the catalog multi-modal — breech-face cartridge-case
+# scans alongside the bullet LEA datasets — and content-addressed/reproducible the
+# same way: `verity-catalog ingest fadul-cartridge-cases`.
+#
+# The directory holds 40 breech-face scans. The 20 named `Fadul {slide}-{case}.x3p`
+# (slides 1-10, two cases each) are the KNOWN-SOURCE set ingested here — each maps to
+# Firearm(Slide) -> CartridgeCase -> Mark(breech_face) -> Scan. The other 20, named
+# `Fadul {letter}.x3p` (A, B, C, …), are QUESTIONED cases with no known source slide;
+# the `{slide}-{case}` filename parser skips them (stats: skipped_no_match), exactly
+# as the NBTRD harvester skips questioned firearm buckets.
+#
+# Reproducible from scratch: the `github` source lists `fadulMasked` via the GitHub
+# Contents API and fetches each raw .x3p; ingest validates every file with verity-x3p
+# (embedded MD5 + metadata), content-hashes the bytes into the blob store, and upserts
+# the catalog hierarchy. No auth token needed (one directory-listing API call; the
+# downloads hit the CDN). Idempotent — re-run to resume.
+name: fadul-cartridge-cases
+title: "Fadul (2011) — consecutively-manufactured slides (cartridge cases)"
+
+entity: cartridge
+mark_type: breech_face
+
+study:
+  source: csafe-isu
+  external_id: fadul-cartridge-cases
+  title: "Fadul (2011) — 10 consecutively-manufactured slides (cartridge cases)"
+  creator: "CSAFE-ISU / Fadul et al."
+  references: "Fadul et al. (2011); CSAFE-ISU/cartridgeCaseScans (CC-BY 4.0)"
+  consecutively_manufactured: true
+  nist_measurement: false
+  persistence: false
+
+firearm_defaults:
+  brand: Glock
+
+source:
+  kind: github
+  repo: CSAFE-ISU/cartridgeCaseScans
+  ref: main
+  path: fadulMasked

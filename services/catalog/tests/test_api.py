@@ -20,7 +20,11 @@ from verity_catalog.api.app import app  # noqa: E402
 from verity_catalog.db import engine  # noqa: E402
 from verity_catalog.store import get_store  # noqa: E402
 
-EXPECTED_STORE_COUNT = 744
+def _catalog_scan_count() -> int:
+    """The live scan count in the local catalog — the catalog grows (bullets,
+    cartridges, tool marks), so assert against the real count, not a frozen one."""
+    with Session(engine) as session:
+        return len(session.exec(select(models.Scan)).all())
 
 
 @pytest.fixture(scope="module")
@@ -48,8 +52,8 @@ def test_healthz_ok_with_store_count(client: TestClient):
     assert body["success"] is True
     data = body["data"]
     assert data["status"] == "ok"
-    assert data["store_count"] == EXPECTED_STORE_COUNT
-    assert data["scan_count"] == EXPECTED_STORE_COUNT
+    assert data["store_count"] == get_store().count()
+    assert data["scan_count"] == _catalog_scan_count()
     assert data["store_backend"] == "local"
     assert data["database"] == "sqlite"
 
@@ -100,7 +104,7 @@ def test_list_scans_returns_rows(client: TestClient):
     body = client.get("/scans", params={"limit": 5}).json()
     assert body["success"] is True
     assert len(body["data"]) == 5
-    assert body["meta"]["total"] == EXPECTED_STORE_COUNT
+    assert body["meta"]["total"] == _catalog_scan_count()
 
 
 def test_scans_respects_caliber_facet(client: TestClient):

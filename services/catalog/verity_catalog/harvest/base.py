@@ -6,6 +6,8 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import Protocol
 
+USER_AGENT = "verity-catalog/0.1 (+https://github.com/erichare/verity)"
+
 
 @dataclass
 class RemoteFile:
@@ -25,6 +27,36 @@ class Source(Protocol):
     def fetch(self, file: RemoteFile) -> bytes: ...
 
 
+def fetch_url(
+    url: str,
+    *,
+    timeout: float = 120.0,
+    request_delay: float = 0.6,
+    retries: int = 4,
+    user_agent: str = USER_AGENT,
+) -> bytes:
+    """Polite GET with a small inter-request delay and bounded retries with
+    backoff — suitable for pulling hundreds of files from a public host. Shared by
+    every source adapter so the throttling/retry policy lives in one place."""
+    import time
+
+    import httpx
+
+    headers = {"User-Agent": user_agent}
+    last_error: Exception | None = None
+    for attempt in range(retries):
+        if request_delay:
+            time.sleep(request_delay)
+        try:
+            resp = httpx.get(url, follow_redirects=True, timeout=timeout, headers=headers)
+            resp.raise_for_status()
+            return resp.content
+        except httpx.HTTPError as err:
+            last_error = err
+            time.sleep(min(2.0**attempt, 10.0))  # backoff before retry
+    raise RuntimeError(f"failed to fetch {url} after {retries} attempts") from last_error
+
+
 class UrlListSource:
     """Fetches an explicit list of files by URL — e.g. the NBTRD direct
     ``DownloadMeasurement/{guid}`` endpoints declared in a manifest. (Discovering
@@ -32,8 +64,6 @@ class UrlListSource:
 
     Polite by default: a small inter-request delay plus bounded retries with
     backoff, suitable for pulling hundreds of files from a public ``.gov`` host."""
-
-    USER_AGENT = "verity-catalog/0.1 (+https://github.com/erichare/verity)"
 
     def __init__(
         self,
@@ -52,24 +82,9 @@ class UrlListSource:
         return list(self._files)
 
     def fetch(self, file: RemoteFile) -> bytes:
-        import time
-
-        import httpx
-
-        headers = {"User-Agent": self.USER_AGENT}
-        last_error: Exception | None = None
-        for attempt in range(self._retries):
-            if self._request_delay:
-                time.sleep(self._request_delay)
-            try:
-                resp = httpx.get(
-                    file.url, follow_redirects=True, timeout=self._timeout, headers=headers
-                )
-                resp.raise_for_status()
-                return resp.content
-            except httpx.HTTPError as err:
-                last_error = err
-                time.sleep(min(2.0**attempt, 10.0))  # backoff before retry
-        raise RuntimeError(
-            f"failed to fetch {file.url} after {self._retries} attempts"
-        ) from last_error
+        return fetch_url(
+            file.url,
+            timeout=self._timeout,
+            request_delay=self._request_delay,
+            retries=self._retries,
+        )
