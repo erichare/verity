@@ -100,14 +100,8 @@ export function Lineage() {
             <strong className="font-medium text-foreground/70">Non-affiliation.</strong> Verity is an
             independent project and is not affiliated with, sponsored by, or endorsed by CSAFE or Iowa
             State University. References to their published research denote scientific lineage and
-            validation targets only. A formal collaboration is something we would{" "}
-            <a
-              href="/partnership"
-              className="underline decoration-border underline-offset-2 transition hover:text-accent hover:decoration-accent"
-            >
-              propose
-            </a>
-            , not something that exists today.
+            validation targets only. A formal collaboration is something we would propose, not
+            something that exists today.
           </p>
         </div>
       </section>
