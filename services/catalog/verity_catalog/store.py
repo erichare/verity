@@ -84,11 +84,27 @@ class LocalBlobStore(BlobStore):
         return sum(1 for _ in self.root.rglob("*.bin"))
 
 
+def _s3_store(settings: Settings, bucket: str | None) -> BlobStore:
+    """Build an :class:`S3BlobStore` from settings for the given bucket."""
+    from .store_s3 import S3BlobStore
+
+    return S3BlobStore(
+        bucket or "",
+        endpoint_url=settings.blob_store_endpoint_url,
+        region=settings.s3_region,
+        access_key_id=settings.s3_access_key_id,
+        secret_access_key=settings.s3_secret_access_key,
+        public_base_url=settings.blob_store_public_base_url,
+    )
+
+
 def get_store(settings: Settings | None = None) -> BlobStore:
     """Construct the configured blob store for raw scans."""
     settings = settings or get_settings()
     if settings.blob_store_backend == "local":
         return LocalBlobStore(settings.blob_store_path)
+    if settings.blob_store_backend == "s3":
+        return _s3_store(settings, settings.blob_store_bucket)
     raise ValueError(f"unknown blob_store_backend: {settings.blob_store_backend!r}")
 
 
@@ -99,4 +115,10 @@ def get_artifact_store(settings: Settings | None = None) -> BlobStore:
     settings = settings or get_settings()
     if settings.blob_store_backend == "local":
         return LocalBlobStore(settings.artifact_store_path)
+    if settings.blob_store_backend == "s3":
+        # Derived artifacts get their own bucket if configured, else share the
+        # raw-scan bucket (keys are content-addressed, so they never collide).
+        return _s3_store(
+            settings, settings.artifact_store_bucket or settings.blob_store_bucket
+        )
     raise ValueError(f"unknown blob_store_backend: {settings.blob_store_backend!r}")

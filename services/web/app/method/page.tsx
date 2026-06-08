@@ -8,7 +8,7 @@ import { Heatmap } from "@/components/method/Heatmap";
 import { SignaturePlot } from "@/components/method/SignaturePlot";
 import { AlignedSignatures } from "@/components/method/AlignedSignatures";
 import { CalibrationChart } from "@/components/method/CalibrationChart";
-import { ThemeToggle } from "@/components/theme/ThemeToggle";
+import { SiteNav } from "@/components/SiteNav";
 
 const SurfaceViewer = dynamic(() => import("@/components/three/SurfaceViewer"), { ssr: false });
 
@@ -171,25 +171,7 @@ export default function MethodPage() {
 
   return (
     <>
-      <header className="fixed inset-x-0 top-0 z-30">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <a href="/" className="font-display text-xl font-semibold tracking-tight">
-            <span className="accent-text">Verity</span>
-          </a>
-          <div className="flex items-center gap-5">
-            <a href="/why" className="text-sm text-foreground/70 transition hover:text-foreground">
-              Why
-            </a>
-            <a href="/docs" className="text-sm text-foreground/70 transition hover:text-foreground">
-              Docs
-            </a>
-            <a href="/#compare" className="text-sm text-foreground/70 transition hover:text-foreground">
-              Compare
-            </a>
-            <ThemeToggle />
-          </div>
-        </div>
-      </header>
+      <SiteNav />
 
       <main className="mx-auto w-full max-w-4xl px-6 pb-24 pt-28 sm:pt-36">
         {/* Intro */}

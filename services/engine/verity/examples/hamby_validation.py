@@ -22,8 +22,9 @@ from itertools import combinations
 
 import numpy as np
 
-from verity import ScoreLRModel, cllr, cllr_min, roc_auc
+from verity import cllr_min, roc_auc
 from verity.aggregate import bullet_comparison
+from verity.decision.validation import barrel_disjoint_folds
 from verity.examples.hamby_km_knm import (
     LAMBDA_C,
     LAMBDA_S,
@@ -49,9 +50,7 @@ def load_study_bullets(session, store, study) -> list[tuple[int, str, list[np.nd
     out: list[tuple[int, str, list[np.ndarray]]] = []
     firearms = session.exec(select(m.Firearm).where(m.Firearm.study_id == study.id)).all()
     for firearm in firearms:
-        for bullet in session.exec(
-            select(m.Bullet).where(m.Bullet.firearm_id == firearm.id)
-        ).all():
+        for bullet in session.exec(select(m.Bullet).where(m.Bullet.firearm_id == firearm.id)).all():
             lands = session.exec(
                 select(m.Land).where(m.Land.bullet_id == bullet.id).order_by(m.Land.position)
             ).all()
@@ -91,9 +90,7 @@ def iter_bullet_studies(session) -> list:
     studies = session.exec(select(m.Study)).all()
     out = []
     for study in studies:
-        has_firearm = session.exec(
-            select(m.Firearm).where(m.Firearm.study_id == study.id)
-        ).first()
+        has_firearm = session.exec(select(m.Firearm).where(m.Firearm.study_id == study.id)).first()
         if has_firearm is not None:
             out.append(study)
     return out
@@ -132,33 +129,6 @@ def pairwise_scores(bullets):
         barrels_a.append(ba)
         barrels_b.append(bb)
     return (np.array(scores), np.array(labels), np.array(barrels_a), np.array(barrels_b))
-
-
-def barrel_disjoint_folds(scores, labels, ba, bb, *, n_splits=10, test_frac=0.4, seed=0):
-    """Calibrate on train barrels, score held-out test barrels; no barrel spans
-    both. Pairs straddling the split are dropped."""
-    barrels = sorted(set(ba.tolist()) | set(bb.tolist()))
-    rng = np.random.default_rng(seed)
-    n_test = max(2, round(len(barrels) * test_frac))
-    rows = []
-    for _ in range(n_splits):
-        test_b = set(rng.permutation(barrels)[:n_test].tolist())
-        in_test = np.array([x in test_b and y in test_b for x, y in zip(ba, bb, strict=True)])
-        in_train = np.array(
-            [x not in test_b and y not in test_b for x, y in zip(ba, bb, strict=True)]
-        )
-        if labels[in_train].sum() < 3 or labels[in_test].sum() < 1:
-            continue
-        model = ScoreLRModel().fit(scores[in_train], labels[in_train])
-        lr = model.predict_lr(scores[in_test])
-        rows.append(
-            {
-                "cllr": cllr(lr[labels[in_test] == 1], lr[labels[in_test] == 0]),
-                "cllr_min": cllr_min(scores[in_test], labels[in_test]),
-                "auc": roc_auc(scores[in_test], labels[in_test]),
-            }
-        )
-    return rows
 
 
 def evaluate(study_external_id: str | None = None) -> dict:
@@ -221,10 +191,7 @@ def evaluate_all() -> list[dict]:
 
 def _print_study(res: dict) -> None:
     scores, labels, folds = res["scores"], res["labels"], res["folds"]
-    print(
-        f"=== {res['title']}  "
-        f"({res['n_barrels']} barrels, {res['n_bullets']} bullets) ==="
-    )
+    print(f"=== {res['title']}  ({res['n_barrels']} barrels, {res['n_bullets']} bullets) ===")
     print(
         f"  pairs={len(scores)}  KM={int(labels.sum())}  KNM={int((labels == 0).sum())}  "
         f"AUC={roc_auc(scores, labels):.3f}  pooled Cllr_min={cllr_min(scores, labels):.3f}"

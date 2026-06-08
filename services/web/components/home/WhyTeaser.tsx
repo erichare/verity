@@ -1,4 +1,4 @@
-import { Citations } from "./Citations";
+import { Citations, HOME_CITATIONS } from "./Citations";
 
 /**
  * The stakes + the scientific contribution in one block: why the field needed a
@@ -44,7 +44,7 @@ export function WhyTeaser() {
       </div>
       <details className="group mt-5">
         <summary className="cursor-pointer list-none text-xs font-medium uppercase tracking-wider text-muted transition hover:text-foreground/80">
-          <span className="inline-block transition group-open:rotate-90">▸</span> References (6)
+          <span className="inline-block transition group-open:rotate-90">▸</span> References ({HOME_CITATIONS.length})
         </summary>
         <Citations />
       </details>

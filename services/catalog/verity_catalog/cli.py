@@ -67,6 +67,49 @@ def list_manifests() -> None:
         typer.echo(path.stem)
 
 
+@app.command("migrate-db")
+def migrate_db_cmd(
+    to: str = typer.Option(..., "--to", help="Target DB URL, e.g. postgresql://user:pass@host/db"),
+    create_schema: bool = typer.Option(
+        True, help="Create tables on the target first (disable if you ran alembic upgrade head)"
+    ),
+) -> None:
+    """Copy the local catalog into a target DB (Postgres), preserving ids +
+    content hashes. Idempotent — re-run to resume."""
+    from .migrate import migrate_db
+
+    typer.echo(f"migrating catalog -> {to}")
+
+    def _progress(table: str, inserted: int, total: int) -> None:
+        typer.echo(f"  {table:<16} +{inserted} (of {total})")
+
+    inserted = migrate_db(to, create_schema=create_schema, on_progress=_progress)
+    typer.echo(f"done: {sum(inserted.values())} rows inserted")
+
+
+@app.command("sync-blobs")
+def sync_blobs_cmd(
+    to: str = typer.Option("s3", "--to", help="Target backend (currently only 's3')"),
+) -> None:
+    """Upload every local blob to the configured S3/R2 backend, verifying each
+    reads back with the same SHA-256. Idempotent — re-run to resume."""
+    if to != "s3":
+        raise typer.BadParameter("only --to s3 is supported")
+    from .migrate import sync_blobs
+    from .store import LocalBlobStore, _s3_store
+
+    settings = get_settings()
+    target = _s3_store(settings, settings.blob_store_bucket)
+    source = LocalBlobStore(settings.blob_store_path)
+    typer.echo(f"syncing blobs {settings.blob_store_path} -> s3://{settings.blob_store_bucket}")
+
+    def _progress(index: int, total: int, content_hash: str) -> None:
+        typer.echo(f"  [{index}/{total}] {content_hash[:12]}…")
+
+    stats = sync_blobs(target, source_store=source, on_progress=_progress)
+    typer.echo(f"done: {stats}")
+
+
 @app.command("crawl-study")
 def crawl_study_cmd(
     study_guid: str = typer.Argument(..., help="NBTRD study GUID"),

@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { Reveal } from "@/components/Reveal";
 import { Benchmarks } from "@/components/why/Benchmarks";
-import { ThemeToggle } from "@/components/theme/ThemeToggle";
+import { Lineage } from "@/components/why/Lineage";
+import { CuellarResponse } from "@/components/why/CuellarResponse";
+import { SiteNav } from "@/components/SiteNav";
 
 export const metadata: Metadata = {
   title: "Why Verity — what was missing",
@@ -112,25 +114,7 @@ function Gap({ n, title, children }: { n: string; title: string; children: React
 export default function WhyPage() {
   return (
     <>
-      <header className="fixed inset-x-0 top-0 z-30">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <a href="/" className="font-display text-xl font-semibold tracking-tight">
-            <span className="accent-text">Verity</span>
-          </a>
-          <div className="flex items-center gap-5">
-            <a href="/method" className="text-sm text-foreground/70 transition hover:text-foreground">
-              Method
-            </a>
-            <a href="/docs" className="text-sm text-foreground/70 transition hover:text-foreground">
-              Docs
-            </a>
-            <a href="/#compare" className="text-sm text-foreground/70 transition hover:text-foreground">
-              Compare
-            </a>
-            <ThemeToggle />
-          </div>
-        </div>
-      </header>
+      <SiteNav />
 
       <main className="mx-auto w-full max-w-4xl px-6 pb-24 pt-28 sm:pt-36">
         <section className="rise">
@@ -149,18 +133,26 @@ export default function WhyPage() {
           </p>
         </section>
 
-        <Reveal className="mt-12">
+        {/* Lineage — Verity operationalizes the CSAFE research program. */}
+        <div className="mt-12 sm:mt-16">
+          <Lineage />
+        </div>
+
+        <Reveal className="mt-16">
           <Matrix />
         </Reveal>
 
         <Reveal className="mt-16">
           <h2 className="font-display text-2xl font-medium text-foreground sm:text-3xl">
-            Measured against the specialists
+            Measured against the specialists, on their home turf
           </h2>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-foreground/80">
-            A capability table is a claim; this is the measurement. On each specialist&rsquo;s home
-            turf — the <em>same</em> scans, the same source-disjoint split — Verity is scored on two
-            axes: <strong className="text-foreground">AUC</strong> (can it tell same-source from
+            A capability table is a claim; this is the measurement — and it is deliberately the hardest
+            kind. Each specialist is run on the data it was built for; Verity is held to the{" "}
+            <em>same</em> scans and the <em>same</em> barrel-disjoint split (no firearm appears in both
+            train and test). Every row is scored per dataset and{" "}
+            <strong className="text-foreground">never pooled across makes</strong>, on two axes:{" "}
+            <strong className="text-foreground">AUC</strong> (can it tell same-source from
             different-source apart?) and the forensic{" "}
             <strong className="text-foreground">
               C<sub>llr</sub>
@@ -171,10 +163,12 @@ export default function WhyPage() {
           <Benchmarks />
           <p className="mt-4 max-w-2xl text-xs leading-relaxed text-muted">
             Higher AUC and lower C<sub>llr</sub> are better; the stronger figure in each pair is
-            highlighted. One Verity pipeline produces every row. The cartridge (10 slides) and toolmark
-            (7 tools) sets are deliberately small, hardest-case benchmarks, and bulletxtrctr&rsquo;s
-            random forest was trained on Hamby-family data, so its Hamby figure is near in-sample — the
-            honest comparison is out-of-domain, where an untrained, stable calibration shows its worth.
+            highlighted. One Verity pipeline produces every row — no per-dataset re-tuning, no pooling
+            across firearm makes. The cartridge (10 slides) and toolmark (7 tools) sets are
+            deliberately small, hardest-case benchmarks, and the bulletxtrctr random forest was trained
+            on Hamby-family data, so its Hamby figure is near in-sample — the honest comparison is
+            out-of-domain, where an untrained, stable calibration shows its worth. We report the losses
+            alongside the wins on purpose.
           </p>
         </Reveal>
 
@@ -216,6 +210,11 @@ export default function WhyPage() {
           </Gap>
         </div>
 
+        {/* Cuellar et al. (2024) — the critique, and Verity's concrete answer. */}
+        <div className="mt-16">
+          <CuellarResponse />
+        </div>
+
         <Reveal className="mt-20 sm:mt-28">
           <div className="glass rounded-2xl p-8 text-center">
             <h2 className="font-display text-2xl font-medium text-foreground sm:text-3xl">
@@ -229,10 +228,10 @@ export default function WhyPage() {
             </p>
             <div className="mt-6 flex flex-wrap justify-center gap-3">
               <a
-                href="/method"
+                href="/partnership"
                 className="glass rounded-full px-6 py-3 text-sm font-medium text-foreground/80 transition hover:text-foreground"
               >
-                See how it works
+                A proposed CSAFE × Verity partnership
               </a>
               <a
                 href="/#compare"

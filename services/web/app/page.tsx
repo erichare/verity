@@ -121,7 +121,7 @@ export default function Home() {
           <a href="#top" className="font-display text-xl font-semibold tracking-tight">
             <span className="accent-text">Verity</span>
           </a>
-          <div className="flex items-center gap-4 sm:gap-5">
+          <div className="flex items-center gap-4 overflow-x-auto sm:gap-5">
             <a href="/method" className="text-sm text-foreground/70 transition hover:text-foreground">
               Method
             </a>
@@ -130,6 +130,20 @@ export default function Home() {
             </a>
             <a href="/docs" className="text-sm text-foreground/70 transition hover:text-foreground">
               Docs
+            </a>
+            <a href="/partnership" className="text-sm text-foreground/70 transition hover:text-foreground">
+              Partnership
+            </a>
+            <a href="/references" className="text-sm text-foreground/70 transition hover:text-foreground">
+              References
+            </a>
+            <a
+              href="/whitepaper.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-foreground/70 transition hover:text-foreground"
+            >
+              White paper
             </a>
             <a
               href="https://api.verity.codes/scalar"

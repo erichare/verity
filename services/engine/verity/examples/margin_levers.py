@@ -74,9 +74,7 @@ def load_bullets(session, store, study, cache_dir) -> list[tuple[int, str, list[
 
     out = []
     for firearm in session.exec(select(m.Firearm).where(m.Firearm.study_id == study.id)).all():
-        for bullet in session.exec(
-            select(m.Bullet).where(m.Bullet.firearm_id == firearm.id)
-        ).all():
+        for bullet in session.exec(select(m.Bullet).where(m.Bullet.firearm_id == firearm.id)).all():
             lands = session.exec(
                 select(m.Land).where(m.Land.bullet_id == bullet.id).order_by(m.Land.position)
             ).all()
@@ -202,7 +200,23 @@ def _print_levers(title, n_barrels, n_bullets, labels, levers) -> None:
         )
 
 
-def evaluate(study_external_id: str | None = None) -> None:
+def _lever_summary(rows: list[dict]) -> dict | None:
+    """Mean of each metric over the folds (None if too few barrels)."""
+    if not rows:
+        return None
+    return {
+        "auc": _mean(rows, "auc"),
+        "cllr": _mean(rows, "cllr"),
+        "cllr_sd": _std(rows, "cllr"),
+        "cllr_min": _mean(rows, "cllr_min"),
+        "cohens_d": _mean(rows, "cohens_d"),
+        "pct_gap": _mean(rows, "pct_gap"),
+        "n_folds": len(rows),
+    }
+
+
+def _evaluated_studies(study_external_id: str | None = None):
+    """Yield ``(title, n_barrels, n_bullets, labels, levers)`` per bullet study."""
     from sqlmodel import Session, create_engine
     from verity_catalog.store import LocalBlobStore
 
@@ -227,13 +241,49 @@ def evaluate(study_external_id: str | None = None) -> None:
         if not len(labels):
             continue
         n_barrels = len(set(ba.tolist()) | set(bb.tolist()))
-        levers = evaluate_levers(comps, labels, ba, bb)
-        _print_levers(title, n_barrels, len(bullets), labels, levers)
+        yield title, n_barrels, len(bullets), labels, evaluate_levers(comps, labels, ba, bb)
+
+
+def evaluate(study_external_id: str | None = None) -> None:
+    for title, n_barrels, n_bullets, labels, levers in _evaluated_studies(study_external_id):
+        _print_levers(title, n_barrels, n_bullets, labels, levers)
+
+
+def build_results(study_external_id: str | None = None) -> list[dict]:
+    """Machine-readable ablation table — one entry per study, every lever
+    summarized over the same barrel-disjoint folds. Feeds the white paper and the
+    site benchmark, so the published table is regenerable, not hand-typed."""
+    out: list[dict] = []
+    for title, n_barrels, n_bullets, labels, levers in _evaluated_studies(study_external_id):
+        out.append(
+            {
+                "title": title,
+                "n_barrels": n_barrels,
+                "n_bullets": n_bullets,
+                "n_km": int(labels.sum()),
+                "n_knm": int((labels == 0).sum()),
+                "levers": {name: _lever_summary(rows) for name, rows in levers.items()},
+            }
+        )
+    return out
 
 
 def main() -> None:
-    arg = sys.argv[1] if len(sys.argv) > 1 else None
-    evaluate(arg)
+    args = sys.argv[1:]
+    json_out: str | None = None
+    if "--json" in args:
+        i = args.index("--json")
+        json_out = args[i + 1]
+        args = args[:i] + args[i + 2 :]
+    arg = args[0] if args else None
+    if json_out:
+        import json
+
+        results = build_results(arg)
+        Path(json_out).write_text(json.dumps(results, indent=2))
+        print(f"Wrote {json_out} ({len(results)} studies)")
+    else:
+        evaluate(arg)
 
 
 if __name__ == "__main__":

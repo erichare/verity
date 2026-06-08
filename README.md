@@ -66,7 +66,7 @@ population, an **ELUB bound** on how strong a claim the data can support, and th
   "likelihood_ratio": 146.0,
   "verbal": "moderately strong support for same source",
   "lr_bound_log10": 2.16,
-  "reference": { "name": "pooled bullet-land", "n_km": 146, "n_knm": 1755, "auc": 0.984, "cllr": 0.09 },
+  "reference": { "name": "pooled bullet-land", "n_km": 146, "n_knm": 1755, "auc": 0.984, "cllr": 0.193 },
   "attribution": [ /* the matched regions — the explanation */ ],
   "scope_note": "Not a claim about the error rate of examination, which remains unknown."
 }
@@ -91,15 +91,22 @@ Full write-up: [`docs/congruent-matching-regions.md`](docs/congruent-matching-re
 
 ## Validation (honest)
 
-- **Source-disjoint, first-principles (no learned representation).** A
-  barrel-disjoint protocol on Hamby-252 yields **AUC ≈ 0.92, Cllr ≈ 0.60**
-  (`Cllr_min ≈ 0.38`) on held-out barrels — informative, calibrated weight of
-  evidence from metrology alone. (`Cllr < 1` = informative; the `Cllr − Cllr_min`
-  gap is the calibration loss the source-disjoint split exposes, answering the
-  Cuellar et al. critique on its own terms.)
+- **Source-disjoint, first-principles (no learned representation).** Under a
+  barrel-disjoint protocol (no barrel in both train and test; reported per study,
+  never pooled across makes), the production `diag_contrast` scorer yields on
+  held-out barrels **AUC ≈ 1.00 and test Cllr ≈ 0.11 on Hamby-252**, and across
+  the four NBTRD bullet studies (Hamby-252/173, PGPD Beretta, Phoenix Ruger)
+  **test Cllr ≈ 0.11–0.35 at AUC ≈ 0.97–1.00** — an informative, calibrated
+  weight of evidence from metrology alone. (`Cllr < 1` = informative; the
+  `Cllr − Cllr_min` gap is the calibration loss the source-disjoint split exposes,
+  answering the Cuellar et al. critique on its own terms.) The scorer was selected
+  over the Phase-1 `diag_mean` and a multivariate fusion by an explicit
+  barrel-disjoint ablation (`verity-margin`); `verity-validation-report`
+  regenerates the full characterization — Tippett, DET, calibration, and the
+  source-disjoint summary — as a court-ready PDF.
 - **Learned representation (Phase-2b).** Trained barrel-disjoint on 210 Hamby
   scans, it **does not beat the cross-correlation baseline** — it overfits
-  (held-out AUC 0.92 → 0.67). Synthetic tests confirm the pipeline *does* learn
+  (held-out AUC collapses to ≈ 0.67). Synthetic tests confirm the pipeline *does* learn
   given enough signal: a **data limit, not a defect**. Next: expand the dataset
   and retest.
 
