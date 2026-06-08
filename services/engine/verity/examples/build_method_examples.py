@@ -21,10 +21,12 @@ from pathlib import Path
 
 import numpy as np
 
-from verity.compare import _land_fields, _to_preview, compare_bullets_with_previews
+from verity.cmr import cmr_regions_1d_pair
+from verity.compare import _land_fields, _to_preview, compare_bullets_with_previews, compare_with_previews
 from verity.decision.lr import ScoreLRModel, cllr_min
 from verity.preprocess import isolate_roughness, remove_form
 from verity.registration.align import align_1d
+from verity.report import build_comparison_report
 from verity.surface import Surface
 
 _LAMBDA_S, _LAMBDA_C = 4e-6, 250e-6
@@ -105,6 +107,99 @@ def _example(a_paths: list[Path], b_paths: list[Path], scores, labels) -> dict:
     }
 
 
+def _norm_sig(s) -> list[float]:
+    s = np.nan_to_num(np.asarray(s, dtype=float), nan=0.0)
+    s = s - s.mean()
+    scale = float(np.max(np.abs(s))) or 1.0
+    return [round(float(x / scale), 4) for x in s]
+
+
+def _cartridge_example() -> dict | None:
+    """A real Fadul same-slide (KM) breech-face pair → impressed report + previews."""
+    from collections import defaultdict
+
+    from verity.examples.cartridge_fadul import _FADUL_RE, _read_surface, fetch_fadul
+
+    masked = fetch_fadul()
+    if masked is None:
+        return None
+    slides: dict[int, list] = defaultdict(list)
+    for p in sorted(masked.glob("*.x3p")):
+        mm = _FADUL_RE.search(p.name)
+        if mm:
+            slides[int(mm.group(1))].append(p)
+    pair = next((v for v in slides.values() if len(v) >= 2), None)
+    if pair is None:
+        return None
+    ref = np.load(_ROOT / "services/api/verity_api/references/cartridge_fadul.npz")
+    report, previews = compare_with_previews(
+        _read_surface(pair[0]),
+        _read_surface(pair[1]),
+        domain="impressed",
+        reference_scores=ref["scores"],
+        reference_labels=ref["labels"],
+        reference_name="Fadul cartridge cases",
+        preview_size=72,
+    )
+    rep = report.to_dict()
+    return {
+        "domain": "impressed",
+        "scanA": previews["a"],
+        "scanB": previews["b"],
+        "bandsA": rep["attribution"],
+        "bandsB": rep["attribution_b"],
+        "score": round(float(rep["score"]), 3),
+        "lr": float(rep["likelihood_ratio"]),
+        "verbal": rep["verbal"],
+        "reference": {
+            "name": "Fadul cartridge cases (10 consecutively-manufactured slides)",
+            "auc": round(float(rep["reference"]["auc"]), 3),
+        },
+    }
+
+
+def _screwdriver_example() -> dict | None:
+    """A real tmaRks same-tool (KM) screwdriver pair → striated report + matched bands."""
+    from collections import defaultdict
+
+    from verity.examples.toolmark_tmaRks import export_tmaRks, load_tmaRks_marks
+    from verity.examples.toolmark_transfer import evaluate
+
+    if not export_tmaRks():
+        return None
+    marks = load_tmaRks_marks(level="edge")
+    res = evaluate(marks)
+    by: dict[str, list] = defaultdict(list)
+    for src, _tid, sig in marks:
+        by[src].append(sig)
+    pair = next((v for v in by.values() if len(v) >= 2), None)
+    if pair is None:
+        return None
+    sig_a, sig_b = pair[0], pair[1]
+    score = float(align_1d(sig_a, sig_b)[1])
+    bands_a, bands_b = cmr_regions_1d_pair(sig_a, sig_b, corr_thresh=0.5, lag_tol=10.0)
+    report = build_comparison_report(
+        score=score,
+        reference_scores=res["scores"],
+        reference_labels=res["labels"],
+        domain="striated",
+        reference_name="tmaRks screwdriver toolmarks",
+        score_kind="ccf",
+    )
+    rep = report.to_dict()
+    return {
+        "domain": "striated",
+        "signatureA": _norm_sig(sig_a),
+        "signatureB": _norm_sig(sig_b),
+        "bandsA": bands_a,
+        "bandsB": bands_b,
+        "score": round(score, 3),
+        "lr": float(rep["likelihood_ratio"]),
+        "verbal": rep["verbal"],
+        "reference": {"name": "tmaRks screwdriver toolmarks", "auc": round(float(rep["reference"]["auc"]), 3)},
+    }
+
+
 def main() -> None:
     rng = np.random.default_rng(0)
     data = np.load(_REF)
@@ -143,7 +238,22 @@ def main() -> None:
         "nKnm": int(km["reference"]["nKnm"]),
     }
 
-    _OUT.write_text(json.dumps({"km": km, "knm": knm, "calibration": calibration}))
+    others: dict = {}
+    for name, fn in (("cartridge", _cartridge_example), ("screwdriver", _screwdriver_example)):
+        try:
+            ex = fn()
+            if ex:
+                others[name] = ex
+                print(f"  {name}: LR={ex['lr']:.2f} '{ex['verbal']}'")
+            else:
+                print(f"  {name}: skipped (data unavailable)")
+        except Exception as exc:  # noqa: BLE001
+            print(f"  {name}: skipped ({exc})")
+
+    out: dict = {"km": km, "knm": knm, "calibration": calibration}
+    if others:
+        out["others"] = others
+    _OUT.write_text(json.dumps(out))
     print(f"wrote {_OUT} ({_OUT.stat().st_size / 1024:.0f} KB)")
     print(f"  KM  score={km['score']} LR={km['lr']:.1f} '{km['verbal']}' bands={len(km['bandsA'])}")
     print(f"  KNM score={knm['score']} LR={knm['lr']:.3f} '{knm['verbal']}' bands={len(knm['bandsA'])}")
