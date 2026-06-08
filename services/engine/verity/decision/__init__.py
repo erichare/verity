@@ -3,6 +3,7 @@ forensic metrics to validate it."""
 
 from .lr import ScoreLRModel, cllr_min
 from .metrics import cllr, ece, eer, lr_separation, margin, roc_auc, tippett
+from .scorer import BulletScorer, ContrastScorer, FusionScorer
 from .uncertainty import (
     BootstrapCalibration,
     LRInterval,
@@ -13,6 +14,9 @@ from .uncertainty import (
 __all__ = [
     "ScoreLRModel",
     "BootstrapCalibration",
+    "BulletScorer",
+    "ContrastScorer",
+    "FusionScorer",
     "LRInterval",
     "cached_bootstrap_calibration",
     "cllr",

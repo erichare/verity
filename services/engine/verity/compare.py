@@ -16,6 +16,7 @@ import numpy as np
 from .aggregate import bullet_comparison
 from .areal import areal_signature
 from .cmr import areal_votes, cmr_regions_1d_pair, consensus_members, regions_from_members
+from .decision.scorer import BulletScorer, ContrastScorer
 from .preprocess import isolate_roughness, remove_form
 from .region import DEFAULT_KEEP, extract_region
 from .registration.align import align_1d
@@ -157,27 +158,32 @@ def compare_bullets_with_previews(
     reference_name: str,
     provenance: dict | None = None,
     preview_size: int = 140,
+    scorer: BulletScorer | None = None,
 ) -> tuple[ComparisonReport, dict]:
     """Compare two *bullets* (each a set of land scans) → ``(report, previews)``.
 
     A single striated land is only weakly diagnostic; firearms identification gets
-    its power from aggregating a bullet's lands. The score is the best mean
-    land-to-land cross-correlation over cyclic land rotations (the AUC≈1.0 Phase-1
-    score) — unchanged. For attribution, the strongest-matching land of each bullet
-    is rendered (its oriented striae field), and the **consecutive matching striae**
-    (windows agreeing on the common lag) are returned as overlay bands on Mark A."""
+    its power from aggregating a bullet's lands. The default ``scorer`` is
+    :class:`~verity.decision.scorer.ContrastScorer` (``diag_contrast`` — how far the
+    matched land diagonal stands above the rest of the CCF matrix), selected over
+    ``diag_mean`` and a multivariate fusion by a barrel-disjoint ablation
+    (``verity-margin``). The scorer is pluggable, but a deployment must calibrate
+    against a reference scored the same way. For attribution, the strongest-matching
+    land of each bullet is rendered, and the **consecutive matching striae** (windows
+    agreeing on the common lag) are returned as overlay bands."""
+    scorer = scorer or ContrastScorer()
     fields_a = [_land_fields(s) for s in surfaces_a]
     fields_b = [_land_fields(s) for s in surfaces_b]
     sigs_a = [f[0] for f in fields_a]
     sigs_b = [f[0] for f in fields_b]
 
     cmp = bullet_comparison(sigs_a, sigs_b)
-    # Score on diag_contrast (diagonal minus off-diagonal), NOT the raw diagonal mean:
-    # the bullet reference is built on this margin. KNM bullets get a high diagonal by
-    # the luck of the max over cyclic rotations, but their whole matrix is high (flat,
-    # low contrast); KM bullets stand *above* their background. diag_mean fails to
-    # separate KM/KNM here (both ~0.4–0.5); diag_contrast separates them cleanly.
-    score = float("nan") if cmp is None else cmp.diag_contrast
+    # diag_contrast (diagonal minus off-diagonal), NOT the raw diagonal mean: KNM
+    # bullets get a high diagonal by the luck of the max over cyclic rotations, but
+    # their whole matrix is high (flat, low contrast); KM bullets stand *above*
+    # their background. The barrel-disjoint ablation (verity-margin) picks this
+    # over diag_mean and a multivariate fusion (which ties it / overfits).
+    score = float("nan") if cmp is None else scorer.score(cmp)
 
     attribution: list[dict] = []
     attribution_b: list[dict] = []
@@ -200,11 +206,11 @@ def compare_bullets_with_previews(
         reference_labels=reference_labels,
         domain="striated",
         reference_name=reference_name,
-        score_kind="bullet-contrast",
+        score_kind=scorer.name,
         attribution=attribution,
         attribution_b=attribution_b,
         provenance={
-            "scorer": "bullet-contrast",
+            "scorer": scorer.name,
             "domain": "striated",
             "n_lands_a": len(sigs_a),
             "n_lands_b": len(sigs_b),
