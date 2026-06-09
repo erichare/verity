@@ -4,7 +4,12 @@ pytest.importorskip("yaml")
 
 from verity_catalog.harvest.base import UrlListSource  # noqa: E402
 from verity_catalog.harvest.github import GithubSource  # noqa: E402
-from verity_catalog.ingest import build_source, load_manifest  # noqa: E402
+from verity_catalog.ingest import (  # noqa: E402
+    build_source,
+    load_manifest,
+    load_manifest_by_name,
+    resolve_manifest_name,
+)
 
 
 def test_load_sample_manifest():
@@ -46,6 +51,36 @@ def test_build_github_source():
     assert src.repo == "CSAFE-ISU/cartridgeCaseScans"
     assert src.ref == "main"
     assert src.path == "fadulMasked"
+
+
+def test_load_manifest_by_name_confined_to_manifest_dir():
+    m = load_manifest_by_name("hamby252-barrel1-sample")
+    assert m.name == "hamby252-barrel1-sample"
+
+
+@pytest.mark.parametrize(
+    "evil",
+    [
+        "../../../../etc/passwd",
+        "../ingest",
+        "/etc/passwd",
+        "..",
+        ".",
+        "sub/manifest",
+        "foo\x00bar",
+        "name with spaces",
+    ],
+)
+def test_resolve_manifest_name_rejects_traversal(evil):
+    """Untrusted names must never escape MANIFEST_DIR (path-injection guard)."""
+    with pytest.raises(FileNotFoundError):
+        resolve_manifest_name(evil)
+
+
+@pytest.mark.parametrize("evil", ["../../../../etc/passwd", "/etc/passwd", "../ingest"])
+def test_load_manifest_by_name_rejects_traversal(evil):
+    with pytest.raises(FileNotFoundError):
+        load_manifest_by_name(evil)
 
 
 def test_cartridge_manifest_rejects_bad_mark_type():

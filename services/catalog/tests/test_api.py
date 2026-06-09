@@ -231,3 +231,12 @@ def test_dataset_404(client: TestClient):
     resp = client.get("/datasets/no-such-dataset")
     assert resp.status_code == 404
     assert resp.json()["success"] is False
+
+
+def test_dataset_rejects_path_traversal(client: TestClient):
+    """An untrusted dataset name that reaches the handler must not read files
+    outside the bundled manifests dir — it resolves to a 404, never a real file.
+    (Resolver-level traversal guards are exercised in ``test_manifest.py``.)"""
+    for evil in ["..%2f..%2f..%2fetc%2fpasswd", "%2e%2e", "....yaml", "no_such"]:
+        resp = client.get(f"/datasets/{evil}")
+        assert resp.status_code == 404, f"{evil!r} should 404, got {resp.status_code}"
