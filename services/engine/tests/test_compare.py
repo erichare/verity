@@ -119,7 +119,8 @@ def test_compare_bullets_scores_on_diag_contrast_not_diag_mean():
     reference is built on), NOT ``diag_mean``. Scoring on diag_mean put every live
     comparison above the reference and saturated the LR at the cap for any pair."""
     from verity.aggregate import bullet_comparison
-    from verity.compare import _LAMBDA_C, _LAMBDA_S, compare_bullets
+    from verity.compare import compare_bullets
+    from verity.decision import DEFAULT_SCORER_CONFIG as _CFG
     from verity.signature import striation_signature
 
     a, b = _bullet(0), _bullet(1)
@@ -127,8 +128,30 @@ def test_compare_bullets_scores_on_diag_contrast_not_diag_mean():
     rep = compare_bullets(
         a, b, reference_scores=scores, reference_labels=labels, reference_name="syn"
     )
-    sa = [striation_signature(s, lambda_s=_LAMBDA_S, lambda_c=_LAMBDA_C) for s in a]
-    sb = [striation_signature(s, lambda_s=_LAMBDA_S, lambda_c=_LAMBDA_C) for s in b]
+    sa = [striation_signature(s, lambda_s=_CFG.lambda_s, lambda_c=_CFG.lambda_c) for s in a]
+    sb = [striation_signature(s, lambda_s=_CFG.lambda_s, lambda_c=_CFG.lambda_c) for s in b]
     cmp = bullet_comparison(sa, sb)
     assert rep.score_kind == "bullet-contrast"
     assert rep.score == pytest.approx(cmp.diag_contrast)
+
+
+def test_config_override_default_invariance_and_effect():
+    """Threading a per-request ScorerConfig must leave the deployed default path
+    byte-identical (the safety guarantee), and an explicit override must change the score
+    (the basis for the API's off-config calibration refusal)."""
+    import dataclasses
+
+    from verity.decision import DEFAULT_SCORER_CONFIG
+
+    a, b = _striated(0), _striated(7)
+    base, kind = comparison_score(a, b, domain="striated")
+    assert kind == "ccf"
+    assert comparison_score(a, b, domain="striated", config=DEFAULT_SCORER_CONFIG)[0] == base
+    tight = dataclasses.replace(DEFAULT_SCORER_CONFIG, lambda_c=8e-6)
+    assert comparison_score(a, b, domain="striated", config=tight)[0] != base
+
+    # Impressed: the areal-band guard must keep the deployed band for the default config
+    # (areal_signature's own lambda_c differs from the striated band).
+    ia, ib = _areal(0), _areal(1)
+    ibase = comparison_score(ia, ib, domain="impressed")[0]
+    assert comparison_score(ia, ib, domain="impressed", config=DEFAULT_SCORER_CONFIG)[0] == ibase
