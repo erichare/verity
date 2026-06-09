@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import methodData from "@/lib/method-data.json";
+import liveProof from "@/lib/live-proof-screwdriver.json";
 import { formatLRx } from "@/lib/format";
 import { AlignedSignatures } from "@/components/method/AlignedSignatures";
 
@@ -24,13 +24,15 @@ interface CalibrationSlice {
   nKm: number;
   nKnm: number;
 }
-const data = methodData as unknown as { km: Example; knm: Example; calibration: CalibrationSlice };
+const data = liveProof as unknown as { km: Example; knm: Example; calibration: CalibrationSlice };
 
 /**
  * The single most persuasive thing on the site, brought to the homepage: the
  * SAME algorithm flipping between same-source and different-source verdicts on
- * real Hamby-252 bullets. Reuses the real method-data and the AlignedSignatures
- * visualization — no fabricated numbers.
+ * real screwdriver toolmarks (tmaRks) — a NON-firearm mark, to make the point
+ * that it's one method for any surface. Real CMR-1D comparisons calibrated on the
+ * committed toolmark reference (lib/live-proof-screwdriver.json); no fabricated
+ * numbers. The /method walkthrough carries the full bullet example.
  */
 export function LiveProof() {
   const [mode, setMode] = useState<"km" | "knm">("km");
@@ -50,9 +52,10 @@ export function LiveProof() {
           Same method. <span className="accent-text">The evidence decides.</span>
         </h2>
         <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-foreground/80 sm:text-base">
-          Two Hamby-252 bullets fired from the <em>same</em> barrel, and two from{" "}
-          <em>different</em> barrels — the same algorithm, with zero parameters tuned to these
-          bullets. Flip the switch and watch the weight of evidence reverse.
+          Two screwdriver toolmarks cut by the <em>same</em> edge, and two by{" "}
+          <em>different</em> edges — the same algorithm that compares bullets and cartridge cases,
+          with zero parameters tuned to these marks. Flip the switch and watch the weight of
+          evidence reverse.
         </p>
       </div>
 
@@ -70,7 +73,7 @@ export function LiveProof() {
                     : "text-foreground/70 hover:text-foreground"
                 }`}
               >
-                {k === "km" ? "Same firearm" : "Different firearms"}
+                {k === "km" ? "Same tool" : "Different tools"}
               </button>
             ))}
           </div>
@@ -89,7 +92,7 @@ export function LiveProof() {
             <p className="mt-3 text-sm leading-relaxed text-foreground/80">
               {ex.verbal}. The reference can support at most{" "}
               <strong className="text-foreground">{cal.nKm}:1</strong> either way — and the same
-              code produced this with nothing tuned to these bullets.
+              code produced this with nothing tuned to these marks.
             </p>
           </div>
 
