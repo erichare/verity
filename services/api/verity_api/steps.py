@@ -12,21 +12,31 @@ off the event loop; their inputs are surfaces already size-capped at upload.
 
 from __future__ import annotations
 
+import numpy as np
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from fastapi.responses import Response
 
 from verity import align_1d, land_trace
 from verity.aggregate import bullet_comparison
 from verity.areal import areal_signature
-from verity.decision import DEFAULT_SCORER_CONFIG
+from verity.decision import DEFAULT_SCORER_CONFIG, ScoreLRModel
+from verity.decision.uncertainty import lr_credible_interval
 from verity.preprocess.filters import isolate_roughness
 from verity.preprocess.form import remove_form
+from verity.report import verbal_weight
 from verity.surface import Surface
 
 from . import limits
 from .artifacts import STORE, _sha256
 from .decode import engine_version, surface_from_bytes
-from .intermediates import _decimate_1d, _downsample_grid, bullet_features_dict, trace_dict
+from .intermediates import (
+    _decimate_1d,
+    _downsample_grid,
+    bullet_features_dict,
+    calibration_diagnostics,
+    trace_dict,
+)
+from .references import load_reference_by_id
 
 steps = APIRouter(prefix="/v1")
 
@@ -250,3 +260,89 @@ def step_features(a: str = Form(...), b: str = Form(...)) -> dict:
         "features": bullet_features_dict(cmp),
         "engine_version": engine_version(),
     }
+
+
+_CALIBRATE_REASON = (
+    "Refused to emit a calibrated LR: the score was computed under scorer config {got}, "
+    "but reference {ref!r} is calibrated under {want}. The two scores live on different "
+    "scales, so a calibrated LR would be meaningless rather than merely uncertain. Score "
+    "under the reference's config, or calibrate against a reference built under {got}."
+)
+
+
+@steps.post(
+    "/steps/calibrate", tags=["v1"], summary="Calibrate a score → bounded LR (the firewall)"
+)
+def step_calibrate(
+    score: float = Form(...),
+    reference: str = Form(...),
+    scorer_config_hash: str | None = Form(None),
+    ci: bool = Form(True),
+) -> dict:
+    """Map a comparison score to a bounded likelihood ratio against a named reference —
+    the calibration firewall, as an addressable step. The reference (its KM/KNM scores)
+    both fits the monotone, ELUB-bounded calibration and scopes it.
+
+    The firewall: a calibrated LR is valid only if the score was produced under the
+    *same* scorer config as the reference. If the caller declares a `scorer_config_hash`
+    that does **not** match the reference's, the LR is **refused** (`calibrated: false`,
+    raw score passed through) — a mis-scaled number would be worse than none. If the hash
+    matches, the LR is emitted with `config_verified: true`; if omitted, the LR is emitted
+    with `config_verified: false` (the deployed pipeline uses the matching config, so the
+    common case is sound, but the caller hasn't proven it). The bullet score to pass here
+    is `features.diag_contrast`; the impressed score is the CMR-2D count."""
+    try:
+        bundle = load_reference_by_id(reference)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=f"unknown reference {reference!r}") from exc
+
+    ref_hash = bundle.scorer_config_hash
+    if scorer_config_hash and ref_hash and scorer_config_hash != ref_hash:
+        return {
+            "calibrated": False,
+            "score": score,
+            "reference": reference,
+            "requested_scorer_config_hash": scorer_config_hash,
+            "reference_scorer_config_hash": ref_hash,
+            "reason": _CALIBRATE_REASON.format(
+                got=scorer_config_hash[:12], ref=reference, want=ref_hash[:12]
+            ),
+        }
+
+    scores = np.asarray(bundle.scores, dtype=np.float64)
+    labels = np.asarray(bundle.labels, dtype=np.float64)
+    model = ScoreLRModel(lr_bound="auto").fit(scores, labels)
+    lr = float(model.predict_lr(np.asarray([score], dtype=np.float64))[0])
+    log10_lr = float(np.log10(lr))
+    out: dict = {
+        "calibrated": True,
+        "config_verified": bool(scorer_config_hash and ref_hash and scorer_config_hash == ref_hash),
+        "score": score,
+        "likelihood_ratio": lr,
+        "log10_lr": log10_lr,
+        "lr_bound_log10": model._log_bound,
+        "direction": "same source" if log10_lr > 0 else "different sources",
+        "verbal": verbal_weight(log10_lr),
+        "reference": {
+            "id": reference,
+            "name": bundle.name,
+            "scorer_config_hash": ref_hash,
+            "diagnostics": (bundle.provenance or {}).get("diagnostics"),
+        },
+        "calibration": calibration_diagnostics(scores, labels, score, bundle.name),
+    }
+    if ci:
+        interval = lr_credible_interval(
+            scores,
+            labels,
+            float(score),
+            lr_bound="auto",
+            n_boot=1000,
+            seed=0,
+            cluster_ids=bundle.cluster_ids,
+            point_log10_lr=log10_lr,
+        )
+        out["log10_lr_ci"] = [interval.lo_log10_lr, interval.hi_log10_lr]
+        out["lr_ci_method"] = f"bootstrap-{interval.resample}"
+        out["n_sources"] = interval.n_sources
+    return out
