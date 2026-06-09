@@ -106,7 +106,7 @@ def fig_scorer_selection(studies: list[dict]) -> None:
     ]
     fig, ax = plt.subplots(figsize=(5.4, 2.8))
     bars = ax.bar(names, means, color=colours, width=0.6)
-    for b, m in zip(bars, means):
+    for b, m in zip(bars, means, strict=True):
         ax.text(b.get_x() + b.get_width() / 2, m + 0.006, f"{m:.3f}",
                 ha="center", va="bottom", fontsize=8)
     ax.set_ylabel(r"Mean barrel-disjoint $C_{\mathrm{llr}}$ (4 studies)")
@@ -130,19 +130,20 @@ def fig_cllr_cartridge() -> None:
     methods = data["methods"]  # [areal, CMR-2D, cmcR]
     names = ["global\nareal CCF", "CMR-2D\n(Verity)", "cmcR\n(CMC)"]
     colours = [C_BASE, C_PROD, "#2e8b6f"]  # baseline · deployed (hero) · specialist
-    # Recorded baselines are hatched so "reproduces offline" is visible at a glance.
+    # CMR-2D reproduces offline from the committed npz (solid); the baselines need
+    # R/caches to re-lock (hatched) — the reproducibility status, visible at a glance.
     hatches = ["" if m.get("reproducible") else "//" for m in methods]
 
     fig, (axa, axc) = plt.subplots(1, 2, figsize=(5.6, 2.9))
 
     aucs = [m["auc"] for m in methods]
     bars_a = axa.bar(names, aucs, color=colours, width=0.62)
-    for b, h in zip(bars_a, hatches):
+    for b, h in zip(bars_a, hatches, strict=True):
         if h:  # hatch needs a contrasting edge to render
             b.set_hatch(h)
             b.set_edgecolor("white")
             b.set_linewidth(0.0)
-    for b, v in zip(bars_a, aucs):
+    for b, v in zip(bars_a, aucs, strict=True):
         axa.text(b.get_x() + b.get_width() / 2, v + 0.003, f"{v:.3f}",
                  ha="center", va="bottom", fontsize=8)
     axa.set_ylabel("Pooled AUC (higher is better)")
@@ -154,7 +155,7 @@ def fig_cllr_cartridge() -> None:
     bars_c = axc.bar(names, cllrs, color=colours, width=0.62,
                      yerr=cllr_err, capsize=2.5,
                      error_kw={"elinewidth": 0.8, "ecolor": "#102a44"})
-    for b, h in zip(bars_c, hatches):
+    for b, h in zip(bars_c, hatches, strict=True):
         if h:
             b.set_hatch(h)
             b.set_edgecolor("white")

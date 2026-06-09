@@ -3,6 +3,7 @@
   "domain": "striated-toolmark",
   "deployed_scorer": "CMR-1D (congruent matching regions, 1-D striae; Chumbley/CMS)",
   "reproducible_from": "services/api/verity_api/references/toolmark_tmaRks.npz",
+  "baselines_from": "docs/whitepaper/data/baselines.json (verity-relock-baselines)",
   "source_level": "tool-edge (the mark generator)",
   "summary": {
     "reference_name": "tmaRks screwdriver toolmarks (consecutively manufactured; tool-edge sources)",
@@ -36,32 +37,33 @@
     {
       "method": "global 1-D CCF (same pipeline as bullets)",
       "scorer": "align_1d (1-D cross-correlation, no congruence consensus)",
-      "auc": 0.94,
-      "cllr_range": [
-        0.25,
-        0.45
-      ],
-      "level": "tool-edge",
-      "measured_by": "verity-toolmark-tmaRks",
-      "requires": "tmaRks cache (or R+network on first fetch)",
+      "dataset": "tmaRks (tool-edge) \u2014 directly comparable to CMR-1D",
+      "auc": 0.9418,
+      "cllr": 0.4473,
+      "cllr_sd": 0.0642,
+      "measured_by": "verity-relock-baselines",
+      "measured": true,
       "reproducible": false,
-      "note": "the pre-CMR baseline on the same set; strong transfer of the bullets pipeline"
+      "note": "pre-CMR baseline on the same set; CMR-1D beats it (lower Cllr, higher AUC)"
     },
     {
       "method": "Chumbley U (specialist)",
       "scorer": "toolmaRk::chumbley_non_random",
-      "demonstrated_on": "ameslab (16 profiles / 7 tools) \u2014 proof-of-concept, NOT tmaRks",
-      "measured_by": "verity-toolmark-chumbley-proof",
-      "requires": "git+network+R(toolmaRk)",
+      "dataset": "ameslab (7 tools) \u2014 different, smaller set; NOT tmaRks",
+      "auc": 0.6142,
+      "cllr": 0.9571,
+      "cllr_sd": 0.0495,
+      "measured_by": "verity-relock-baselines",
+      "measured": true,
       "reproducible": false,
-      "note": "the field-standard toolmark statistic; head-to-head shown separately on ameslab"
+      "note": "field-standard toolmark statistic, measured on ameslab; cross-method context"
     }
   ],
   "provenance": {
     "generator": "build_toolmark_validation_data",
-    "git_commit": "dfe1195",
+    "git_commit": "76cc93c",
     "source_reference_sha256": "d6c3e596cdc961bb829115ef4809a63749d906f0a8aae3378d1dab52ab8341c3",
     "generated_at": "2026-06-09",
-    "note": "Deployed CMR-1D numbers recomputed from the committed reference (no network). Baselines are recorded context from the named harnesses (the Chumbley head-to-head is on ameslab, a different set); not recomputed here."
+    "note": "Deployed CMR-1D numbers recomputed from the committed reference (no network). Baselines read from baselines.json (measured; the Chumbley head-to-head is on ameslab, a different set). Re-lock with verity-relock-baselines."
   }
 }
