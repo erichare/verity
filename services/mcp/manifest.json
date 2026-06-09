@@ -1,0 +1,44 @@
+{
+  "manifest_version": "0.3",
+  "name": "verity-forensics",
+  "display_name": "Verity — Forensic Mark Comparison",
+  "version": "0.1.0",
+  "description": "Calibrated, reproducible likelihood ratios for forensic surface marks (bullet lands, cartridge breech faces, toolmarks). Every answer is a calibrated weight of evidence with a reproducible recipe handle — or an honest refusal. Never a fabricated number.",
+  "author": {
+    "name": "Eric Hare",
+    "url": "https://verity.codes"
+  },
+  "homepage": "https://verity.codes",
+  "documentation": "https://verity.codes/docs#reproducibility",
+  "server": {
+    "type": "python",
+    "entry_point": "verity_mcp/server.py",
+    "mcp_config": {
+      "command": "python",
+      "args": ["-m", "verity_mcp.server"],
+      "env": {
+        "PYTHONPATH": "${__dirname}/lib:${__dirname}",
+        "VERITY_API_URL": "${user_config.api_url}"
+      }
+    }
+  },
+  "tools": [
+    { "name": "detect_mark_type", "description": "Suggest striated vs impressed for a scan." },
+    { "name": "compare_marks", "description": "Compare two marks → a calibrated likelihood ratio + recipe handle." },
+    { "name": "calibrate_score", "description": "Map a score → bounded LR (the calibration firewall)." },
+    { "name": "list_references", "description": "The calibration references + their provenance." },
+    { "name": "scorer_config", "description": "The deployed scorer config + hash." },
+    { "name": "service_health", "description": "Service status + calibrated domains." }
+  ],
+  "user_config": [
+    {
+      "name": "api_url",
+      "type": "string",
+      "title": "Verity API URL",
+      "description": "Base URL of the Verity API (the hosted instance, or your own deployment).",
+      "default": "https://api.verity.codes",
+      "required": true
+    }
+  ],
+  "keywords": ["forensics", "firearms", "toolmarks", "likelihood-ratio", "x3p", "reproducible"]
+}
