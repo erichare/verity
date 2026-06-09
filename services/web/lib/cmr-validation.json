@@ -1,0 +1,60 @@
+{
+  "generated_at": "2026-06-09",
+  "git_commit": "dfe1195",
+  "scorer_config_hash": "ea4ddd513b57ce8a3dd117dabc6d539432f7ddfab382c425837ead8199a6e127",
+  "claim": "One algorithm, one scorer config (shared hash above), reduced to each modality and validated source-disjoint \u2014 CMR recovers the field-standard per-modality method in each case.",
+  "reductions": [
+    {
+      "modality": "striated",
+      "label": "Bullet lands",
+      "reduction": "consecutive matching striae (1-D, inter-land aggregate)",
+      "specialist": "bulletxtrctr",
+      "reference": "pooled: Hamby-252/173, PGPD Beretta, Phoenix",
+      "n_km": 146,
+      "n_knm": 1755,
+      "in_sample_auc": 0.9838,
+      "in_sample_cllr_min": 0.1681,
+      "source_disjoint": {
+        "cllr": 0.1859,
+        "cllr_sd": 0.1259,
+        "auc": 0.9889,
+        "n_folds": 10
+      }
+    },
+    {
+      "modality": "impressed",
+      "label": "Cartridge breech face",
+      "reduction": "congruent matching cells / CMC (2-D)",
+      "specialist": "cmcR",
+      "reference": "Fadul (10 consecutively-manufactured slides)",
+      "n_km": 10,
+      "n_knm": 180,
+      "in_sample_auc": 0.9967,
+      "in_sample_cllr_min": 0.0701,
+      "source_disjoint": {
+        "cllr": 0.3849,
+        "cllr_sd": 0.1868,
+        "auc": 0.9906,
+        "n_folds": 10
+      }
+    },
+    {
+      "modality": "striated-toolmark",
+      "label": "Screwdriver toolmark",
+      "reduction": "Chumbley consecutive matching striae (1-D)",
+      "specialist": "toolmaRk (Chumbley U)",
+      "reference": "tmaRks (56 tool-edges; source = mark generator)",
+      "n_km": 3537,
+      "n_knm": 164373,
+      "in_sample_auc": 0.9636,
+      "in_sample_cllr_min": 0.289,
+      "source_disjoint": {
+        "cllr": 0.3277,
+        "cllr_sd": 0.0496,
+        "auc": 0.957,
+        "n_folds": 10
+      }
+    }
+  ],
+  "note": "Every row recomputed from a committed reference via the same source-disjoint path (no network). Bullet lands are the pooled 4-study reference (the single best study, Hamby-252, is lower still); cartridge/toolmark are their full sets. These characterize weight of evidence on the named references, not field error rates."
+}

@@ -26,6 +26,7 @@ import matplotlib.pyplot as plt  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
 DATA = HERE / "data" / "ablation.json"
+CARTRIDGE = HERE / "data" / "cartridge_fadul.json"
 
 # Serious, print-friendly defaults.
 plt.rcParams.update(
@@ -118,10 +119,64 @@ def fig_scorer_selection(studies: list[dict]) -> None:
     print(f"wrote {out}")
 
 
+def fig_cllr_cartridge() -> None:
+    """The impressed (cartridge) unification figure: the *same* generic algorithm,
+    scored on the same slide-disjoint Fadul task, moves from the naive global areal-CCF
+    baseline toward the cmcR Congruent Matching Cells specialist. Left: pooled AUC
+    (discrimination). Right: Cllr (calibrated cost; the CMR-2D bar is the reproducible
+    slide-disjoint value with its cross-fold SD; baselines are recorded — hatched)."""
+    with CARTRIDGE.open() as fh:
+        data = json.load(fh)
+    methods = data["methods"]  # [areal, CMR-2D, cmcR]
+    names = ["global\nareal CCF", "CMR-2D\n(Verity)", "cmcR\n(CMC)"]
+    colours = [C_BASE, C_PROD, "#2e8b6f"]  # baseline · deployed (hero) · specialist
+    # Recorded baselines are hatched so "reproduces offline" is visible at a glance.
+    hatches = ["" if m.get("reproducible") else "//" for m in methods]
+
+    fig, (axa, axc) = plt.subplots(1, 2, figsize=(5.6, 2.9))
+
+    aucs = [m["auc"] for m in methods]
+    bars_a = axa.bar(names, aucs, color=colours, width=0.62)
+    for b, h in zip(bars_a, hatches):
+        if h:  # hatch needs a contrasting edge to render
+            b.set_hatch(h)
+            b.set_edgecolor("white")
+            b.set_linewidth(0.0)
+    for b, v in zip(bars_a, aucs):
+        axa.text(b.get_x() + b.get_width() / 2, v + 0.003, f"{v:.3f}",
+                 ha="center", va="bottom", fontsize=8)
+    axa.set_ylabel("Pooled AUC (higher is better)")
+    axa.set_ylim(0.85, 1.015)
+    axa.set_title("Discrimination", fontsize=9)
+
+    cllrs = [m["cllr"] for m in methods]
+    cllr_err = [m.get("cllr_sd", 0.0) for m in methods]
+    bars_c = axc.bar(names, cllrs, color=colours, width=0.62,
+                     yerr=cllr_err, capsize=2.5,
+                     error_kw={"elinewidth": 0.8, "ecolor": "#102a44"})
+    for b, h in zip(bars_c, hatches):
+        if h:
+            b.set_hatch(h)
+            b.set_edgecolor("white")
+            b.set_linewidth(0.0)
+    axc.set_ylabel(r"$C_{\mathrm{llr}}$ (lower is better)")
+    axc.set_ylim(0, max(cllrs) + max(cllr_err) + 0.12)
+    axc.set_title("Calibrated cost", fontsize=9)
+    axc.text(0.97, 0.95, "hatched = recorded\n(needs R/network)", transform=axc.transAxes,
+             ha="right", va="top", fontsize=6.5, color="#5a6470")
+
+    fig.tight_layout()
+    out = HERE / "fig_cllr_cartridge.pdf"
+    fig.savefig(out)
+    plt.close(fig)
+    print(f"wrote {out}")
+
+
 def main() -> None:
     studies = load()
     fig_cllr_by_study(studies)
     fig_scorer_selection(studies)
+    fig_cllr_cartridge()
 
 
 if __name__ == "__main__":

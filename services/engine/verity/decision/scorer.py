@@ -39,7 +39,16 @@ class BulletScorer(Protocol):
 
 class ContrastScorer:
     """The production scorer: ``diag_contrast``. Selected by the barrel-disjoint
-    lever ablation; leaves the deployed behaviour unchanged."""
+    lever ablation; leaves the deployed behaviour unchanged.
+
+    In the CMR frame this is congruence at the *inter-land* level: a same-source
+    bullet's lands match on a single cyclic diagonal at consistent lags, and
+    ``diag_contrast`` measures how far that congruent diagonal stands above the
+    background. It is the bullet-land aggregate of the same congruence principle
+    ``cmr_score_1d`` applies *within* a land — so the two compose rather than compete
+    (see ``docs/congruent-matching-regions.md``), and the deployed bullet, cartridge
+    (CMR-2D), and toolmark (CMR-1D) references are all consensus-of-congruence scores
+    under one ``DEFAULT_SCORER_CONFIG``."""
 
     name = "bullet-contrast"
 

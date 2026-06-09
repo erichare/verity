@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import { useState, type ReactNode } from "react";
 import methodData from "@/lib/method-data.json";
+import cmrValidation from "@/lib/cmr-validation.json";
 import { Reveal } from "@/components/Reveal";
 import { Heatmap } from "@/components/method/Heatmap";
 import { SignaturePlot } from "@/components/method/SignaturePlot";
@@ -75,6 +76,24 @@ const data = methodData as unknown as {
   knm: Example;
   calibration: Calibration;
   others?: Others;
+};
+
+interface CmrReduction {
+  modality: string;
+  label: string;
+  reduction: string;
+  specialist: string;
+  reference: string;
+  n_km: number;
+  n_knm: number;
+  in_sample_auc: number;
+  source_disjoint: { cllr: number; cllr_sd: number; auc: number; n_folds: number };
+}
+const cmr = cmrValidation as unknown as {
+  scorer_config_hash: string;
+  claim: string;
+  reductions: CmrReduction[];
+  note: string;
 };
 
 function formatLR(lr: number): string {
@@ -445,6 +464,59 @@ export default function MethodPage() {
             </div>
           </Reveal>
         )}
+
+        {/* Three reductions, validated source-disjoint */}
+        <Reveal className="mt-20 sm:mt-28">
+          <div className="text-center">
+            <span className="glass inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs text-foreground/70">
+              <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+              One config, every modality
+            </span>
+            <h2 className="mt-5 font-display text-2xl font-medium text-foreground sm:text-3xl">
+              Three reductions, validated source-disjoint
+            </h2>
+            <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-foreground/80">
+              The same congruent-matching-regions algorithm, under one scorer config, reduces to the
+              field-standard method for each mark — and recovers it. Each figure is the held-out
+              (source-disjoint) weight-of-evidence cost on the named reference, recomputed from the
+              committed calibration data.
+            </p>
+          </div>
+
+          <div className="mt-8 grid gap-4 sm:grid-cols-3">
+            {cmr.reductions.map((r) => (
+              <div key={r.modality} className="glass flex flex-col rounded-2xl p-5">
+                <p className="text-xs uppercase tracking-wider text-muted">{r.label}</p>
+                <p className="mt-1 text-sm text-foreground/80">
+                  recovers <strong className="text-foreground">{r.reduction}</strong>
+                </p>
+                <div className="mt-4 flex items-baseline gap-2">
+                  <span className="font-mono text-3xl font-semibold accent-text">
+                    {r.source_disjoint.cllr.toFixed(2)}
+                  </span>
+                  <span className="text-xs text-muted">
+                    ± {r.source_disjoint.cllr_sd.toFixed(2)} Cllr
+                  </span>
+                </div>
+                <p className="mt-1 text-xs text-muted">
+                  AUC {r.source_disjoint.auc.toFixed(3)} · {r.n_km} same-source pairs ·{" "}
+                  {r.source_disjoint.n_folds} folds
+                </p>
+                <p className="mt-auto border-t border-border pt-3 text-[11px] leading-snug text-foreground/60">
+                  {r.reference}
+                  <span className="mt-1 block text-muted">vs. specialist: {r.specialist}</span>
+                </p>
+              </div>
+            ))}
+          </div>
+
+          <p className="mx-auto mt-5 max-w-2xl text-center text-[11px] leading-relaxed text-muted">
+            All three references share one scorer-config hash (
+            <span className="font-mono">{cmr.scorer_config_hash.slice(0, 12)}…</span>) — the same
+            algorithm and parameters, not three tuned pipelines. These characterize weight of evidence
+            on the named references, not field-wide error rates.
+          </p>
+        </Reveal>
 
         {/* Closing */}
         <Reveal className="mt-20 sm:mt-28">

@@ -1,0 +1,67 @@
+{
+  "reference": "tmaRks screwdriver toolmarks (consecutively manufactured; tool-edge sources)",
+  "domain": "striated-toolmark",
+  "deployed_scorer": "CMR-1D (congruent matching regions, 1-D striae; Chumbley/CMS)",
+  "reproducible_from": "services/api/verity_api/references/toolmark_tmaRks.npz",
+  "source_level": "tool-edge (the mark generator)",
+  "summary": {
+    "reference_name": "tmaRks screwdriver toolmarks (consecutively manufactured; tool-edge sources)",
+    "domain": "striated-toolmark",
+    "n_km": 3537,
+    "n_knm": 164373,
+    "n_sources": 56,
+    "auc": 0.9635631824713695,
+    "eer": 0.08502986032713503,
+    "cllr": 0.29184068011321457,
+    "cllr_min": 0.28897905474381974,
+    "calibration_loss": 0.002861625369394827,
+    "ece": 0.11233044552045944,
+    "lr_bound_log10": 3.5486350598147514,
+    "cohens_d": 6.0671417007122175,
+    "pct_gap": -1.0,
+    "barrel_disjoint": {
+      "n_folds": 10,
+      "cllr_mean": 0.3277319999532743,
+      "cllr_std": 0.04958261824239817,
+      "cllr_min_mean": 0.31341896592532753,
+      "cllr_min_std": 0.04378152181432343,
+      "auc_mean": 0.9569780392440524,
+      "auc_std": 0.009807609256277624,
+      "calibration_loss": 0.014313034027946758
+    },
+    "pipeline_version": "0.1.0",
+    "generated_at": "2026-06-09"
+  },
+  "baselines": [
+    {
+      "method": "global 1-D CCF (same pipeline as bullets)",
+      "scorer": "align_1d (1-D cross-correlation, no congruence consensus)",
+      "auc": 0.94,
+      "cllr_range": [
+        0.25,
+        0.45
+      ],
+      "level": "tool-edge",
+      "measured_by": "verity-toolmark-tmaRks",
+      "requires": "tmaRks cache (or R+network on first fetch)",
+      "reproducible": false,
+      "note": "the pre-CMR baseline on the same set; strong transfer of the bullets pipeline"
+    },
+    {
+      "method": "Chumbley U (specialist)",
+      "scorer": "toolmaRk::chumbley_non_random",
+      "demonstrated_on": "ameslab (16 profiles / 7 tools) \u2014 proof-of-concept, NOT tmaRks",
+      "measured_by": "verity-toolmark-chumbley-proof",
+      "requires": "git+network+R(toolmaRk)",
+      "reproducible": false,
+      "note": "the field-standard toolmark statistic; head-to-head shown separately on ameslab"
+    }
+  ],
+  "provenance": {
+    "generator": "build_toolmark_validation_data",
+    "git_commit": "dfe1195",
+    "source_reference_sha256": "d6c3e596cdc961bb829115ef4809a63749d906f0a8aae3378d1dab52ab8341c3",
+    "generated_at": "2026-06-09",
+    "note": "Deployed CMR-1D numbers recomputed from the committed reference (no network). Baselines are recorded context from the named harnesses (the Chumbley head-to-head is on ameslab, a different set); not recomputed here."
+  }
+}

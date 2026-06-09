@@ -7,7 +7,12 @@ import json
 import numpy as np
 
 from verity.decision import DEFAULT_SCORER_CONFIG
-from verity.examples._reference_io import reference_diagnostics, write_reference
+from verity.examples._reference_io import (
+    barrels_from_clusters,
+    load_reference,
+    reference_diagnostics,
+    write_reference,
+)
 
 
 def _synth():
@@ -71,3 +76,34 @@ def test_write_false_does_not_touch_disk(tmp_path):
     )
     assert not out.exists()
     assert art.provenance["diagnostics"]["n_knm"] == 80
+
+
+def test_load_reference_round_trip(tmp_path):
+    s, lab, c = _synth()
+    out = tmp_path / "ref.npz"
+    write_reference(
+        out, scores=s, labels=lab, cluster_ids=c,
+        name="t", generator="g", seed=1, datasets=[{"x": 1}], write=True,
+    )
+    loaded = load_reference(out)
+    assert np.allclose(loaded.scores, s)
+    assert np.array_equal(loaded.labels, lab)
+    assert loaded.cluster_ids.shape[0] == len(s)
+    assert loaded.provenance is not None
+    assert loaded.provenance["scorer_config_hash"] == DEFAULT_SCORER_CONFIG.config_hash
+
+
+def test_load_reference_missing_sidecar(tmp_path):
+    out = tmp_path / "ref.npz"
+    np.savez(out, scores=np.zeros(3), labels=np.zeros(3), cluster_ids=np.asarray(["a|a"] * 3))
+    loaded = load_reference(out)
+    assert loaded.provenance is None
+
+
+def test_barrels_from_clusters_recovers_both_sides():
+    clusters = np.asarray(["b1|b1", "b2|b3", "b4|b4"])
+    ba, bb = barrels_from_clusters(clusters)
+    assert ba.tolist() == ["b1", "b2", "b4"]
+    assert bb.tolist() == ["b1", "b3", "b4"]
+    # every distinct source is recoverable for the disjoint split
+    assert set(ba.tolist()) | set(bb.tolist()) == {"b1", "b2", "b3", "b4"}
