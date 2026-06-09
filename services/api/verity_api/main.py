@@ -62,6 +62,7 @@ from .references import (
     load_striated_single_land,
     reference_metadata,
 )
+from .steps import steps as steps_router
 
 _LAMBDA_S, _LAMBDA_C = DEFAULT_SCORER_CONFIG.lambda_s, DEFAULT_SCORER_CONFIG.lambda_c
 
@@ -94,6 +95,11 @@ The versioned **`/v1`** routes expose the algorithm's intermediate steps on requ
 the methods section as JSON, with a content **handle** — an applicability-domain guard
 (`/v1/scope`), and metadata on the deployed scorer config (`/v1/scorer-config`) and the
 calibration references (`/v1/references`).
+
+Every pipeline stage is also **independently addressable** as a content-hashed artifact
+graph: `POST /v1/artifacts` a scan for a surface handle, then chain
+`/v1/steps/{preprocess,signature,areal-signature,align,features}` by handle — each
+intermediate fetchable at `/v1/artifacts/{handle}`.
 
 Web app: <https://verity.codes> · Method & references: <https://verity.codes/#science>
 """
@@ -173,7 +179,20 @@ app.add_middleware(
 # Per-IP sliding-window rate limit on the upload endpoints. In-process (fine for a
 # single instance); front a shared store (Redis) when scaling horizontally.
 _RATE_LIMITED_PATHS = frozenset(
-    {"/compare", "/v1/compare", "/v1/compare/report.pdf", "/detect", "/v1/scope"}
+    {
+        "/compare",
+        "/v1/compare",
+        "/v1/compare/report.pdf",
+        "/detect",
+        "/v1/scope",
+        # glass-box step API: the upload + the compute steps (cheap GETs are unmetered).
+        "/v1/artifacts",
+        "/v1/steps/preprocess",
+        "/v1/steps/signature",
+        "/v1/steps/areal-signature",
+        "/v1/steps/align",
+        "/v1/steps/features",
+    }
 )
 _MAX_TRACKED_IPS = 10_000
 _rate_hits: dict[str, deque] = {}
@@ -699,6 +718,7 @@ def reference_v1(reference_id: str) -> dict:
 
 
 app.include_router(v1)
+app.include_router(steps_router)
 
 
 _SCALAR_HTML = """<!doctype html>

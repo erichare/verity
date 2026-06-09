@@ -117,6 +117,22 @@ def trace_dict(trace: LandTrace, *, grid: int = 120, sig_max: int = 512) -> dict
     }
 
 
+def bullet_features_dict(cmp) -> dict:
+    """The CCF-matrix structure features + the land×land matrix, as JSON. The single
+    serializer shared by ``include=features`` and the ``/v1/steps/features`` endpoint, so
+    the inline and addressable views are byte-identical."""
+    i = int(np.argmax(cmp.diag_ccf))
+    j = (i + cmp.offset) % cmp.ccf.shape[1]
+    return {
+        **{k: round(float(v), 5) for k, v in cmp.features().items()},
+        "offset": int(cmp.offset),
+        "diag_ccf": cmp.diag_ccf.round(5).tolist(),
+        "land_ccf_matrix": np.round(cmp.ccf, 5).tolist(),  # bullets have few lands → small
+        "best_land_a": i,
+        "best_land_b": j,
+    }
+
+
 def striated_bullet_intermediates(
     surfaces_a: list[Surface],
     surfaces_b: list[Surface],
@@ -142,14 +158,7 @@ def striated_bullet_intermediates(
     out: dict = {}
 
     if "features" in include:
-        out["features"] = {
-            **{k: round(float(v), 5) for k, v in cmp.features().items()},
-            "offset": int(cmp.offset),
-            "diag_ccf": cmp.diag_ccf.round(5).tolist(),
-            "land_ccf_matrix": np.round(cmp.ccf, 5).tolist(),  # bullets have few lands → small
-            "best_land_a": i,
-            "best_land_b": j,
-        }
+        out["features"] = bullet_features_dict(cmp)
 
     if "perland" in include and single_land_reference is not None:
         s_scores, s_labels, s_name = single_land_reference
