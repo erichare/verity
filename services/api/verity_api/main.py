@@ -19,6 +19,7 @@ from __future__ import annotations
 import asyncio
 import functools
 import hashlib
+import json
 import os
 import tempfile
 import time
@@ -40,6 +41,7 @@ from verity.compare import compare_bullets_with_previews, compare_with_previews
 from verity.decision import (
     DEFAULT_SCORER_CONFIG,
     ScopeReport,
+    ScorerConfig,
     cached_bootstrap_calibration,
     check_applicability,
 )
@@ -393,12 +395,76 @@ def _refusal_envelope(
     }
 
 
+_SCORER_CONFIG_KEYS = frozenset(DEFAULT_SCORER_CONFIG.to_dict())
+
+
+def _parse_scorer_config(raw: str | None) -> ScorerConfig | None:
+    """Parse a JSON ``scorer_config`` override into a frozen :class:`ScorerConfig` (None
+    when absent). Unknown keys and an inverted band fail fast as 400s, never silently."""
+    if not raw:
+        return None
+    try:
+        overrides = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise HTTPException(status_code=400, detail=f"scorer_config must be JSON: {exc}") from exc
+    if not isinstance(overrides, dict):
+        raise HTTPException(status_code=400, detail="scorer_config must be a JSON object")
+    unknown = set(overrides) - _SCORER_CONFIG_KEYS
+    if unknown:
+        raise HTTPException(
+            status_code=400, detail=f"unknown scorer_config keys: {sorted(unknown)}"
+        )
+    merged = {**DEFAULT_SCORER_CONFIG.to_dict(), **overrides}
+    merged["cmr_tol"] = tuple(merged["cmr_tol"])
+    try:
+        cfg = ScorerConfig(**merged)
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail=f"invalid scorer_config: {exc}") from exc
+    if not cfg.lambda_s < cfg.lambda_c:
+        raise HTTPException(status_code=400, detail="scorer_config requires lambda_s < lambda_c")
+    return cfg
+
+
+_UNCALIBRATED_NOTE = (
+    "Verity scored this comparison under the requested scorer config but refused to emit a "
+    "calibrated likelihood ratio: the bundled reference was built under a different config, "
+    "so the query score and the calibration would live on different scales. The raw score is "
+    "returned; for an LR, calibrate against a reference built under the requested config."
+)
+
+
+def _uncalibrated_envelope(
+    resp: dict, *, domain: str, cfg: ScorerConfig, ref_hash: str | None
+) -> dict:
+    """The off-config result: the raw score (under the requested config) + attribution +
+    scope, but NO calibrated LR — the firewall, on the full-comparison path."""
+    keep = (
+        "score",
+        "score_kind",
+        "attribution",
+        "attribution_b",
+        "previews",
+        "scope",
+        "provenance",
+    )
+    return {
+        "calibrated": False,
+        "domain": domain,
+        **{k: resp[k] for k in keep if k in resp},
+        "requested_scorer_config_hash": cfg.config_hash,
+        "reference_scorer_config_hash": ref_hash,
+        "scorer_config": cfg.to_dict(),
+        "uncalibrated_reason": _UNCALIBRATED_NOTE,
+    }
+
+
 async def _run_compare(
     domain: str,
     mark_a: list[UploadFile],
     mark_b: list[UploadFile],
     *,
     include: set[str],
+    config: ScorerConfig | None = None,
 ) -> dict:
     """Core comparison shared by the unversioned and ``/v1`` routes. ``include`` selects
     which intermediate computations to attach (empty = lean report). Validation and the
@@ -427,7 +493,13 @@ async def _run_compare(
         "input_hashes": {"mark_a": hashes_a, "mark_b": hashes_b},
     }
     return await _offload(
-        _compute_report, domain, surfaces_a, surfaces_b, provenance=provenance, include=include
+        _compute_report,
+        domain,
+        surfaces_a,
+        surfaces_b,
+        provenance=provenance,
+        include=include,
+        config=config,
     )
 
 
@@ -438,6 +510,7 @@ def _compute_report(
     *,
     provenance: dict,
     include: set[str],
+    config: ScorerConfig | None = None,
 ) -> dict:
     """The synchronous comparison: applicability guard → score → calibrate → assemble.
     Runs in a worker thread, off the event loop."""
@@ -456,6 +529,7 @@ def _compute_report(
             domain=domain, scope=scope, inadmissible=inadmissible, provenance=provenance
         )
 
+    cfg = config or DEFAULT_SCORER_CONFIG
     bundle = load_reference_bundle(domain)
     scores, labels, reference_name = bundle.scores, bundle.labels, bundle.name
     ref_provenance = bundle.provenance
@@ -472,6 +546,7 @@ def _compute_report(
                 reference_name=single.name,
                 provenance={**provenance, "n_lands_a": 1, "n_lands_b": 1},
                 cluster_ids=single.cluster_ids,
+                config=cfg,
             )
             scores, labels, reference_name = single.scores, single.labels, single.name
         else:
@@ -483,6 +558,7 @@ def _compute_report(
                 reference_name=reference_name,
                 provenance=provenance,
                 cluster_ids=bundle.cluster_ids,
+                config=cfg,
             )
     else:
         report, previews = compare_with_previews(
@@ -494,9 +570,15 @@ def _compute_report(
             reference_name=reference_name,
             provenance=provenance,
             cluster_ids=bundle.cluster_ids,
+            config=cfg,
         )
 
     resp = {**report.to_dict(), "previews": previews, "scope": scope}
+    # The firewall: a per-request config override that doesn't match the reference's
+    # scorer config invalidates the calibration — return the raw score, refuse the LR.
+    ref_hash = ref_provenance.get("scorer_config_hash")
+    if config is not None and ref_hash and cfg.config_hash != ref_hash:
+        return _uncalibrated_envelope(resp, domain=domain, cfg=cfg, ref_hash=ref_hash)
     if domain == "striated" and len(surfaces_a) == 1 and len(surfaces_b) == 1:
         ref = resp["reference"]
         resp["evidence_note"] = {
@@ -613,6 +695,7 @@ async def compare_v1(
     mark_a: list[UploadFile] = File(...),
     mark_b: list[UploadFile] = File(...),
     include: str | None = Form(None),
+    scorer_config: str | None = Form(None),
 ) -> dict:
     """Same calibrated comparison as `/compare`, plus — on request — the algorithm's
     intermediate computations. `include` is a comma-separated subset of:
@@ -631,9 +714,19 @@ async def compare_v1(
       by default.
 
     `include=all` returns everything. The default is `calibration,recipe`. The response
-    always carries an applicability-domain `scope` annotation for the inputs."""
+    always carries an applicability-domain `scope` annotation for the inputs.
+
+    `scorer_config` is an optional JSON object of scorer-hyperparameter overrides
+    (e.g. `{"lambda_c": 8e-6}`). The comparison is scored under it, but — the firewall —
+    if its hash doesn't match the reference's, the calibrated LR is **refused**
+    (`calibrated: false`, raw score returned); calibration is valid only on a reference
+    built under the same config."""
     return await _run_compare(
-        domain, mark_a, mark_b, include=parse_include(include) or {"calibration", "recipe"}
+        domain,
+        mark_a,
+        mark_b,
+        include=parse_include(include) or {"calibration", "recipe"},
+        config=_parse_scorer_config(scorer_config),
     )
 
 

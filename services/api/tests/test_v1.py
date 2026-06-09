@@ -173,3 +173,17 @@ def test_v1_reference_by_id_and_404():
     assert client.get("/v1/references/impressed").status_code == 200
     assert client.get("/v1/references/striated_single").status_code == 200
     assert client.get("/v1/references/nope").status_code == 404
+
+
+def test_v1_compare_invalid_scorer_config_400():
+    # The scorer-config override is parsed before any scoring, so bad input is a clean 400
+    # (dummy files are never read).
+    files = {
+        "mark_a": ("a.x3p", b"x", "application/octet-stream"),
+        "mark_b": ("b.x3p", b"y", "application/octet-stream"),
+    }
+    for bad in ("{not json", '{"bogus": 1}', '{"lambda_s": 1e-3, "lambda_c": 1e-6}'):
+        r = client.post(
+            "/v1/compare", data={"domain": "striated", "scorer_config": bad}, files=files
+        )
+        assert r.status_code == 400, bad

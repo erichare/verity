@@ -17,7 +17,7 @@ from .aggregate import bullet_comparison
 from .areal import areal_signature
 from .cmr import areal_votes, cmr_regions_1d_pair, consensus_members, regions_from_members
 from .decision.scorer import BulletScorer, ContrastScorer
-from .decision.scorer_config import DEFAULT_SCORER_CONFIG
+from .decision.scorer_config import DEFAULT_SCORER_CONFIG, ScorerConfig
 from .preprocess import isolate_roughness, remove_form
 from .region import DEFAULT_KEEP, extract_region
 from .registration.align import align_1d
@@ -25,19 +25,31 @@ from .report import ComparisonReport, build_comparison_report
 from .signature import striation_signature
 from .surface import Surface
 
-# Single source of truth for the scorer hyperparameters — bundled with each reference
-# and drift-checked at load time (see verity.decision.scorer_config).
-_CFG = DEFAULT_SCORER_CONFIG
-_LAMBDA_S, _LAMBDA_C = _CFG.lambda_s, _CFG.lambda_c  # striated roughness band (m)
-_CMR_CORR, _CMR_TOL = _CFG.cmr_corr, _CFG.cmr_tol  # 2-D CMR congruence thresholds
-_CMR_1D_CORR, _CMR_1D_LAG = _CFG.cmr_1d_corr, _CFG.cmr_1d_lag  # 1-D striae-band congruence
-
+# Scorer hyperparameters come from a ScorerConfig — the deployed default is bundled with
+# each reference and drift-checked at load time (see verity.decision.scorer_config). The
+# functions below take an optional per-request config (None ⇒ the deployed default, so
+# behaviour is byte-identical unless a caller deliberately overrides). The API refuses to
+# *calibrate* a score whose config doesn't match the reference's (the firewall).
 DOMAINS = ("striated", "impressed")
 
 
-def _striated_score(surface_a: Surface, surface_b: Surface) -> float:
-    sig_a = striation_signature(surface_a, lambda_s=_LAMBDA_S, lambda_c=_LAMBDA_C)
-    sig_b = striation_signature(surface_b, lambda_s=_LAMBDA_S, lambda_c=_LAMBDA_C)
+def _areal_sigs(
+    surface_a: Surface, surface_b: Surface, cfg: ScorerConfig
+) -> tuple[np.ndarray, np.ndarray]:
+    """Areal signatures for an impressed pair. The default config keeps
+    :func:`areal_signature`'s own roughness band (which differs from the striated band, so
+    the deployed impressed score is unchanged); an explicit override applies its cutoffs."""
+    if cfg.config_hash == DEFAULT_SCORER_CONFIG.config_hash:
+        return areal_signature(surface_a), areal_signature(surface_b)
+    return (
+        areal_signature(surface_a, lambda_s=cfg.lambda_s, lambda_c=cfg.lambda_c),
+        areal_signature(surface_b, lambda_s=cfg.lambda_s, lambda_c=cfg.lambda_c),
+    )
+
+
+def _striated_score(surface_a: Surface, surface_b: Surface, cfg: ScorerConfig) -> float:
+    sig_a = striation_signature(surface_a, lambda_s=cfg.lambda_s, lambda_c=cfg.lambda_c)
+    sig_b = striation_signature(surface_b, lambda_s=cfg.lambda_s, lambda_c=cfg.lambda_c)
     return float(align_1d(sig_a, sig_b)[1])
 
 
@@ -52,28 +64,32 @@ def _to_preview(sig: np.ndarray, size: int) -> list[list[float]]:
     return np.nan_to_num(small).round(4).tolist()
 
 
-def _land_fields(surface: Surface) -> tuple[np.ndarray, np.ndarray]:
+def _land_fields(surface: Surface, cfg: ScorerConfig) -> tuple[np.ndarray, np.ndarray]:
     """A land's ``(signature, oriented striae band)``. Mirrors
     :func:`striation_signature` exactly (so the score is unchanged) but also returns
     the 2-D oriented+cropped striae field to render the matched striae on."""
     s = remove_form(surface, degree=2)
-    s = isolate_roughness(s, _LAMBDA_S, _LAMBDA_C)
+    s = isolate_roughness(s, cfg.lambda_s, cfg.lambda_c)
     z = s.heights
     w = (~np.isnan(z)).astype(np.float64)
     zr, _wr, prof, (lo, hi), _tilt = extract_region(z, w, keep=DEFAULT_KEEP)
     return prof[lo:hi], zr[:, lo:hi]
 
 
-def comparison_score(surface_a: Surface, surface_b: Surface, *, domain: str) -> tuple[float, str]:
-    """The similarity score for a mark pair and its kind, by domain."""
+def comparison_score(
+    surface_a: Surface, surface_b: Surface, *, domain: str, config: ScorerConfig | None = None
+) -> tuple[float, str]:
+    """The similarity score for a mark pair and its kind, by domain. ``config`` defaults
+    to the deployed scorer config."""
+    cfg = config or DEFAULT_SCORER_CONFIG
     if domain == "impressed":
-        sig_a, sig_b = areal_signature(surface_a), areal_signature(surface_b)
+        sig_a, sig_b = _areal_sigs(surface_a, surface_b, cfg)
         members = consensus_members(
-            areal_votes(sig_a, sig_b), corr_thresh=_CMR_CORR, transform_tol=_CMR_TOL
+            areal_votes(sig_a, sig_b), corr_thresh=cfg.cmr_corr, transform_tol=cfg.cmr_tol
         )
         return float(len(members)), "cmr-2d"
     if domain == "striated":
-        return _striated_score(surface_a, surface_b), "ccf"
+        return _striated_score(surface_a, surface_b, cfg), "ccf"
     raise ValueError(f"domain must be one of {DOMAINS}, got {domain!r}")
 
 
@@ -88,30 +104,34 @@ def compare_with_previews(
     provenance: dict | None = None,
     preview_size: int = 120,
     cluster_ids: np.ndarray | None = None,
+    config: ScorerConfig | None = None,
 ) -> tuple[ComparisonReport, dict]:
     """Compare two surfaces → (report, previews). The report's ``attribution`` holds
     the matched regions (congruent cells for impressed, consecutive matching striae
     for striated) and ``previews`` the two rendered surfaces to overlay them on. The
     striated path here is a *single land* per mark (weakly diagnostic); a full bullet
-    uses :func:`compare_bullets_with_previews`."""
+    uses :func:`compare_bullets_with_previews`. ``config`` defaults to the deployed
+    scorer config; an override changes the score, so the caller must calibrate against a
+    reference built under the same config."""
+    cfg = config or DEFAULT_SCORER_CONFIG
     attribution: list[dict] = []
     attribution_b: list[dict] = []
     previews: dict = {}
     if domain == "impressed":
-        sig_a, sig_b = areal_signature(surface_a), areal_signature(surface_b)
+        sig_a, sig_b = _areal_sigs(surface_a, surface_b, cfg)
         members = consensus_members(
-            areal_votes(sig_a, sig_b), corr_thresh=_CMR_CORR, transform_tol=_CMR_TOL
+            areal_votes(sig_a, sig_b), corr_thresh=cfg.cmr_corr, transform_tol=cfg.cmr_tol
         )
         score, score_kind = float(len(members)), "cmr-2d"
         attribution = regions_from_members(members, sig_a.shape)
         attribution_b = regions_from_members(members, sig_b.shape, shift=True)
         previews = {"a": _to_preview(sig_a, preview_size), "b": _to_preview(sig_b, preview_size)}
     elif domain == "striated":
-        sig_a, band_a = _land_fields(surface_a)
-        sig_b, band_b = _land_fields(surface_b)
+        sig_a, band_a = _land_fields(surface_a, cfg)
+        sig_b, band_b = _land_fields(surface_b, cfg)
         score, score_kind = float(align_1d(sig_a, sig_b)[1]), "ccf"
         attribution, attribution_b = cmr_regions_1d_pair(
-            sig_a, sig_b, corr_thresh=_CMR_1D_CORR, lag_tol=_CMR_1D_LAG
+            sig_a, sig_b, corr_thresh=cfg.cmr_1d_corr, lag_tol=cfg.cmr_1d_lag
         )
         previews = {"a": _to_preview(band_a, preview_size), "b": _to_preview(band_b, preview_size)}
     else:
@@ -142,6 +162,7 @@ def compare_surfaces(
     reference_name: str,
     provenance: dict | None = None,
     cluster_ids: np.ndarray | None = None,
+    config: ScorerConfig | None = None,
 ) -> ComparisonReport:
     """Compare two surfaces into a calibrated :class:`ComparisonReport` (no previews)."""
     report, _ = compare_with_previews(
@@ -153,6 +174,7 @@ def compare_surfaces(
         reference_name=reference_name,
         provenance=provenance,
         cluster_ids=cluster_ids,
+        config=config,
     )
     return report
 
@@ -168,6 +190,7 @@ def compare_bullets_with_previews(
     preview_size: int = 140,
     scorer: BulletScorer | None = None,
     cluster_ids: np.ndarray | None = None,
+    config: ScorerConfig | None = None,
 ) -> tuple[ComparisonReport, dict]:
     """Compare two *bullets* (each a set of land scans) → ``(report, previews)``.
 
@@ -181,8 +204,9 @@ def compare_bullets_with_previews(
     land of each bullet is rendered, and the **consecutive matching striae** (windows
     agreeing on the common lag) are returned as overlay bands."""
     scorer = scorer or ContrastScorer()
-    fields_a = [_land_fields(s) for s in surfaces_a]
-    fields_b = [_land_fields(s) for s in surfaces_b]
+    cfg = config or DEFAULT_SCORER_CONFIG
+    fields_a = [_land_fields(s, cfg) for s in surfaces_a]
+    fields_b = [_land_fields(s, cfg) for s in surfaces_b]
     sigs_a = [f[0] for f in fields_a]
     sigs_b = [f[0] for f in fields_b]
 
@@ -204,7 +228,7 @@ def compare_bullets_with_previews(
         sig_a, band_a = fields_a[i]
         sig_b, band_b = fields_b[j]
         attribution, attribution_b = cmr_regions_1d_pair(
-            sig_a, sig_b, corr_thresh=_CMR_1D_CORR, lag_tol=_CMR_1D_LAG
+            sig_a, sig_b, corr_thresh=cfg.cmr_1d_corr, lag_tol=cfg.cmr_1d_lag
         )
         previews = {"a": _to_preview(band_a, preview_size), "b": _to_preview(band_b, preview_size)}
         best = {"best_land_a": i, "best_land_b": j, "best_land_ccf": float(cmp.diag_ccf[i])}
@@ -240,6 +264,7 @@ def compare_bullets(
     reference_name: str,
     provenance: dict | None = None,
     cluster_ids: np.ndarray | None = None,
+    config: ScorerConfig | None = None,
 ) -> ComparisonReport:
     """:func:`compare_bullets_with_previews` without the previews."""
     report, _ = compare_bullets_with_previews(
@@ -250,5 +275,6 @@ def compare_bullets(
         reference_name=reference_name,
         provenance=provenance,
         cluster_ids=cluster_ids,
+        config=config,
     )
     return report
