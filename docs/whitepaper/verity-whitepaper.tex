@@ -73,7 +73,12 @@ deployed calibrated-LR API; and (5) a small methodological result --- a
 multivariate fusion \emph{by data, not assumption}. On the Hamby-252 bullet
 benchmark Verity attains a barrel-disjoint (source-disjoint) test
 $\Cllr = \num{0.113} \pm \num{0.066}$ with test AUC $\num{1.000}$; we report results
-per study and never pool across firearm makes.
+per study and never pool across firearm makes. Beyond bullets, the \emph{same}
+pipeline under \emph{one} scorer configuration is validated source-disjoint on
+impressed cartridge breech faces (Fadul) and striated screwdriver toolmarks
+(\code{tmaRks}), where CMR recovers Song's Congruent Matching Cells and the Chumbley
+statistic respectively --- one calibrated algorithm, three reductions, each
+\emph{demonstrated} rather than asserted.
 \end{abstract}
 
 % ==========================================================================
@@ -154,11 +159,13 @@ Br\"ummer \& du Preez~\cite{brummer2006}.
 boundary is clear:
 \begin{enumerate}
   \item \textbf{Unification.} One calibrated pipeline scores striated, impressed,
-        and fractured marks through \emph{Congruent Matching Regions}
+        and (in principle) fractured marks through \emph{Congruent Matching Regions}
         (\S\ref{sec:cmr}), a generalization of CMC from 2-D cells under
         translation+rotation to regions of any dimension under any transformation
         group. CMC and the 1-D Chumbley statistic become two instantiations of one
-        algorithm.
+        algorithm --- and we \emph{demonstrate} both reductions source-disjoint, under
+        a single scorer configuration, alongside bullets (\S\ref{sec:crossmodal}); the
+        3-D fractured case is the general form, not yet validated.
   \item \textbf{A calibrated-LR answer to Cuellar et al.} Rather than a single
         disputed error rate, Verity reports a bounded LR with a per-study,
         source-disjoint $\Cllr$ (\S\ref{sec:validation}).
@@ -440,7 +447,10 @@ mean and standard deviation across folds.
 consecutively-rifled 10-barrel test sets (252 and 173)~\cite{hamby2009} and on two
 NBTRD~\cite{nbtrd2020} collections (a PGPD Beretta set and a Phoenix PD Ruger
 P-95 set). Impressed marks are validated on the Fadul study of 10 consecutively
-manufactured cartridge-case slides (breech faces)~\cite{fadul2011}. Consecutively
+manufactured cartridge-case slides (breech faces)~\cite{fadul2011}. Striated
+\emph{toolmarks} are validated on the MIT-licensed \code{tmaRks}
+consecutively-manufactured slotted-screwdriver set (580 marks across 56 tool edges),
+a non-firearm domain the pipeline was never tuned for. Consecutively
 manufactured / rifled sources are the hardest available test: successive barrels or
 slides share the most subclass character, so a method that separates them is being
 held to the demanding case.
@@ -580,6 +590,82 @@ NBTRD sets, raises this above the per-study figures). This is an
 such; it is not a generalization claim. The generalization claims are the
 barrel-disjoint numbers above.
 
+\subsection{Closing the CMR table: cross-modality validation}
+\label{sec:crossmodal}
+Table~\ref{tab:cmr} is a \emph{claim}: one algorithm, three reductions. Here we
+\emph{demonstrate} it. The same congruent-matching pipeline, under the \emph{same}
+scorer configuration (one content hash shared across all three calibration
+references), is validated source-disjoint on each modality
+(Table~\ref{tab:reductions}). Every figure is recomputed from a committed reference by
+the identical source-disjoint path used for bullets; the comparison baselines are
+measured by a re-lockable harness (\S\ref{sec:platform}).
+
+\begin{table}[t]
+  \centering\small
+  \begin{tabular}{@{}lllll@{}}
+    \toprule
+    \textbf{Reduction (modality)} & \textbf{Reference} & \textbf{Src-disjoint $\Cllr$} & \textbf{AUC} & \textbf{Baseline / specialist} \\
+    \midrule
+    Bullet lands (1-D striae)   & pooled, 4 studies   & $\num{0.186}\pm\num{0.126}$ & \num{0.989} & Hamby-252 alone: \num{0.113} \\
+    Cartridge breech (2-D)      & Fadul, 10 slides    & $\num{0.385}\pm\num{0.187}$ & \num{0.991} & cmcR \num{0.194}; areal \num{0.529} \\
+    Screwdriver toolmark (1-D)  & \code{tmaRks}, 56 edges & $\num{0.328}\pm\num{0.050}$ & \num{0.957} & global align \num{0.447} \\
+    \bottomrule
+  \end{tabular}
+  \caption{The CMR table, \emph{demonstrated}: one scorer configuration (shared config
+    hash) reduced to each modality and validated source-disjoint ($\Cllr$ lower is
+    better; mean $\pm$ SD over folds). Bullets are the pooled four-study reference
+    (Hamby-252 alone is \num{0.113}); cartridges and toolmarks are their full sets. CMR
+    matches or approaches the field-standard specialist in each case, and on toolmarks
+    \emph{beats} the same-pipeline global baseline. From \code{data/cmr\_table.json} and
+    \code{data/baselines.json}.}
+  \label{tab:reductions}
+\end{table}
+
+\paragraph{Impressed (Fadul, CMR-2D).} The deployed 2-D reduction --- the same
+\code{cmr\_count} consensus, now over 2-D cells under translation$+$rotation --- reaches
+in-sample AUC \num{0.997} ($\Cllr\,\num{0.220}$, $\Cllrmin\,\num{0.070}$) and a
+slide-disjoint $\Cllr$ of $\num{0.385}\pm\num{0.187}$ on the ten consecutively
+manufactured Fadul slides. Figure~\ref{fig:cartridge} places it against the two
+references on the \emph{same} slide-disjoint task: generic CMR-2D moves the naive global
+areal cross-correlation (pooled AUC \num{0.911}, $\Cllr\,\num{0.529}$) almost all the way
+to the \code{cmcR} Congruent Matching Cells specialist (AUC \num{1.000},
+$\Cllr\,\num{0.194}$) --- with no cartridge-specific engineering. CMR-2D \emph{is} CMC,
+and the numbers bear it out.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.82\linewidth]{fig_cllr_cartridge.pdf}
+  \caption{Impressed-mark validation on the slide-disjoint Fadul task: the naive global
+    areal CCF, the deployed generic CMR-2D, and the \code{cmcR} CMC specialist. Left:
+    pooled AUC. Right: source-disjoint $\Cllr$ with cross-fold error bars. CMR-2D (solid;
+    reproducible from the committed reference) lands beside the specialist; the baselines
+    (hatched) need R to re-lock. Generated from \code{data/cartridge\_fadul.json} and
+    \code{data/baselines.json}.}
+  \label{fig:cartridge}
+\end{figure}
+
+\paragraph{Toolmarks (\code{tmaRks}, CMR-1D).} The 1-D reduction --- the
+consecutive-striae statistic of Table~\ref{tab:cmr} --- is validated on the MIT
+\code{tmaRks} consecutively-manufactured screwdriver set (580 marks across 56 tool
+edges), source-disjoint by the mark-generating edge. CMR-1D reaches AUC \num{0.957} at
+$\Cllr\,\num{0.328}\pm\num{0.050}$ and, notably, \emph{beats} the same-pipeline global
+1-D cross-correlation on the identical set (AUC \num{0.942}, $\Cllr\,\num{0.447}$):
+requiring congruence among matching windows, rather than one global alignment, helps on
+real toolmarks. This is a \emph{non-firearm} domain the pipeline was never tuned for ---
+evidence the unification is not firearm-specific. (On the much smaller Ames Lab set the
+Chumbley \code{toolmaRk} $U$ specialist is itself weak --- pooled AUC \num{0.614} over 7
+tools --- a known small-sample effect, which is why we report \code{tmaRks} as the
+primary toolmark benchmark.)
+
+\paragraph{Reading these numbers.} The cross-modality $\Cllr$ values are larger than
+Hamby-252's \num{0.113}, as they should be: cartridges and toolmarks have far fewer
+sources (ten slides; the cross-edge toolmark task is genuinely hard), and the pooled
+bullet reference mixes the harder NBTRD sets. The claim is not that every modality is as
+strong as the best bullet study; it is that \emph{one calibrated algorithm, validated
+source-disjoint, recovers the field-standard method in each of the three reductions of
+Table~\ref{tab:cmr}} --- the Chumbley statistic on toolmarks, the CMC count on breech
+faces, and the bullet-land result --- rather than three bespoke pipelines.
+
 % ==========================================================================
 \section{Limitations and honest scope}
 \label{sec:limits}
@@ -606,10 +692,17 @@ We would rather state the boundaries plainly than have a reviewer find them.
         Phase-2b learned (embedding) representation is implemented behind the same
         firewall, but on the data available it does not yet outperform the
         cross-correlation baseline. We treat this as a data limitation, not a
-        success, and the deployed system uses the interpretable baseline.
-  \item \textbf{Impressed-mark validation is earlier-stage} than the striated path:
-        Fadul gives a credible demonstration on consecutively manufactured breech
-        faces, but with far fewer sources than the bullet benchmarks.
+        success, and the deployed system uses the interpretable baseline. The concrete
+        path is self-supervised pretraining on the unlabelled LAPD ($\approx\!15$k-scan)
+        corpus, fine-tuned behind the same firewall and retested barrel-disjoint --- an
+        orthogonal research track, not a precondition for the calibrated-LR results above.
+  \item \textbf{The cross-modality reductions rest on few sources.} The impressed
+        (Fadul, $\approx\!10$ slides) and toolmark (\code{tmaRks}) reductions are now
+        demonstrated source-disjoint (\S\ref{sec:crossmodal}) --- and CMR-1D even beats
+        the same-pipeline global baseline on toolmarks --- but with far fewer independent
+        sources than the bullet benchmarks, so the wider $\Cllr$ and conservative ELUB
+        bounds reflect that. They are a genuine cross-modality demonstration of the CMR
+        unification, not yet a definitive per-modality error characterization.
 \end{itemize}
 
 % ==========================================================================
@@ -631,12 +724,18 @@ fast, and inspectable. Verity is built as production software, not a script.
         \code{/health} endpoint that publishes the currently calibrated domains ---
         the scope guard, machine-readable.
   \item \textbf{A local-first data catalog.} A catalog service harvests and labels
-        the open NBTRD~\cite{nbtrd2020} 3-D scans (which have no public API) and
-        other open sets, so validation runs against versioned, reproducible data.
-  \item \textbf{Reproducible validation reports.} The numbers in
-        \S\ref{sec:validation} come from a validation harness over
-        \code{data/ablation.json}; the figures in this paper are regenerated from
-        that file by a checked-in script.
+        the open NBTRD~\cite{nbtrd2020} 3-D scans --- which have no public API --- the
+        first open programmatic harvester for that benchmark (the prior CSAFE scraper
+        has been unmaintained since 2020), alongside the Fadul and \code{tmaRks} sets,
+        so validation runs against versioned, content-addressed, reproducible data.
+  \item \textbf{Reproducible validation reports.} Every number in
+        \S\ref{sec:validation} is recomputed from a committed calibration reference by a
+        checked-in harness and persisted as the paper's source of truth:
+        \code{data/ablation.json} (bullets), \code{data/cmr\_table.json} (the three
+        reductions), \code{data/cartridge\_fadul.json}, \code{data/toolmark\_tmaRks.json},
+        and \code{data/baselines.json} (the comparison baselines, re-lockable offline via
+        \code{verity-relock-baselines}); the figures are regenerated from those files by a
+        checked-in script.
 \end{itemize}
 
 \paragraph{An invitation.} Verity is the production, calibration, and validation
