@@ -99,7 +99,9 @@ calibration references (`/v1/references`).
 Every pipeline stage is also **independently addressable** as a content-hashed artifact
 graph: `POST /v1/artifacts` a scan for a surface handle, then chain
 `/v1/steps/{preprocess,signature,areal-signature,align,features}` by handle — each
-intermediate fetchable at `/v1/artifacts/{handle}`.
+intermediate fetchable at `/v1/artifacts/{handle}` — and `/v1/steps/calibrate` maps a
+score to a bounded LR behind the calibration firewall (it refuses to calibrate a score
+whose scorer-config hash doesn't match the reference's).
 
 Web app: <https://verity.codes> · Method & references: <https://verity.codes/#science>
 """
@@ -192,6 +194,7 @@ _RATE_LIMITED_PATHS = frozenset(
         "/v1/steps/areal-signature",
         "/v1/steps/align",
         "/v1/steps/features",
+        "/v1/steps/calibrate",
     }
 )
 _MAX_TRACKED_IPS = 10_000

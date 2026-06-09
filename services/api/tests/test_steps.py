@@ -134,6 +134,54 @@ def test_get_artifact_metadata_data_preview():
     assert prev.status_code == 200 and "grid" in prev.json()
 
 
+def test_calibrate_emits_lr_against_reference():
+    from verity.decision import DEFAULT_SCORER_CONFIG
+
+    r = client.post(
+        "/v1/steps/calibrate", data={"score": 5.0, "reference": "impressed", "ci": "false"}
+    )
+    assert r.status_code == 200
+    body = r.json()
+    assert body["calibrated"] is True
+    assert body["likelihood_ratio"] > 0 and "log10_lr" in body
+    assert body["reference"]["scorer_config_hash"]
+    assert "calibration" in body and "tippett" in body["calibration"]
+    # matching hash → config_verified true
+    matched = client.post(
+        "/v1/steps/calibrate",
+        data={
+            "score": 5.0,
+            "reference": "impressed",
+            "scorer_config_hash": DEFAULT_SCORER_CONFIG.config_hash,
+            "ci": "false",
+        },
+    ).json()
+    assert matched["config_verified"] is True
+
+
+def test_calibrate_firewall_refuses_off_config():
+    # THE FIREWALL: a declared config that doesn't match the reference's must NOT yield a
+    # calibrated LR — raw score passed through, calibrated=false, with a structured reason.
+    r = client.post(
+        "/v1/steps/calibrate",
+        data={"score": 5.0, "reference": "impressed", "scorer_config_hash": "deadbeef" * 8},
+    )
+    assert r.status_code == 200
+    body = r.json()
+    assert body["calibrated"] is False
+    assert "likelihood_ratio" not in body
+    assert body["score"] == 5.0
+    assert body["requested_scorer_config_hash"] == "deadbeef" * 8
+    assert body["reference_scorer_config_hash"] and "scale" in body["reason"]
+
+
+def test_calibrate_unknown_reference_404():
+    assert (
+        client.post("/v1/steps/calibrate", data={"score": 1.0, "reference": "nope"}).status_code
+        == 404
+    )
+
+
 @pytest.mark.skipif(not _FADUL.exists(), reason="Fadul scans not cached locally")
 def test_upload_then_areal_signature():
     with (_FADUL / "Fadul 1-1.x3p").open("rb") as f:

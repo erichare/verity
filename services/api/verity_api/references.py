@@ -52,6 +52,15 @@ def _bundle_for_id(rid: str) -> ReferenceBundle | None:
     return None
 
 
+def load_reference_by_id(rid: str) -> ReferenceBundle:
+    """The bundle for an addressable reference id (``striated`` | ``impressed`` |
+    ``striated_single``). Raises :class:`KeyError` on an unknown id."""
+    bundle = _bundle_for_id(rid)
+    if bundle is None:
+        raise KeyError(rid)
+    return bundle
+
+
 def reference_metadata(rid: str) -> dict | None:
     """Public provenance for one reference (``GET /v1/references/{id}``): the scorer-config
     hash it was built under, its source datasets, and its calibration diagnostics ---
