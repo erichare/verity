@@ -1,57 +1,56 @@
-import methodData from "./method-data.json";
+import sample from "./sample-screwdriver.json";
 import type { ComparisonReport } from "./types";
 
-// The slices of method-data.json this module reads. The file is the single
-// source of truth for the real Hamby-252 comparison shown across the site, so
-// the "Load sample" report on the homepage stays honest and never drifts.
-interface KmExample {
+// The slice of the committed screwdriver sample this module renders. The file is generated
+// from a REAL same-tool-edge tmaRks comparison (CMR-1D, calibrated on the committed
+// toolmark reference) by `verity-build-sample-screwdriver`, so the homepage "Load a sample"
+// report stays honest and reproducible and never drifts.
+interface ScrewdriverSample {
+  domain: string;
   score: number;
-  scoreKind: string;
-  lr: number;
+  score_kind: string;
+  likelihood_ratio: number;
   log10_lr: number;
   log10_lr_ci_lo: number;
   log10_lr_ci_hi: number;
   verbal: string;
-  lrBound: number | null;
-  reference: { name: string; auc: number; cllr: number; nKm: number; nKnm: number };
-}
-interface CalibrationSlice {
-  cllrMin: number;
+  lr_bound_log10: number | null;
+  reference: { name: string; auc: number; cllr: number; cllr_min: number; n_km: number; n_knm: number };
+  pair: string[];
+  scope_note: string;
 }
 
-const data = methodData as unknown as { km: KmExample; calibration: CalibrationSlice };
+const data = sample as unknown as ScrewdriverSample;
 
 /**
- * A precomputed `ComparisonReport` from the real same-source Hamby-252 bullet
- * comparison in method-data.json — so a visitor can see the actual report
- * artifact without owning any .x3p scans. Every figure is real; nothing is
- * fabricated. Region attribution is intentionally omitted here (the homepage's
- * live proof and the /method walkthrough carry the visual attribution).
+ * A precomputed `ComparisonReport` from a real same-source screwdriver-toolmark comparison
+ * (tmaRks, scored with CMR-1D and calibrated on the committed toolmark reference) — so a
+ * visitor sees the actual report artifact without owning any .x3p scans, on a non-firearm
+ * mark. Every figure is real; nothing is fabricated. Region attribution is omitted here
+ * (the homepage's live proof and the /method walkthrough carry the visual attribution).
  */
 export function buildSampleReport(): ComparisonReport {
-  const { km, calibration } = data;
   return {
-    domain: "striated",
-    score: km.score,
-    score_kind: km.scoreKind,
-    likelihood_ratio: km.lr,
-    log10_lr: km.log10_lr,
-    log10_lr_ci_lo: km.log10_lr_ci_lo,
-    log10_lr_ci_hi: km.log10_lr_ci_hi,
+    domain: data.domain,
+    score: data.score,
+    score_kind: data.score_kind,
+    likelihood_ratio: data.likelihood_ratio,
+    log10_lr: data.log10_lr,
+    log10_lr_ci_lo: data.log10_lr_ci_lo,
+    log10_lr_ci_hi: data.log10_lr_ci_hi,
     direction: "same_source",
-    verbal: km.verbal,
-    lr_bound_log10: km.lrBound,
+    verbal: data.verbal,
+    lr_bound_log10: data.lr_bound_log10,
     reference: {
-      name: km.reference.name,
-      n_km: km.reference.nKm,
-      n_knm: km.reference.nKnm,
-      cllr: km.reference.cllr,
-      cllr_min: calibration.cllrMin,
-      auc: km.reference.auc,
+      name: data.reference.name,
+      n_km: data.reference.n_km,
+      n_knm: data.reference.n_knm,
+      cllr: data.reference.cllr,
+      cllr_min: data.reference.cllr_min,
+      auc: data.reference.auc,
     },
     attribution: [],
-    provenance: { sample: true, dataset: "Hamby-252", pairing: "same-source" },
-    scope_note:
-      "A precomputed sample — a real same-source Hamby-252 bullet comparison on the pooled bullet-land reference. Not a claim about the error rate of examination, which remains unknown.",
+    provenance: { sample: true, dataset: "tmaRks", pairing: "same-tool-edge", pair: data.pair },
+    scope_note: data.scope_note,
   };
 }

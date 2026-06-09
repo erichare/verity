@@ -274,7 +274,7 @@ export default function Home() {
             {result.sample && (
               <p className="mb-3 inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/[0.08] px-3 py-1 text-xs text-foreground/80">
                 <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-                Sample — a precomputed real Hamby-252 same-source comparison
+                Sample — a precomputed real screwdriver-toolmark (tmaRks) same-source comparison
               </p>
             )}
             {isRefusal(result.data) ? (
