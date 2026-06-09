@@ -17,6 +17,7 @@ const SECTIONS: NavSection[] = [
   { id: "quickstart", label: "Quickstart" },
   { id: "concepts", label: "Core concepts" },
   { id: "api", label: "REST API" },
+  { id: "reproducibility", label: "Reproducibility" },
   { id: "codec", label: "X3P codec" },
   { id: "catalog", label: "Data catalog" },
   { id: "architecture", label: "Architecture" },
@@ -133,6 +134,51 @@ const COMPARE_RESPONSE = `{
   "scope_note": "A calibrated weight of evidence on the named reference; not a
                  claim about the error rate of examination, which remains unknown."
 }`;
+
+const RECIPE_EXCERPT = `{
+  "handle": "sha256:632d8a8b9943fb71…",        // the content address of this computation
+  "engine_version": "0.1.0",
+  "scorer_config_hash": "ea4ddd513b57…",
+  "inputs": { "mark_a": ["8ab45f56…"], "mark_b": ["ed232b90…"] },   // SHA-256 of each scan
+  "reference": {
+    "name": "Fadul cartridge cases", "scorer_config_hash": "ea4ddd513b57…",
+    "diagnostics": { "n_km": 10, "n_knm": 180, "auc": 0.997, "cllr_min": 0.07 }
+  },
+  "result": { "likelihood_ratio": 10.0, "log10_lr": 1.0, "verbal": "moderate support…" },
+  "steps": [
+    { "step": "decode",          "code": "verity_x3p.read_x3p" },
+    { "step": "preprocess",      "code": "verity.preprocess", "params": { "lambda_s": 4e-6, "lambda_c": 250e-6 } },
+    { "step": "areal-signature", "code": "verity.areal.areal_signature" },
+    { "step": "compare",         "code": "verity.cmr.cmr_count" },
+    { "step": "calibrate",       "code": "verity.decision.lr.ScoreLRModel", "params": { "lr_bound": "auto" } },
+    { "step": "uncertainty",     "code": "verity.decision.uncertainty.lr_credible_interval" }
+  ]
+}`;
+
+const REPRODUCE_TABS = [
+  {
+    label: "Python",
+    code: `from verity_client import VerityClient        # clients/python
+v = VerityClient("${API_BASE}")
+
+r = v.compare("impressed", "breech_a.x3p", "breech_b.x3p")
+print(r["likelihood_ratio"], r["handle"])     # the content address
+
+# verify a published LR — a one-line hash-equality check
+assert v.reproduce("impressed", "breech_a.x3p", "breech_b.x3p",
+                   expect_handle=r["handle"])`,
+  },
+  {
+    label: "R",
+    code: `source("clients/r/verity.R")                  # clients/r
+
+r <- verity_compare("impressed", "breech_a.x3p", "breech_b.x3p")
+cat(r$likelihood_ratio, r$handle, "\\n")
+
+again <- verity_compare("impressed", "breech_a.x3p", "breech_b.x3p", include = "recipe")
+stopifnot(identical(again$handle, r$handle))  # same computation -> same handle`,
+  },
+];
 
 const CODEC_TABS = [
   {
@@ -372,6 +418,82 @@ export default function DocsPage() {
                 <code className="font-mono text-xs">VERITY_CORS_ORIGINS</code>). Errors return a JSON{" "}
                 <code className="font-mono text-xs">detail</code> with a 400 status for bad uploads or
                 an uncalibrated domain.
+              </p>
+            </Section>
+
+            <Section id="reproducibility" eyebrow="Show your work" title="Reproducibility & the glass-box API">
+              <p>
+                Every <code className="font-mono text-xs">/v1/compare</code> carries a{" "}
+                <strong className="text-foreground">recipe</strong> — the methods section as JSON:
+                every pipeline step and its parameters, the engine version, the SHA-256 of each
+                input scan, and the reference&rsquo;s provenance — stamped with a content{" "}
+                <strong className="text-foreground">handle</strong>. Same inputs + scorer config +
+                reference + engine produce the same handle, so verifying a published likelihood
+                ratio is a hash-equality check, not an act of trust.
+              </p>
+              <CodeBlock label="recipe (excerpt)" code={RECIPE_EXCERPT} />
+
+              <p>
+                <strong className="text-foreground">Every step is addressable.</strong> Upload a
+                scan for a content handle, then chain the pipeline — each intermediate is fetchable
+                and links to its inputs, a content-addressed graph from scan to score.
+              </p>
+              <div className="space-y-3">
+                <Endpoint method="POST" path="/v1/artifacts">
+                  Upload a scan → a surface handle (the graph entry point).
+                </Endpoint>
+                <Endpoint method="POST" path="/v1/steps/{preprocess,signature,areal-signature,align,features}">
+                  Each wraps one engine step, taking its inputs as content handles and returning the
+                  output handle + provenance.
+                </Endpoint>
+                <Endpoint method="GET" path="/v1/artifacts/{handle}">
+                  The intermediate&rsquo;s record (kind + provenance); add{" "}
+                  <code className="font-mono text-xs">/data</code> for the raw{" "}
+                  <code className="font-mono text-xs">.npy</code> (ETag = handle) or{" "}
+                  <code className="font-mono text-xs">/preview</code> for a downsampled view.
+                </Endpoint>
+              </div>
+
+              <p>
+                <strong className="text-foreground">The calibration firewall.</strong> A likelihood
+                ratio is valid only when the score was produced under the <em>same</em> scorer config
+                as the reference. <code className="font-mono text-xs">/v1/steps/calibrate</code> — and
+                a <code className="font-mono text-xs">scorer_config</code> override on{" "}
+                <code className="font-mono text-xs">/v1/compare</code> — refuse to emit a calibrated LR
+                when the config hashes disagree, returning the raw score with{" "}
+                <code className="font-mono text-xs">calibrated: false</code> rather than a mis-scaled
+                number.
+              </p>
+              <div className="space-y-3">
+                <Endpoint method="GET" path="/v1/scorer-config">
+                  The deployed scorer hyperparameters + their content hash.
+                </Endpoint>
+                <Endpoint method="GET" path="/v1/references">
+                  Every calibration reference&rsquo;s scorer hash, source datasets, and
+                  Cllr/Cllr<sub>min</sub>/AUC — exactly what each LR is calibrated on.
+                </Endpoint>
+                <Endpoint method="POST" path="/v1/steps/calibrate">
+                  Map a score → bounded LR against a reference; refuses an off-config score (the
+                  firewall).
+                </Endpoint>
+              </div>
+
+              <p>
+                <strong className="text-foreground">Clients.</strong> Thin Python and R clients wrap
+                the API; <code className="font-mono text-xs">reproduce()</code> re-runs a comparison
+                and checks the handle matches.
+              </p>
+              <CodeTabs tabs={REPRODUCE_TABS} />
+              <p className="text-xs text-muted">
+                Clients:{" "}
+                <a
+                  href="https://github.com/erichare/verity/tree/main/clients"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-accent hover:underline"
+                >
+                  clients/ ↗
+                </a>
               </p>
             </Section>
 

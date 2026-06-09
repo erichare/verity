@@ -391,6 +391,14 @@ export default function MethodPage() {
             calibration is a bounded, monotone map, the report is interpretable{" "}
             <em>regardless of how the score was computed</em> — the firewall against the black box.
           </p>
+          <p>
+            And it ships a reproducible <strong className="text-foreground">recipe</strong> — every
+            step, parameter, and input hash — under a content handle, so the result can be verified by
+            re-running it.{" "}
+            <a href="/docs#reproducibility" className="text-accent hover:underline">
+              See the glass-box API →
+            </a>
+          </p>
         </Stage>
 
         {/* The same method, other marks */}
