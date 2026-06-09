@@ -30,7 +30,12 @@ from .decision.lr import ScoreLRModel, cllr_min
 from .decision.metrics import cllr, ece, eer, margin, roc_auc, tippett
 from .decision.validation import barrel_disjoint_folds, summarize_folds
 
-__all__ = ["ValidationSummary", "compute_validation_summary", "generate_validation_report"]
+__all__ = [
+    "ValidationSummary",
+    "compute_validation_summary",
+    "generate_validation_report",
+    "report_from_reference",
+]
 
 
 @dataclass(frozen=True)
@@ -431,6 +436,40 @@ def generate_validation_report(
     return summary
 
 
+def report_from_reference(
+    npz_path: str | Path,
+    *,
+    domain: str,
+    out_path: str,
+    reference_name: str | None = None,
+    generated_at: str | None = None,
+    seed: int = 0,
+) -> ValidationSummary:
+    """Render a validation PDF + JSON from a committed reference ``.npz`` (scores,
+    labels, ``pair-source-set`` cluster IDs) — no catalog, no network.
+
+    The source-disjoint summary uses the per-side source IDs recovered from the cluster
+    IDs, so the same generator that characterizes bullet lands from the catalog also
+    characterizes the impressed (cartridge) and toolmark references the engine ships —
+    one report, every modality."""
+    from .examples._reference_io import barrels_from_clusters, load_reference
+
+    ref = load_reference(npz_path)
+    barrels_a, barrels_b = barrels_from_clusters(ref.cluster_ids)
+    name = reference_name or (ref.provenance or {}).get("name") or Path(npz_path).stem
+    return generate_validation_report(
+        ref.scores,
+        ref.labels,
+        reference_name=name,
+        domain=domain,
+        out_path=out_path,
+        barrels_a=barrels_a,
+        barrels_b=barrels_b,
+        generated_at=generated_at,
+        seed=seed,
+    )
+
+
 def main() -> None:
     """CLI: ``verity-validation-report <study-external-id|''> [out.pdf]``.
 
@@ -483,6 +522,34 @@ def main() -> None:
     print(f"Wrote {out_path} ({summary.n_km} KM / {summary.n_knm} KNM, AUC={summary.auc:.3f})")
     if bd:
         print(f"  barrel-disjoint test Cllr = {bd['cllr_mean']:.3f} ± {bd['cllr_std']:.3f}")
+
+
+def main_reference() -> None:
+    """CLI: ``verity-validation-report-ref <reference.npz> <domain> [out.pdf]``.
+
+    Renders a validation PDF + JSON from a committed reference bundle — no catalog, no
+    network — so the impressed and toolmark references are characterized to the same
+    standard as bullets. Example::
+
+        verity-validation-report-ref \\
+            verity_api/references/cartridge_fadul.npz impressed cartridge_validation.pdf
+    """
+    import sys
+    from datetime import date
+
+    args = sys.argv[1:]
+    if len(args) < 2:
+        print("usage: verity-validation-report-ref <reference.npz> <domain> [out.pdf]")
+        return
+    npz_path, domain = args[0], args[1]
+    out_path = args[2] if len(args) > 2 else "validation_report.pdf"
+    summary = report_from_reference(
+        npz_path, domain=domain, out_path=out_path, generated_at=date.today().isoformat()
+    )
+    bd = summary.barrel_disjoint
+    print(f"Wrote {out_path} ({summary.n_km} KM / {summary.n_knm} KNM, AUC={summary.auc:.3f})")
+    if bd:
+        print(f"  source-disjoint test Cllr = {bd['cllr_mean']:.3f} ± {bd['cllr_std']:.3f}")
 
 
 if __name__ == "__main__":

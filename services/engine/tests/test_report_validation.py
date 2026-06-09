@@ -9,9 +9,11 @@ import pytest
 
 pytest.importorskip("matplotlib")
 
+from verity.examples._reference_io import write_reference  # noqa: E402
 from verity.report_validation import (  # noqa: E402
     compute_validation_summary,
     generate_validation_report,
+    report_from_reference,
 )
 
 
@@ -82,3 +84,23 @@ def test_generate_validation_report_writes_pdf_and_json(tmp_path):
     assert loaded["reference_name"] == "synthetic reference"
     assert loaded["pipeline_version"] == summary.pipeline_version
     assert loaded["barrel_disjoint"]["n_folds"] >= 1
+
+
+def test_report_from_reference_recovers_sources(tmp_path):
+    """A committed reference bundle (scores/labels/pair-source-set clusters) renders a
+    validation PDF + source-disjoint summary with no catalog — the impressed/toolmark
+    path. Sources are recovered from the 'A|B' cluster IDs."""
+    scores, labels, ba, bb = _synthetic_pairs()
+    clusters = [f"{min(a, b)}|{max(a, b)}" for a, b in zip(ba, bb)]
+    ref = tmp_path / "synthetic_impressed.npz"
+    write_reference(
+        ref, scores=scores, labels=labels, cluster_ids=clusters,
+        name="synthetic impressed", generator="test", seed=0, datasets=[], write=True,
+    )
+    out = tmp_path / "impressed_report.pdf"
+    summary = report_from_reference(ref, domain="impressed", out_path=str(out))
+    assert out.exists() and out.read_bytes()[:4] == b"%PDF"
+    assert summary.domain == "impressed"
+    assert summary.reference_name == "synthetic impressed"  # picked up from provenance
+    assert summary.n_sources == 8  # all barrels recovered from the cluster IDs
+    assert summary.barrel_disjoint is not None and summary.barrel_disjoint["n_folds"] >= 1

@@ -57,6 +57,48 @@ class ReferenceArtifact:
     provenance: dict
 
 
+@dataclass(frozen=True)
+class LoadedReference:
+    """A reference bundle read back from disk — the ``.npz`` arrays plus the
+    ``.provenance.json`` sidecar (``None`` if absent). The inverse of
+    :func:`write_reference`."""
+
+    path: Path
+    scores: np.ndarray
+    labels: np.ndarray
+    cluster_ids: np.ndarray
+    provenance: dict | None
+
+
+def load_reference(npz_path: Path | str) -> LoadedReference:
+    """Read a :func:`write_reference` bundle: the scores/labels/cluster IDs and, if
+    present, its provenance sidecar. No network — works from the committed reference."""
+    path = Path(npz_path)
+    with np.load(path, allow_pickle=False) as d:
+        scores = np.asarray(d["scores"], dtype=np.float64)
+        labels = np.asarray(d["labels"], dtype=np.float64)
+        clusters = np.asarray(d["cluster_ids"]).astype("U")
+    sidecar = path.with_suffix(".provenance.json")
+    provenance = json.loads(sidecar.read_text()) if sidecar.exists() else None
+    return LoadedReference(
+        path=path, scores=scores, labels=labels, cluster_ids=clusters, provenance=provenance
+    )
+
+
+def barrels_from_clusters(cluster_ids: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Recover the two per-side source IDs from ``pair-source-set`` cluster IDs.
+
+    :func:`write_reference` stores each pair's cluster as ``"A|B"`` — the sorted source
+    IDs of the two sides (``"X|X"`` for a same-source pair). The source-disjoint
+    protocol (:func:`verity.decision.validation.barrel_disjoint_folds`) needs the source
+    of *each* side, which this splits back out. Source IDs are barrel/slide/edge
+    identifiers and never contain ``"|"``."""
+    parts = [str(c).split("|") for c in cluster_ids]
+    barrels_a = np.array([p[0] for p in parts])
+    barrels_b = np.array([p[-1] for p in parts])
+    return barrels_a, barrels_b
+
+
 def write_reference(
     out_path: Path,
     *,
@@ -95,7 +137,10 @@ def write_reference(
     }
     if write:
         out_path.parent.mkdir(parents=True, exist_ok=True)
-        np.savez(
+        # Compressed: cluster_ids are highly repetitive (few distinct sources among many
+        # pairs) and scores are small integers, so this is a large win at scale (the
+        # tmaRks toolmark reference drops ~10x). Transparent to ``np.load``.
+        np.savez_compressed(
             out_path,
             scores=scores,
             labels=labels,

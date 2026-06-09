@@ -14,6 +14,7 @@ from . import (
     build_bullet_pooled_reference,
     build_cartridge_fadul_reference,
     build_striated_land_reference,
+    build_toolmark_reference,
 )
 
 
@@ -22,6 +23,8 @@ def main() -> None:
     build_bullet_pooled_reference.build()
     print("\n== cartridge-fadul (impressed reference) ==")
     build_cartridge_fadul_reference.build()
+    print("\n== toolmark-tmaRks (striated 1-D / CMR-1D reference) ==")
+    build_toolmark_reference.build()
     print("\n== striated single-land reference ==")
     build_striated_land_reference.main()
 
