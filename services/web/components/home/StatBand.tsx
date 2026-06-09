@@ -1,30 +1,25 @@
-import methodData from "@/lib/method-data.json";
+import cmrValidation from "@/lib/cmr-validation.json";
 
-interface CalibrationSlice {
-  auc: number;
-  cllr: number;
-  nKm: number;
-  nKnm: number;
+interface Reduction {
+  n_km: number;
+  n_knm: number;
+  source_disjoint: { auc: number; cllr: number };
 }
-interface OthersSlice {
-  cartridge?: unknown;
-  screwdriver?: unknown;
-}
-const data = methodData as unknown as { calibration: CalibrationSlice; others?: OthersSlice };
+const cmr = cmrValidation as unknown as { reductions: Reduction[] };
 
-// Real figures from the bullet-land reference + the count of mark types the
-// same pipeline runs on (bullet, plus whichever "others" examples exist).
+// A multi-modal credibility strip: one pipeline, validated source-disjoint across
+// every mark type. Sourced from the same committed validation data that feeds the
+// /method "three reductions" table, so the hero never drifts from — or contradicts —
+// the proof it links to. Not tied to any single modality or the example below it.
 function buildStats(): { value: string; label: string }[] {
-  const cal = data.calibration;
-  const markTypes = 1 + Object.values(data.others ?? {}).filter(Boolean).length;
+  const r = cmr.reductions;
+  const totalPairs = r.reduce((s, x) => s + x.n_km + x.n_knm, 0);
+  const minAuc = Math.min(...r.map((x) => x.source_disjoint.auc));
   return [
-    { value: cal.auc.toFixed(2), label: "Reference AUC" },
-    { value: cal.cllr.toFixed(2), label: "Cllr (cost)" },
-    {
-      value: `${cal.nKm.toLocaleString("en-US")} + ${cal.nKnm.toLocaleString("en-US")}`,
-      label: "Reference pairs",
-    },
-    { value: `${markTypes}`, label: "Mark types, one pipeline" },
+    { value: `${r.length}`, label: "Mark types, one pipeline" },
+    { value: `${(Math.floor(minAuc * 100) / 100).toFixed(2)}+`, label: "Source-disjoint AUC" },
+    { value: totalPairs.toLocaleString("en-US"), label: "Reference pairs" },
+    { value: "0", label: "Per-modality re-tuning" },
   ];
 }
 

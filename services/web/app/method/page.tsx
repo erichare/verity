@@ -95,6 +95,9 @@ const cmr = cmrValidation as unknown as {
   reductions: CmrReduction[];
   note: string;
 };
+const cmrByModality: Record<string, CmrReduction> = Object.fromEntries(
+  cmr.reductions.map((r) => [r.modality, r]),
+);
 
 function formatLR(lr: number): string {
   const human = (x: number) =>
@@ -133,51 +136,197 @@ function Stage({
   );
 }
 
-function OtherMark({
-  badge,
-  title,
-  lr,
-  verbal,
-  reference,
-  bandLabel,
-  children,
-}: {
+// ---- Multi-modal swap -------------------------------------------------------
+
+type ModalityKey = "bullet" | "cartridge" | "screwdriver";
+
+interface ModalityPanel {
   badge: string;
-  title: string;
   lr: number;
   verbal: string;
-  reference: { name: string; auc: number };
-  bandLabel: string;
-  children: ReactNode;
-}) {
-  const positive = lr >= 1;
+  regions: number;
+  regionWord: string;
+  registration: string;
+  refName: string;
+  auc: number;
+  nKm: number;
+  nKnm: number;
+  viz: ReactNode;
+}
+
+const MODALITY_PILLS: { key: ModalityKey; pill: string }[] = [
+  { key: "bullet", pill: "Bullet land" },
+  { key: "cartridge", pill: "Cartridge case" },
+  { key: "screwdriver", pill: "Screwdriver" },
+];
+
+// Resolve the comparison panel for the active mark. Each modality shows the SAME
+// concept — congruent matching regions — rendered in its natural geometry: a 1-D
+// aligned-signature view for striated marks, the 2-D breech-face surfaces for the
+// impression. Verdict (LR, verbal) comes from the real example in method-data;
+// the reference's AUC + pair counts come from cmr-validation.json so the card can
+// never contradict the source-disjoint table further down the page.
+function buildPanel(key: ModalityKey, others?: Others): ModalityPanel | null {
+  if (key === "bullet") {
+    const r = cmrByModality["striated"];
+    const ex = data.km;
+    return {
+      badge: "Striated · 1-D signature",
+      lr: ex.lr,
+      verbal: ex.verbal,
+      regions: ex.bandsA.length,
+      regionWord: "congruent matching regions",
+      registration: "a single 1-D shift",
+      refName: ex.reference.name,
+      auc: r.in_sample_auc,
+      nKm: r.n_km,
+      nKnm: r.n_knm,
+      viz: (
+        <Frame className="p-3">
+          <AlignedSignatures
+            a={ex.signatureA}
+            b={ex.signatureB}
+            bandsA={ex.bandsA}
+            bandsB={ex.bandsB}
+            className="h-48 sm:h-56"
+          />
+        </Frame>
+      ),
+    };
+  }
+  const c = others?.cartridge;
+  if (key === "cartridge" && c?.scanA && c.scanB) {
+    const scanA = c.scanA;
+    const scanB = c.scanB;
+    const r = cmrByModality["impressed"];
+    return {
+      badge: "Impressed · 2-D areal",
+      lr: c.lr,
+      verbal: c.verbal,
+      regions: c.bandsA.length,
+      regionWord: "congruent matching cells",
+      registration: "a 2-D shift + rotation",
+      refName: c.reference.name,
+      auc: r.in_sample_auc,
+      nKm: r.n_km,
+      nKnm: r.n_knm,
+      viz: (
+        <div className="grid grid-cols-2 gap-3">
+          <Frame className="h-48 sm:h-56">
+            <SurfaceViewer grid={scanA} regions={c.bandsA} className="h-full w-full" />
+          </Frame>
+          <Frame className="h-48 sm:h-56">
+            <SurfaceViewer grid={scanB} regions={c.bandsB} className="h-full w-full" />
+          </Frame>
+        </div>
+      ),
+    };
+  }
+  const s = others?.screwdriver;
+  if (key === "screwdriver" && s?.signatureA && s.signatureB) {
+    const sigA = s.signatureA;
+    const sigB = s.signatureB;
+    const r = cmrByModality["striated-toolmark"];
+    return {
+      badge: "Striated · 1-D toolmark",
+      lr: s.lr,
+      verbal: s.verbal,
+      regions: s.bandsA.length,
+      regionWord: "matched striae",
+      registration: "a single 1-D shift",
+      refName: s.reference.name,
+      auc: r.in_sample_auc,
+      nKm: r.n_km,
+      nKnm: r.n_knm,
+      viz: (
+        <Frame className="p-3">
+          <AlignedSignatures
+            a={sigA}
+            b={sigB}
+            bandsA={s.bandsA}
+            bandsB={s.bandsB}
+            className="h-48 sm:h-56"
+          />
+        </Frame>
+      ),
+    };
+  }
+  return null;
+}
+
+function ModalitySwap({ others }: { others?: Others }) {
+  const [modality, setModality] = useState<ModalityKey>("bullet");
+  const panel = buildPanel(modality, others);
+  const positive = (panel?.lr ?? 1) >= 1;
+
   return (
-    <div className="glass flex flex-col rounded-2xl p-5 sm:p-6">
-      <div className="flex items-center justify-between gap-3">
-        <h3 className="font-display text-lg font-medium text-foreground">{title}</h3>
-        <span className="shrink-0 rounded-full bg-foreground/[0.06] px-2.5 py-1 text-[11px] uppercase tracking-wider text-muted">
-          {badge}
+    <section className="rise mt-12">
+      <div className="text-center">
+        <span className="glass inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs text-foreground/70">
+          <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+          One pipeline · three marks
         </span>
       </div>
-      <div className="mt-4">{children}</div>
-      <p className="mt-3 text-xs text-muted">{bandLabel}</p>
-      <div className="mt-auto flex items-end justify-between gap-4 border-t border-border pt-4">
-        <div>
-          <p className="text-[11px] uppercase tracking-wider text-muted">Likelihood ratio</p>
-          <p
-            className={`font-mono text-3xl font-semibold ${positive ? "accent-text" : "text-rose-500 dark:text-rose-300"}`}
-          >
-            {formatLR(lr)}
-          </p>
+
+      <div className="mt-5 flex justify-center">
+        <div className="inline-flex rounded-full border border-border bg-foreground/[0.03] p-1 text-sm">
+          {MODALITY_PILLS.map(({ key, pill }) => (
+            <button
+              key={key}
+              onClick={() => setModality(key)}
+              aria-pressed={modality === key}
+              className={`rounded-full px-4 py-1.5 font-medium transition ${
+                modality === key
+                  ? "bg-gradient-to-r from-indigo-500 to-cyan-400 text-slate-950"
+                  : "text-foreground/70 hover:text-foreground"
+              }`}
+            >
+              {pill}
+            </button>
+          ))}
         </div>
-        <p className="max-w-[58%] text-right text-xs leading-snug text-foreground/70">
-          {verbal}.
-          <span className="mt-1 block text-[11px] text-muted">
-            {reference.name} · AUC {reference.auc}
-          </span>
-        </p>
       </div>
-    </div>
+
+      {panel && (
+        <div className="glass mt-6 rounded-2xl p-5 sm:p-8">
+          <div className="flex items-center justify-between gap-3">
+            <span className="rounded-full bg-foreground/[0.06] px-2.5 py-1 text-[11px] uppercase tracking-wider text-muted">
+              {panel.badge}
+            </span>
+            <span className="text-xs text-muted">
+              {panel.regions} {panel.regionWord}
+            </span>
+          </div>
+
+          <div className="mt-4">{panel.viz}</div>
+          <p className="mt-2 px-1 text-xs text-muted">
+            <span style={{ color: "var(--accent)" }}>mark A</span> vs{" "}
+            <span style={{ color: "var(--accent-2)" }}>mark B</span> — registered by{" "}
+            {panel.registration}, then scored by the same congruent-regions algorithm.
+          </p>
+
+          <div className="mt-5 flex flex-wrap items-end justify-between gap-4 border-t border-border pt-4">
+            <div>
+              <p className="text-[11px] uppercase tracking-wider text-muted">Likelihood ratio</p>
+              <p
+                className={`font-mono text-4xl font-semibold sm:text-5xl ${
+                  positive ? "accent-text" : "text-rose-500 dark:text-rose-300"
+                }`}
+              >
+                {formatLR(panel.lr)}
+              </p>
+              <p className="mt-1 text-sm text-foreground/80">{panel.verbal}.</p>
+            </div>
+            <p className="max-w-[16rem] text-right text-xs leading-snug text-muted">
+              {panel.refName}
+              <br />
+              AUC {panel.auc.toFixed(3)} · {panel.nKm.toLocaleString("en-US")} +{" "}
+              {panel.nKnm.toLocaleString("en-US")} reference pairs
+            </p>
+          </div>
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -204,42 +353,59 @@ export default function MethodPage() {
           </h1>
           <p className="mt-5 max-w-2xl text-lg leading-relaxed text-foreground/80">
             Verity turns a pair of 3-D surface scans into a calibrated likelihood ratio — and shows
-            its work at every step. Below is a <strong className="text-foreground">real comparison</strong>{" "}
-            of two Hamby-252 bullets, walked through the whole pipeline. Flip between two bullets from{" "}
-            <em>the same</em> firearm and two from <em>different</em> firearms, and watch the same
-            algorithm reach opposite conclusions.
+            its work at every step. The <strong className="text-foreground">same pipeline</strong>{" "}
+            weighs three different kinds of mark; swap between them to see three real, calibrated
+            verdicts from one algorithm — then follow the entire pipeline, step by step, on a bullet.
           </p>
         </section>
 
-        {/* Toggle + live verdict */}
-        <div className="rise mt-10">
-          <div className="inline-flex rounded-full border border-border bg-foreground/[0.03] p-1 text-sm">
-            {(["km", "knm"] as const).map((k) => (
-              <button
-                key={k}
-                onClick={() => setMode(k)}
-                className={`rounded-full px-4 py-1.5 font-medium transition ${
-                  mode === k ? "bg-gradient-to-r from-indigo-500 to-cyan-400 text-slate-950" : "text-foreground/70 hover:text-foreground"
-                }`}
-              >
-                {k === "km" ? "Same firearm" : "Different firearms"}
-              </button>
-            ))}
-          </div>
-          <div className="glass mt-4 flex flex-wrap items-baseline justify-between gap-3 rounded-2xl p-5">
-            <div>
-              <p className="text-xs uppercase tracking-wider text-muted">{ex.sublabel}</p>
-              <p className={`font-mono text-4xl font-semibold ${positive ? "accent-text" : "text-rose-500 dark:text-rose-300"}`}>
-                {formatLR(ex.lr)}
+        {/* Multi-modal swap — the same method on three marks */}
+        <ModalitySwap others={others} />
+
+        {/* The full pipeline, on a bullet */}
+        <Reveal className="mt-20 sm:mt-28">
+          <span className="glass inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs text-foreground/70">
+            <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+            How the bullet was scored
+          </span>
+          <h2 className="mt-5 font-display text-3xl font-medium text-foreground sm:text-4xl">
+            The full pipeline, <span className="accent-text">step by step</span>
+          </h2>
+          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-foreground/80 sm:text-base">
+            Here is the entire machine on a real Hamby-252 bullet — six steps from raw scan to
+            calibrated evidence. Flip between two bullets fired from <em>the same</em> firearm and two
+            from <em>different</em> firearms, and watch the same algorithm reach opposite conclusions.
+          </p>
+
+          <div className="mt-6">
+            <div className="inline-flex rounded-full border border-border bg-foreground/[0.03] p-1 text-sm">
+              {(["km", "knm"] as const).map((k) => (
+                <button
+                  key={k}
+                  onClick={() => setMode(k)}
+                  className={`rounded-full px-4 py-1.5 font-medium transition ${
+                    mode === k ? "bg-gradient-to-r from-indigo-500 to-cyan-400 text-slate-950" : "text-foreground/70 hover:text-foreground"
+                  }`}
+                >
+                  {k === "km" ? "Same firearm" : "Different firearms"}
+                </button>
+              ))}
+            </div>
+            <div className="glass mt-4 flex flex-wrap items-baseline justify-between gap-3 rounded-2xl p-5">
+              <div>
+                <p className="text-xs uppercase tracking-wider text-muted">{ex.sublabel}</p>
+                <p className={`font-mono text-4xl font-semibold ${positive ? "accent-text" : "text-rose-500 dark:text-rose-300"}`}>
+                  {formatLR(ex.lr)}
+                </p>
+              </div>
+              <p className="max-w-xs text-sm leading-relaxed text-foreground/70">
+                {ex.verbal}. The reference can support at most{" "}
+                <strong className="text-foreground">{cal.nKm}:1</strong> either way (the bound), and the
+                same algorithm produced this with zero parameters tuned to these bullets.
               </p>
             </div>
-            <p className="max-w-xs text-sm leading-relaxed text-foreground/70">
-              {ex.verbal}. The reference can support at most{" "}
-              <strong className="text-foreground">{cal.nKm}:1</strong> either way (the bound), and the
-              same algorithm produced this with zero parameters tuned to these bullets.
-            </p>
           </div>
-        </div>
+        </Reveal>
 
         {/* Stage 1 */}
         <Stage
@@ -400,78 +566,6 @@ export default function MethodPage() {
             </a>
           </p>
         </Stage>
-
-        {/* The same method, other marks */}
-        {(others?.cartridge || others?.screwdriver) && (
-          <Reveal className="mt-20 sm:mt-28">
-            <div className="text-center">
-              <span className="glass inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs text-foreground/70">
-                <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-                Same pipeline, zero re-tuning
-              </span>
-              <h2 className="mt-5 font-display text-2xl font-medium text-foreground sm:text-3xl">
-                Watch it generalize
-              </h2>
-              <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-foreground/80">
-                Everything above was a bullet. Here is the <em>same</em> six-step machine — same
-                calibration code, no mark-specific feature engineering — run on a cartridge breech face
-                and a screwdriver toolmark. Only the registration group changes: a 2-D shift-and-rotate
-                for the impression, a 1-D shift for the striae.
-              </p>
-            </div>
-
-            <div className="mt-8 grid items-stretch gap-5 lg:grid-cols-2">
-              {others.cartridge?.scanA && others.cartridge.scanB && (
-                <OtherMark
-                  badge="Impressed · breech face"
-                  title="Cartridge case"
-                  lr={others.cartridge.lr}
-                  verbal={others.cartridge.verbal}
-                  reference={others.cartridge.reference}
-                  bandLabel={`${others.cartridge.bandsA.length} congruent matching cells across the two breech-face impressions — drag to rotate`}
-                >
-                  <div className="grid grid-cols-2 gap-3">
-                    <Frame className="h-44">
-                      <SurfaceViewer
-                        grid={others.cartridge.scanA}
-                        regions={others.cartridge.bandsA}
-                        className="h-full w-full"
-                      />
-                    </Frame>
-                    <Frame className="h-44">
-                      <SurfaceViewer
-                        grid={others.cartridge.scanB}
-                        regions={others.cartridge.bandsB}
-                        className="h-full w-full"
-                      />
-                    </Frame>
-                  </div>
-                </OtherMark>
-              )}
-
-              {others.screwdriver?.signatureA && others.screwdriver.signatureB && (
-                <OtherMark
-                  badge="Striated · toolmark"
-                  title="Screwdriver"
-                  lr={others.screwdriver.lr}
-                  verbal={others.screwdriver.verbal}
-                  reference={others.screwdriver.reference}
-                  bandLabel={`${others.screwdriver.bandsA.length} matched striae aligned down both marks`}
-                >
-                  <Frame className="px-3 py-3">
-                    <AlignedSignatures
-                      a={others.screwdriver.signatureA}
-                      b={others.screwdriver.signatureB}
-                      bandsA={others.screwdriver.bandsA}
-                      bandsB={others.screwdriver.bandsB}
-                      className="h-44"
-                    />
-                  </Frame>
-                </OtherMark>
-              )}
-            </div>
-          </Reveal>
-        )}
 
         {/* Three reductions, validated source-disjoint */}
         <Reveal className="mt-20 sm:mt-28">
