@@ -24,11 +24,6 @@ from .store import BlobStore
 
 MANIFEST_DIR = Path(__file__).parent / "manifests"
 
-# A bundled manifest name is a flat stem: letters, digits, and ``._-`` only.
-# Forbidding path separators (and ``..``) means an untrusted name can never
-# traverse outside MANIFEST_DIR.
-_MANIFEST_NAME_RE = re.compile(r"[A-Za-z0-9._-]+")
-
 
 # --------------------------------------------------------------------------- #
 # Manifest schema                                                             #
@@ -92,22 +87,16 @@ class Manifest(BaseModel):
 def resolve_manifest_name(name: str) -> Path:
     """Resolve a bundled-manifest *name* to its path inside :data:`MANIFEST_DIR`.
 
-    The result is guaranteed to be a direct child of ``MANIFEST_DIR``: names
-    containing path separators, ``..`` segments, or absolute paths are rejected.
-    This confines untrusted names (e.g. an HTTP path parameter) to the bundled
-    manifests directory so they cannot be used to read arbitrary files.
-
-    Raises ``FileNotFoundError`` if the name is invalid or no such manifest exists.
+    The returned path is taken from a listing of ``MANIFEST_DIR`` — the untrusted
+    *name* is only ever compared against the stems of files that already exist,
+    never used to construct a filesystem path. An attacker-controlled name
+    therefore cannot traverse outside the bundled manifests directory; a name
+    that matches no bundled manifest simply yields ``FileNotFoundError``.
     """
-    if not _MANIFEST_NAME_RE.fullmatch(name) or name in (".", ".."):
-        raise FileNotFoundError(f"manifest not found: {name!r}")
-    base = MANIFEST_DIR.resolve()
-    candidate = (base / f"{name}.yaml").resolve()
-    # Defence-in-depth: the allowlist already forbids separators, but verify the
-    # resolved real path still lives directly under MANIFEST_DIR before reading.
-    if candidate.parent != base or not candidate.is_file():
-        raise FileNotFoundError(f"manifest not found: {name!r}")
-    return candidate
+    for candidate in MANIFEST_DIR.glob("*.yaml"):
+        if candidate.stem == name:
+            return candidate
+    raise FileNotFoundError(f"manifest not found: {name!r}")
 
 
 def _read_manifest(path: Path) -> Manifest:
