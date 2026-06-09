@@ -13,7 +13,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 
 from ... import models
-from ...ingest import MANIFEST_DIR, Manifest, load_manifest
+from ...ingest import MANIFEST_DIR, Manifest, load_manifest, load_manifest_by_name
 from ..deps import get_session
 from ..envelope import Envelope, ok
 from ..schemas import DatasetDetail, DatasetSummary, PinnedScan
@@ -58,7 +58,9 @@ def get_dataset(
     matched to a ``Scan`` by ``source_ref`` and annotated with the ingested scan's
     id + content hash (null when that file hasn't been ingested yet)."""
     try:
-        manifest = load_manifest(name)
+        # ``name`` is untrusted: resolve it strictly within the bundled manifests
+        # directory so it cannot traverse to arbitrary files.
+        manifest = load_manifest_by_name(name)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=f"dataset {name!r} not found") from exc
 

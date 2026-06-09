@@ -24,6 +24,11 @@ from .store import BlobStore
 
 MANIFEST_DIR = Path(__file__).parent / "manifests"
 
+# A bundled manifest name is a flat stem: letters, digits, and ``._-`` only.
+# Forbidding path separators (and ``..``) means an untrusted name can never
+# traverse outside MANIFEST_DIR.
+_MANIFEST_NAME_RE = re.compile(r"[A-Za-z0-9._-]+")
+
 
 # --------------------------------------------------------------------------- #
 # Manifest schema                                                             #
@@ -84,14 +89,52 @@ class Manifest(BaseModel):
         return self
 
 
-def load_manifest(name_or_path: str | Path) -> Manifest:
-    """Load a manifest by file path, or by name from the bundled manifests dir."""
-    path = Path(name_or_path)
-    if not path.exists():
-        path = MANIFEST_DIR / f"{name_or_path}.yaml"
-    if not path.exists():
-        raise FileNotFoundError(f"manifest not found: {name_or_path}")
+def resolve_manifest_name(name: str) -> Path:
+    """Resolve a bundled-manifest *name* to its path inside :data:`MANIFEST_DIR`.
+
+    The result is guaranteed to be a direct child of ``MANIFEST_DIR``: names
+    containing path separators, ``..`` segments, or absolute paths are rejected.
+    This confines untrusted names (e.g. an HTTP path parameter) to the bundled
+    manifests directory so they cannot be used to read arbitrary files.
+
+    Raises ``FileNotFoundError`` if the name is invalid or no such manifest exists.
+    """
+    if not _MANIFEST_NAME_RE.fullmatch(name) or name in (".", ".."):
+        raise FileNotFoundError(f"manifest not found: {name!r}")
+    base = MANIFEST_DIR.resolve()
+    candidate = (base / f"{name}.yaml").resolve()
+    # Defence-in-depth: the allowlist already forbids separators, but verify the
+    # resolved real path still lives directly under MANIFEST_DIR before reading.
+    if candidate.parent != base or not candidate.is_file():
+        raise FileNotFoundError(f"manifest not found: {name!r}")
+    return candidate
+
+
+def _read_manifest(path: Path) -> Manifest:
     return Manifest.model_validate(yaml.safe_load(path.read_text()))
+
+
+def load_manifest_by_name(name: str) -> Manifest:
+    """Load a bundled manifest **by name only**, confined to :data:`MANIFEST_DIR`.
+
+    Use this for untrusted input (e.g. an API path parameter): it can never
+    resolve to a file outside the bundled manifests directory.
+    """
+    return _read_manifest(resolve_manifest_name(name))
+
+
+def load_manifest(name_or_path: str | Path) -> Manifest:
+    """Load a manifest from an explicit file path, or by bundled name.
+
+    An existing file path is read as-is — this branch is for **trusted, local**
+    callers only (the CLI and directory globs). Bare names are resolved via
+    :func:`resolve_manifest_name`, which confines them to ``MANIFEST_DIR``. For
+    untrusted input, call :func:`load_manifest_by_name` instead.
+    """
+    path = Path(name_or_path)
+    if path.is_file():
+        return _read_manifest(path)
+    return load_manifest_by_name(str(name_or_path))
 
 
 def build_source(manifest: Manifest) -> Source:
