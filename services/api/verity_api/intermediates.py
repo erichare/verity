@@ -19,7 +19,9 @@ from verity.surface import Surface
 from verity.trace import LandTrace
 
 _LAMBDA_S, _LAMBDA_C = DEFAULT_SCORER_CONFIG.lambda_s, DEFAULT_SCORER_CONFIG.lambda_c
-VALID_INCLUDES = frozenset({"calibration", "features", "perland", "trace"})
+# "recipe" is the reproducible methods-as-JSON + content handle (see recipe.py); it is
+# assembled in main.py rather than here, but shares the include selector.
+VALID_INCLUDES = frozenset({"calibration", "features", "perland", "trace", "recipe"})
 
 
 def parse_include(raw: str | None) -> set[str]:

@@ -19,8 +19,14 @@ _DIR = Path(__file__).parent / "references"
 
 # domain -> (file, human-readable reference name)
 _REFERENCES = {
-    "impressed": ("cartridge_fadul.npz", "Fadul cartridge cases (10 consecutively-manufactured slides)"),
-    "striated": ("bullet_pooled.npz", "pooled bullet-land reference (Hamby-252 & 173, Beretta, Phoenix)"),
+    "impressed": (
+        "cartridge_fadul.npz",
+        "Fadul cartridge cases (10 consecutively-manufactured slides)",
+    ),
+    "striated": (
+        "bullet_pooled.npz",
+        "pooled bullet-land reference (Hamby-252 & 173, Beretta, Phoenix)",
+    ),
 }
 
 # A single striated land is a weaker comparison object than a whole bullet, scored on
@@ -30,6 +36,46 @@ _STRIATED_SINGLE = ("striated_land.npz", "pooled single-land reference (Hamby-25
 
 def available_domains() -> list[str]:
     return sorted(_REFERENCES)
+
+
+def reference_ids() -> list[str]:
+    """Every addressable reference, including the single-land striated one (which is not
+    a calibration *domain* but is a distinct, inspectable reference population)."""
+    return [*sorted(_REFERENCES), "striated_single"]
+
+
+def _bundle_for_id(rid: str) -> ReferenceBundle | None:
+    if rid in _REFERENCES:
+        return load_reference_bundle(rid)
+    if rid == "striated_single":
+        return load_striated_single_bundle()
+    return None
+
+
+def reference_metadata(rid: str) -> dict | None:
+    """Public provenance for one reference (``GET /v1/references/{id}``): the scorer-config
+    hash it was built under, its source datasets, and its calibration diagnostics ---
+    exactly what the LR is calibrated on. ``None`` if the id is unknown."""
+    bundle = _bundle_for_id(rid)
+    if bundle is None:
+        return None
+    p = bundle.provenance
+    return {
+        "id": rid,
+        "name": bundle.name,
+        "scorer_config_hash": bundle.scorer_config_hash,
+        "cluster_scheme": p.get("cluster_scheme"),
+        "n_sources": p.get("n_sources"),
+        "datasets": p.get("datasets"),
+        "diagnostics": p.get("diagnostics"),
+        "generator": p.get("generator"),
+        "git_commit": p.get("git_commit"),
+    }
+
+
+def all_reference_metadata() -> list[dict]:
+    """Provenance for every bundled reference (``GET /v1/references``)."""
+    return [m for rid in reference_ids() if (m := reference_metadata(rid)) is not None]
 
 
 def _load_checked(fname: str, name: str) -> ReferenceBundle:
