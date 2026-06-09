@@ -5,6 +5,7 @@ from __future__ import annotations
 import numpy as np
 from fastapi.testclient import TestClient
 
+from verity.decision import DEFAULT_SCORER_CONFIG
 from verity.surface import Surface
 from verity_api.intermediates import (
     calibration_diagnostics,
@@ -12,6 +13,7 @@ from verity_api.intermediates import (
     striated_bullet_intermediates,
 )
 from verity_api.main import app
+from verity_api.recipe import build_recipe
 
 client = TestClient(app)
 
@@ -34,7 +36,7 @@ def _reference(seed: int = 0):
 def test_parse_include():
     assert parse_include(None) == set()
     assert parse_include("calibration, features") == {"calibration", "features"}
-    assert parse_include("all") == {"calibration", "features", "perland", "trace"}
+    assert parse_include("all") == {"calibration", "features", "perland", "trace", "recipe"}
     assert parse_include("bogus") == set()
 
 
@@ -96,3 +98,78 @@ def test_unversioned_compare_still_present():
     # the live web depends on the unversioned route — it must keep existing
     paths = {r.path for r in app.routes}
     assert "/compare" in paths and "/v1/compare" in paths and "/v1/scope" in paths
+
+
+# --- glass-box: scorer config, references, and the reproducible recipe -------
+
+
+def _recipe_resp(lr: float = 146.0) -> dict:
+    return {
+        "domain": "impressed",
+        "score": 5.0,
+        "score_kind": "cmr-2d",
+        "likelihood_ratio": lr,
+        "log10_lr": float(np.log10(lr)),
+        "log10_lr_ci_lo": 1.0,
+        "log10_lr_ci_hi": 2.0,
+        "lr_ci_method": "bootstrap-clustered",
+        "lr_bound_log10": 2.0,
+        "direction": "same source",
+        "verbal": "moderately strong support for same source",
+        "reference": {"name": "synthetic ref"},
+        "provenance": {
+            "engine_version": "0.1.0",
+            "api_version": "0.1.0",
+            "input_hashes": {"mark_a": ["aa"], "mark_b": ["bb"]},
+        },
+    }
+
+
+def test_build_recipe_structure_and_deterministic_handle():
+    rp = {"scorer_config_hash": "refhash", "datasets": [{"tag": "x"}], "diagnostics": {"auc": 0.99}}
+    r = build_recipe(_recipe_resp(), domain="impressed", reference_provenance=rp)
+    assert r["handle"].startswith("sha256:")
+    assert r["scorer_config_hash"] == DEFAULT_SCORER_CONFIG.config_hash
+    assert r["reference"]["scorer_config_hash"] == "refhash"
+    steps = [s["step"] for s in r["steps"]]
+    assert steps[:2] == ["decode", "preprocess"]
+    assert {"calibrate", "uncertainty"} <= set(steps)
+    # decode step carries the input hashes (the provenance spine)
+    decode = next(s for s in r["steps"] if s["step"] == "decode")
+    assert decode["inputs"] == {"mark_a": ["aa"], "mark_b": ["bb"]}
+    # deterministic: same computation → same handle; changed result → different handle
+    assert (
+        build_recipe(_recipe_resp(), domain="impressed", reference_provenance=rp)["handle"]
+        == r["handle"]
+    )
+    assert (
+        build_recipe(_recipe_resp(lr=999.0), domain="impressed", reference_provenance=rp)["handle"]
+        != r["handle"]
+    )
+
+
+def test_v1_scorer_config_endpoint():
+    r = client.get("/v1/scorer-config")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["config_hash"] == DEFAULT_SCORER_CONFIG.config_hash
+    assert body["lambda_s"] == DEFAULT_SCORER_CONFIG.lambda_s
+    assert body["name"] == DEFAULT_SCORER_CONFIG.name
+
+
+def test_v1_references_list_carries_provenance():
+    r = client.get("/v1/references")
+    assert r.status_code == 200
+    refs = r.json()["references"]
+    ids = {x["id"] for x in refs}
+    assert {"striated", "impressed", "striated_single"} <= ids
+    impressed = next(x for x in refs if x["id"] == "impressed")
+    assert impressed["scorer_config_hash"]  # what the LR is calibrated under
+    assert impressed["diagnostics"]["n_km"] >= 1
+    assert impressed["datasets"]  # source provenance
+
+
+def test_v1_reference_by_id_and_404():
+    assert client.get("/v1/references/impressed").status_code == 200
+    assert client.get("/v1/references/striated_single").status_code == 200
+    assert client.get("/v1/references/nope").status_code == 404

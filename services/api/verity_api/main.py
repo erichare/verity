@@ -53,11 +53,14 @@ from .intermediates import (
     striated_bullet_intermediates,
     trace_dict,
 )
+from .recipe import build_recipe
 from .references import (
+    all_reference_metadata,
     available_domains,
     load_reference_bundle,
     load_striated_single_bundle,
     load_striated_single_land,
+    reference_metadata,
 )
 
 _LAMBDA_S, _LAMBDA_C = DEFAULT_SCORER_CONFIG.lambda_s, DEFAULT_SCORER_CONFIG.lambda_c
@@ -87,8 +90,10 @@ was computed. It is *not* a claim about the error rate of forensic examination,
 which remains unknown.
 
 The versioned **`/v1`** routes expose the algorithm's intermediate steps on request
-(`include=calibration,features,perland,trace`) and an applicability-domain guard
-(`/v1/scope`).
+(`include=calibration,features,perland,trace,recipe`), a reproducible **recipe** —
+the methods section as JSON, with a content **handle** — an applicability-domain guard
+(`/v1/scope`), and metadata on the deployed scorer config (`/v1/scorer-config`) and the
+calibration references (`/v1/references`).
 
 Web app: <https://verity.codes> · Method & references: <https://verity.codes/#science>
 """
@@ -219,7 +224,11 @@ async def _enforce_limits(request: Request, call_next):
     """Reject an over-large body up front (when the client declares its size) and
     rate-limit the upload endpoints per client IP, before any work is done."""
     declared = request.headers.get("content-length")
-    if declared is not None and declared.isdigit() and int(declared) > limits.LIMITS.max_total_bytes:
+    if (
+        declared is not None
+        and declared.isdigit()
+        and int(declared) > limits.LIMITS.max_total_bytes
+    ):
         return JSONResponse(status_code=413, content={"detail": "request body too large"})
     if request.url.path in _RATE_LIMITED_PATHS and not _rate_ok(request):
         return JSONResponse(status_code=429, content={"detail": "rate limit exceeded; slow down"})
@@ -427,9 +436,11 @@ def _compute_report(
 
     bundle = load_reference_bundle(domain)
     scores, labels, reference_name = bundle.scores, bundle.labels, bundle.name
+    ref_provenance = bundle.provenance
     if domain == "striated":
         if len(surfaces_a) == 1 and len(surfaces_b) == 1:
             single = load_striated_single_bundle()
+            ref_provenance = single.provenance
             report, previews = compare_with_previews(
                 surfaces_a[0],
                 surfaces_b[0],
@@ -492,6 +503,12 @@ def _compute_report(
             "a": trace_dict(land_trace(surfaces_a[0], lambda_s=_LAMBDA_S, lambda_c=_LAMBDA_C)),
             "b": trace_dict(land_trace(surfaces_b[0], lambda_s=_LAMBDA_S, lambda_c=_LAMBDA_C)),
         }
+    if "recipe" in include:
+        # The reproducible methods-as-JSON + content handle — assembled from the report
+        # and the reference's provenance, no new computation.
+        recipe = build_recipe(resp, domain=domain, reference_provenance=ref_provenance)
+        resp["recipe"] = recipe
+        resp["handle"] = recipe["handle"]
     return resp
 
 
@@ -586,11 +603,15 @@ async def compare_v1(
       are not independent, so the reportable LR is the aggregate).
     - **trace** — the full signature pipeline (raw → bandpassed → oriented →
       signature) for the best-matching land of each bullet.
+    - **recipe** — the reproducible *methods section as JSON*: every pipeline step,
+      its parameters, the engine version, the input/reference hashes, and a content
+      **handle** over the whole recipe (reproducibility as a hash-equality check). On
+      by default.
 
-    `include=all` returns everything. The response always carries an
-    applicability-domain `scope` annotation for the inputs."""
+    `include=all` returns everything. The default is `calibration,recipe`. The response
+    always carries an applicability-domain `scope` annotation for the inputs."""
     return await _run_compare(
-        domain, mark_a, mark_b, include=parse_include(include) or {"calibration"}
+        domain, mark_a, mark_b, include=parse_include(include) or {"calibration", "recipe"}
     )
 
 
@@ -649,6 +670,32 @@ async def compare_report_pdf(
         media_type="application/pdf",
         headers={"Content-Disposition": "attachment; filename=verity-comparison-report.pdf"},
     )
+
+
+@v1.get("/scorer-config", tags=["v1"], summary="The deployed scorer configuration + hash")
+def scorer_config_v1() -> dict:
+    """The exact hyperparameters the engine scores with (ISO roughness-band cutoffs, the
+    CMR congruence thresholds, the scorer identity) and their content hash. A calibrated
+    LR is only valid when a reference's `scorer_config_hash` matches this — so this is the
+    value to check before trusting a cross-config comparison."""
+    return {**DEFAULT_SCORER_CONFIG.to_dict(), "config_hash": DEFAULT_SCORER_CONFIG.config_hash}
+
+
+@v1.get("/references", tags=["v1"], summary="List calibrated reference populations + provenance")
+def references_v1() -> dict:
+    """Every bundled reference the API calibrates against, with the scorer-config hash it
+    was built under, its source datasets, and its diagnostics (Cllr/Cllr_min/AUC) — what,
+    exactly, each likelihood ratio is calibrated on."""
+    return {"references": all_reference_metadata()}
+
+
+@v1.get("/references/{reference_id}", tags=["v1"], summary="Provenance for one reference")
+def reference_v1(reference_id: str) -> dict:
+    """Provenance for one reference by id (`striated`, `impressed`, `striated_single`)."""
+    meta = reference_metadata(reference_id)
+    if meta is None:
+        raise HTTPException(status_code=404, detail=f"unknown reference {reference_id!r}")
+    return meta
 
 
 app.include_router(v1)
