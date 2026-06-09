@@ -3,15 +3,13 @@
 
 The **deployed CMR-1D** numbers are recomputed here from the *committed* reference
 ``toolmark_tmaRks.npz`` (no network): in-sample AUC / Cllr / Cllr_min and the
-source-disjoint summary (mean ± sd over folds, no tool-edge spanning train and test).
-Two comparison **baselines** are recorded as context (not recomputed here, and flagged
-``reproducible: false``):
+source-disjoint summary (by tool-edge). Two **baselines** are read from ``baselines.json``
+(measured + re-lockable via ``verity-relock-baselines``):
 
-* the *same-pipeline* global 1-D cross-correlation (``align_1d``) on the same set — the
-  pre-CMR baseline (``verity-toolmark-tmaRks``); and
-* the Chumbley ``toolmaRk`` specialist, whose head-to-head Verity runs on the *ameslab*
-  set (``verity-toolmark-chumbley-proof``) — a different, smaller set, so it is recorded
-  as a pointer, not a tmaRks number.
+* the *same-pipeline* global 1-D cross-correlation (``align_1d``) on the same tmaRks set —
+  the directly comparable pre-CMR baseline (CMR-1D should beat it); and
+* the Chumbley ``toolmaRk`` specialist, measured on the *ameslab* set (a different,
+  smaller set), recorded as cross-method context, not a tmaRks number.
 
     cd services/engine && uv run verity-toolmark-validation-data
 """
@@ -26,45 +24,53 @@ from pathlib import Path
 from verity.report_validation import compute_validation_summary
 
 from ._reference_io import barrels_from_clusters, git_short_hash, load_reference
+from .relock_baselines import load_baselines
 
 _ROOT = Path(__file__).resolve().parents[4]
 _REF = _ROOT / "services/api/verity_api/references/toolmark_tmaRks.npz"
 _OUT = _ROOT / "docs/whitepaper/data/toolmark_tmaRks.json"
-
-# Recorded context. Neither is recomputed from the committed reference: the global
-# baseline needs the tmaRks profiles (cache or R+network); the Chumbley head-to-head is
-# demonstrated on a *different* set (ameslab) and needs R + toolmaRk.
-_BASELINES = [
-    {
-        "method": "global 1-D CCF (same pipeline as bullets)",
-        "scorer": "align_1d (1-D cross-correlation, no congruence consensus)",
-        "auc": 0.94,
-        "cllr_range": [0.25, 0.45],
-        "level": "tool-edge",
-        "measured_by": "verity-toolmark-tmaRks",
-        "requires": "tmaRks cache (or R+network on first fetch)",
-        "reproducible": False,
-        "note": "the pre-CMR baseline on the same set; strong transfer of the bullets pipeline",
-    },
-    {
-        "method": "Chumbley U (specialist)",
-        "scorer": "toolmaRk::chumbley_non_random",
-        "demonstrated_on": "ameslab (16 profiles / 7 tools) — proof-of-concept, NOT tmaRks",
-        "measured_by": "verity-toolmark-chumbley-proof",
-        "requires": "git+network+R(toolmaRk)",
-        "reproducible": False,
-        "note": "the field-standard toolmark statistic; head-to-head shown separately on ameslab",
-    },
-]
 
 
 def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def _baselines() -> list[dict]:
+    """The toolmark comparison baselines, with measured numbers from baselines.json."""
+    bl = load_baselines() or {}
+    tm_global = bl.get("toolmark_tmaRks_global", {})
+    chum = (bl.get("toolmark_chumbley_ameslab", {}) or {}).get("chumbley", {})
+    return [
+        {
+            "method": "global 1-D CCF (same pipeline as bullets)",
+            "scorer": "align_1d (1-D cross-correlation, no congruence consensus)",
+            "dataset": "tmaRks (tool-edge) — directly comparable to CMR-1D",
+            "auc": tm_global.get("pooled_auc"),
+            "cllr": tm_global.get("sd_cllr"),
+            "cllr_sd": tm_global.get("sd_cllr_sd"),
+            "measured_by": "verity-relock-baselines",
+            "measured": bool(tm_global),
+            "reproducible": False,  # needs R/caches to re-lock; not offline from the committed npz
+            "note": "pre-CMR baseline on the same set; CMR-1D beats it (lower Cllr, higher AUC)",
+        },
+        {
+            "method": "Chumbley U (specialist)",
+            "scorer": "toolmaRk::chumbley_non_random",
+            "dataset": "ameslab (7 tools) — different, smaller set; NOT tmaRks",
+            "auc": chum.get("pooled_auc"),
+            "cllr": chum.get("sd_cllr"),
+            "cllr_sd": chum.get("sd_cllr_sd"),
+            "measured_by": "verity-relock-baselines",
+            "measured": bool(chum),
+            "reproducible": False,  # needs R/caches to re-lock; not offline from the committed npz
+            "note": "field-standard toolmark statistic, measured on ameslab; cross-method context",
+        },
+    ]
+
+
 def build(write: bool = True) -> dict:
-    """Compute the toolmark validation payload from the committed reference and
-    (optionally) write ``docs/whitepaper/data/toolmark_tmaRks.json``."""
+    """Compute the toolmark validation payload from the committed reference (+ measured
+    baselines) and (optionally) write ``docs/whitepaper/data/toolmark_tmaRks.json``."""
     if not _REF.exists():
         raise FileNotFoundError(
             f"{_REF} not found — build it first: "
@@ -82,15 +88,17 @@ def build(write: bool = True) -> dict:
         generated_at=date.today().isoformat(),
     )
     bd = summary.barrel_disjoint or {}
+    baselines = _baselines()
 
     payload = {
         "reference": summary.reference_name,
         "domain": "striated-toolmark",
         "deployed_scorer": "CMR-1D (congruent matching regions, 1-D striae; Chumbley/CMS)",
         "reproducible_from": "services/api/verity_api/references/toolmark_tmaRks.npz",
+        "baselines_from": "docs/whitepaper/data/baselines.json (verity-relock-baselines)",
         "source_level": "tool-edge (the mark generator)",
         "summary": summary.to_dict(),
-        "baselines": _BASELINES,
+        "baselines": baselines,
         "provenance": {
             "generator": "build_toolmark_validation_data",
             "git_commit": git_short_hash(),
@@ -98,8 +106,8 @@ def build(write: bool = True) -> dict:
             "generated_at": summary.generated_at,
             "note": (
                 "Deployed CMR-1D numbers recomputed from the committed reference (no network). "
-                "Baselines are recorded context from the named harnesses (the Chumbley "
-                "head-to-head is on ameslab, a different set); not recomputed here."
+                "Baselines read from baselines.json (measured; the Chumbley head-to-head is on "
+                "ameslab, a different set). Re-lock with verity-relock-baselines."
             ),
         },
     }
@@ -115,6 +123,8 @@ def build(write: bool = True) -> dict:
         f"in-sample AUC={summary.auc:.3f} Cllr={summary.cllr:.3f} Cllr_min={summary.cllr_min:.3f}"
     )
     print(f"  {bd_txt}")
+    if not load_baselines():
+        print("  WARNING: baselines.json missing — baselines null; run verity-relock-baselines.")
     if write:
         _OUT.parent.mkdir(parents=True, exist_ok=True)
         _OUT.write_text(json.dumps(payload, indent=2) + "\n")

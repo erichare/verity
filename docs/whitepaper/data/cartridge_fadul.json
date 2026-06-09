@@ -3,6 +3,7 @@
   "domain": "impressed",
   "deployed_scorer": "CMR-2D (congruent matching regions, 2-D cells + rotation)",
   "reproducible_from": "services/api/verity_api/references/cartridge_fadul.npz",
+  "baselines_from": "docs/whitepaper/data/baselines.json (verity-relock-baselines)",
   "summary": {
     "reference_name": "Fadul cartridge cases (10 consecutively-manufactured slides)",
     "domain": "impressed",
@@ -35,12 +36,13 @@
     {
       "method": "global areal CCF",
       "scorer": "areal_score (2-D cross-correlation over a rotation grid)",
-      "auc": 0.91,
-      "cllr": 0.53,
-      "measured_by": "verity-cmr-cartridge",
-      "requires": "git+network",
+      "auc": 0.9106,
+      "cllr": 0.5289,
+      "cllr_sd": 0.1765,
+      "measured_by": "verity-relock-baselines",
+      "measured": true,
       "reproducible": false,
-      "note": "the pre-CMR baseline: a single global areal correlation, no congruence consensus"
+      "note": "the pre-CMR baseline: one global areal correlation, no congruence consensus"
     },
     {
       "method": "CMR-2D (deployed)",
@@ -49,26 +51,26 @@
       "cllr": 0.3849,
       "cllr_sd": 0.1868,
       "measured_by": "verity-cartridge-validation-data",
-      "requires": "none (committed reference)",
       "reproducible": true,
       "note": "no cartridge-specific engineering \u2014 same CMR algorithm as bullets/toolmarks"
     },
     {
       "method": "cmcR (CMC specialist)",
-      "scorer": "cmcR congruent matching cells (run via R, as a competitor only)",
-      "auc": 1.0,
-      "cllr": 0.19,
-      "measured_by": "verity-cartridge-cmc-proof",
-      "requires": "git+network+R(cmcR)",
+      "scorer": "cmcR congruent matching cells (run via R)",
+      "auc": 0.9997,
+      "cllr": 0.1944,
+      "cllr_sd": 0.1279,
+      "measured_by": "verity-relock-baselines",
+      "measured": true,
       "reproducible": false,
       "note": "the field-standard impressed-mark method; the target CMR-2D should approach"
     }
   ],
   "provenance": {
     "generator": "build_cartridge_validation_data",
-    "git_commit": "dfe1195",
+    "git_commit": "76cc93c",
     "source_reference_sha256": "08133ee1dddc41ea1a9ebb32febb83a785c0b420786d26a404eeb7b8b342ec7c",
     "generated_at": "2026-06-09",
-    "note": "Deployed CMR-2D numbers recomputed from the committed reference (no network). Baselines are recorded results from the named harnesses; recompute with git+network (and R + cmcR for the specialist) before a paper revision."
+    "note": "Deployed CMR-2D numbers recomputed from the committed reference (no network). Baselines read from baselines.json (re-lock via verity-relock-baselines)."
   }
 }

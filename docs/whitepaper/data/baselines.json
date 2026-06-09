@@ -1,0 +1,70 @@
+{
+  "measured_at": "2026-06-09",
+  "git_commit": "76cc93c",
+  "requires": "~/.cache/verity/{cartridgeCaseScans,tmaRks,ameslab} + R (cmcR, toolmaRk)",
+  "note": "Measured comparison baselines for the CMR validation figures/tables, re-lockable via `verity-relock-baselines`. The deployed CMR numbers live with each reference; these are the naive and specialist baselines those reductions are compared against.",
+  "cartridge": {
+    "split": "slide-disjoint",
+    "global_areal_ccf": {
+      "scorer": "areal_score (2-D CCF over a rotation grid)",
+      "harness": "verity-cartridge-cmc-proof",
+      "pooled_auc": 0.9106,
+      "n_pairs": 190,
+      "n_km": 10,
+      "sd_cllr": 0.5289,
+      "sd_cllr_sd": 0.1765,
+      "sd_auc": 0.9375,
+      "n_folds": 10
+    },
+    "cmcR": {
+      "scorer": "cmcR congruent matching cells (R)",
+      "harness": "verity-cartridge-cmc-proof",
+      "pooled_auc": 0.9997,
+      "n_pairs": 190,
+      "n_km": 10,
+      "sd_cllr": 0.1944,
+      "sd_cllr_sd": 0.1279,
+      "sd_auc": 1.0,
+      "n_folds": 10
+    }
+  },
+  "toolmark_tmaRks_global": {
+    "scorer": "align_1d (1-D CCF; same pipeline as bullets)",
+    "harness": "verity-toolmark-tmaRks",
+    "dataset": "tmaRks (tool-edge)",
+    "split": "edge-disjoint",
+    "pooled_auc": 0.9418,
+    "n_pairs": 167910,
+    "n_km": 3537,
+    "sd_cllr": 0.4473,
+    "sd_cllr_sd": 0.0642,
+    "sd_auc": 0.9348,
+    "n_folds": 10
+  },
+  "toolmark_chumbley_ameslab": {
+    "split": "tool-disjoint",
+    "dataset": "ameslab (7 tools; proof-of-concept, distinct from tmaRks)",
+    "global_1d_ccf": {
+      "scorer": "align_1d (1-D CCF)",
+      "harness": "verity-toolmark-chumbley-proof",
+      "pooled_auc": 0.8194,
+      "n_pairs": 118,
+      "n_km": 15,
+      "sd_cllr": 0.8133,
+      "sd_cllr_sd": 0.191,
+      "sd_auc": 0.8074,
+      "n_folds": 10
+    },
+    "chumbley": {
+      "scorer": "toolmaRk chumbley_non_random U (R)",
+      "harness": "verity-toolmark-chumbley-proof",
+      "pooled_auc": 0.6142,
+      "n_pairs": 118,
+      "n_km": 15,
+      "sd_cllr": 0.9571,
+      "sd_cllr_sd": 0.0495,
+      "sd_auc": 0.6083,
+      "n_folds": 10
+    }
+  }
+}
