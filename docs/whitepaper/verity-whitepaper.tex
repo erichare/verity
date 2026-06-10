@@ -538,6 +538,18 @@ NBTRD wide-scan sets are visibly harder than the Hamby benchmarks, exactly as on
 would expect, and the fold-to-fold standard deviations are large on the smaller
 sets --- a fact we surface rather than hide (\S\ref{sec:limits}).
 
+\paragraph{Against the bullet specialist.} The field-standard bullet method ---
+the trained random-forest matchscore of Hare, Hofmann \&
+Carriquiry~\cite{hare2017}, as implemented in
+\code{bulletxtrctr}~\cite{vanderplas2020} --- run on the same scans through the
+identical barrel-disjoint fold protocol, reaches $\Cllr = \num{0.064}\pm\num{0.015}$
+on Hamby-252 and $\num{0.171}\pm\num{0.088}$ on PGPD Beretta (AUC
+$\approx\num{1.000}$ on both; \code{data/baselines.json}). The trained specialist
+remains ahead of Verity's untrained \diagcontrast{} ($\num{0.113}$ and
+$\num{0.273}$ respectively), as one would expect --- Verity's contribution on
+bullets is the calibrated, bounded, deployable LR layer, not a better matcher ---
+and the same head-to-head is published on the project site.
+
 \begin{table}[t]
   \centering
   \small
@@ -649,7 +661,7 @@ measured by a re-lockable harness (\S\ref{sec:platform}).
     \toprule
     \textbf{Reduction (modality)} & \textbf{Reference} & \textbf{Src-disjoint $\Cllr$} & \textbf{AUC} & \textbf{Baseline / specialist} \\
     \midrule
-    Bullet lands (1-D striae)   & pooled, 4 studies   & $\num{0.186}\pm\num{0.126}$ & \num{0.989} & Hamby-252 alone: \num{0.113} \\
+    Bullet lands (1-D striae)   & pooled, 4 studies   & $\num{0.186}\pm\num{0.126}$ & \num{0.989} & bulletxtrctr \num{0.064}; Hamby-252 alone \num{0.113} \\
     Cartridge breech (2-D)      & Fadul, 10 slides    & $\num{0.385}\pm\num{0.187}$ & \num{0.991} & cmcR \num{0.194}; areal \num{0.529} \\
     Screwdriver toolmark (1-D)  & \code{tmaRks}, 56 edges & $\num{0.328}\pm\num{0.050}$ & \num{0.957} & global align \num{0.447} \\
     \bottomrule

@@ -102,6 +102,46 @@ def _cartridge() -> dict:
     }
 
 
+def _bullet_bulletxtrctr() -> dict:
+    """Barrel-disjoint bulletxtrctr RF matchscores from the cached head-to-head runs.
+
+    Reads the same cached ``scores.csv`` that ``build_benchmark_data`` uses (the
+    random forest is the same artifact either way); regenerate a study's cache via
+    ``verity.baselines.bulletxtrctr.bulletxtrctr_scores`` (needs the local catalog
+    + R with bulletxtrctr/x3ptools/randomForest).
+    """
+    import csv
+
+    try:
+        from verity.examples.build_benchmark_data import _FIREARM_STUDIES
+        from verity.examples.hamby_validation import _catalog_dir
+    except Exception as exc:  # noqa: BLE001 - report, never fabricate
+        return {"error": f"import failed: {exc}"}
+
+    cdir = _catalog_dir()
+    out: dict = {"split": "barrel-disjoint"}
+    for name, ext in _FIREARM_STUDIES:
+        path = cdir / ".verity" / "cache" / "bulletxtrctr" / ext / "scores.csv"
+        if not path.exists():
+            out[name] = {"error": f"no cached bulletxtrctr run at {path}"}
+            continue
+        with path.open() as fh:
+            rows = [r for r in csv.DictReader(fh) if r["score"] not in ("", "NA")]
+        scores = np.array([float(r["score"]) for r in rows])
+        labels = np.array([1.0 if r["barrel_a"] == r["barrel_b"] else 0.0 for r in rows])
+        ba = np.array([int(r["barrel_a"]) for r in rows])
+        bb = np.array([int(r["barrel_b"]) for r in rows])
+        out[name] = _summary(
+            scores,
+            labels,
+            ba,
+            bb,
+            harness="verity/baselines/bulletxtrctr.py (cached scores.csv)",
+            scorer="bulletxtrctr random-forest matchscore (rtrees), best-diagonal mean",
+        )
+    return out
+
+
 def _toolmark_global() -> dict:
     """tmaRks edge-disjoint: the same-pipeline global 1-D CCF (align_1d)."""
     try:
@@ -184,6 +224,7 @@ def build(write: bool = True) -> dict:
             "via `verity-relock-baselines`. The deployed CMR numbers live with each reference; "
             "these are the naive and specialist baselines those reductions are compared against."
         ),
+        "bullet_bulletxtrctr": _bullet_bulletxtrctr(),
         "cartridge": _cartridge(),
         "toolmark_tmaRks_global": _toolmark_global(),
         "toolmark_chumbley_ameslab": _toolmark_chumbley(),

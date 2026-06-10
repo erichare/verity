@@ -105,7 +105,11 @@ Full write-up: [`docs/congruent-matching-regions.md`](docs/congruent-matching-re
   same four studies as this validation, so a one-shot confirmation on untouched
   data is the next milestone (see the whitepaper's Limitations); `verity-validation-report`
   regenerates the full characterization — Tippett, DET, calibration, and the
-  source-disjoint summary — as a court-ready PDF.
+  source-disjoint summary — as a court-ready PDF. The trained `bulletxtrctr`
+  random-forest specialist, run through the identical protocol, reaches
+  **Cllr ≈ 0.06 on Hamby-252** — the specialist still leads on its home turf;
+  Verity's contribution on bullets is the calibrated, bounded, deployable LR
+  layer, not a better matcher.
 - **Learned representation (Phase-2b).** Trained barrel-disjoint on 210 Hamby
   scans, it **does not beat the cross-correlation baseline** — it overfits
   (held-out AUC collapses to ≈ 0.67). Synthetic tests confirm the pipeline *does* learn
