@@ -21,6 +21,7 @@ export const NAV_LINKS: NavLink[] = [
   { href: "/method", label: "Method" },
   { href: "/why", label: "Why" },
   { href: "/catalog", label: "Catalog" },
+  { href: "/benchmark", label: "Benchmark" },
   { href: "/docs", label: "Docs" },
   // The /partnership page exists but is intentionally unlinked here (kept private
   // — shared deliberately, not surfaced in the public nav).
