@@ -63,3 +63,26 @@ def test_lr_is_bounded_by_reference_size():
         domain="bullet land", reference_name="Hamby-252",
     )
     assert rep.log10_lr <= rep.lr_bound_log10 + 1e-9  # cannot exceed what the data supports
+
+
+def test_lr_bound_hit_flags_a_clipped_lr():
+    scores, labels = _reference()
+    rep = build_comparison_report(
+        score=99.0, reference_scores=scores, reference_labels=labels,  # absurdly high
+        domain="bullet land", reference_name="Hamby-252", ci=False,
+    )
+    assert rep.lr_bound_hit is True  # pre-cap LR exceeded the bound -> clipped to it
+    assert abs(abs(rep.log10_lr) - rep.lr_bound_log10) < 1e-9  # sits exactly AT the cap
+    assert "bound-limited" in rep.scope_note
+    assert rep.to_dict()["lr_bound_hit"] is True  # rides along in the served payload
+
+
+def test_lr_bound_hit_false_for_a_measured_lr():
+    scores, labels = _reference()
+    rep = build_comparison_report(
+        score=1.0, reference_scores=scores, reference_labels=labels,  # class overlap
+        domain="bullet land", reference_name="Hamby-252", ci=False,
+    )
+    assert rep.lr_bound_hit is False
+    assert abs(rep.log10_lr) < rep.lr_bound_log10  # strictly inside the bound
+    assert "bound-limited" not in rep.scope_note

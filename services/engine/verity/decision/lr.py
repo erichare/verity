@@ -98,17 +98,24 @@ class ScoreLRModel:
             return self._model.predict_proba(scores.reshape(-1, 1))[:, 1]
         return self._model.predict(scores)
 
-    def predict_lr(self, scores: np.ndarray) -> np.ndarray:
+    def predict_lr(
+        self, scores: np.ndarray, *, return_bound_hit: bool = False
+    ) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
         """Likelihood ratios for ``scores`` (the prior is divided out), clipped to
         the fitted ``lr_bound`` so no comparison asserts more than the reference
-        data can support."""
+        data can support. With ``return_bound_hit=True``, also returns a boolean
+        array marking the scores whose pre-cap LR exceeded the bound (in either
+        direction) and was clipped to it — a bound-limited LR, not a measured one."""
         if self._model is None:
             raise RuntimeError("ScoreLRModel must be fit before predict_lr")
         posterior = np.clip(self._posterior(scores), _EPS, 1.0 - _EPS)
         lr = (posterior / (1.0 - posterior)) / self._prior_odds
+        bound_hit = np.zeros(np.shape(lr), dtype=bool)
         if self._log_bound is not None:
-            lr = np.clip(lr, 10.0**-self._log_bound, 10.0**self._log_bound)
-        return lr
+            lo, hi = 10.0**-self._log_bound, 10.0**self._log_bound
+            bound_hit = (lr < lo) | (lr > hi)
+            lr = np.clip(lr, lo, hi)
+        return (lr, bound_hit) if return_bound_hit else lr
 
 
 def cllr_min(scores: np.ndarray, labels: np.ndarray) -> float:
