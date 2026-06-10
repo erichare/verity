@@ -2,12 +2,18 @@
 a submission *offline* and verify it matches the leaderboard exactly.
 
 A kit zip contains the frozen ``pairs.csv.gz`` + ``folds.json`` +
-``provenance.json`` (with the ``split_hash``), this package's
+``provenance.json`` (with the ``split_hash``), the ``marks.csv.gz``
+mark-hash → scan-hash mapping when the split ships one, this package's
 ``scoring.py`` verbatim (numpy-only), a standalone ``evaluate.py`` CLI, and a
 README stating the protocol + submission contract. Offline ``evaluate.py``
 output equals the server's ``POST /benchmark/splits/{name}/submissions``
 scoring by construction: both run the same ``scoring.py`` on the same frozen
 rows.
+
+The README's submission instructions point at this API's public base URL,
+configurable via the ``VERITY_CATALOG_PUBLIC_URL`` env var (default
+``https://data.verity.codes``) so kits stay followable wherever the service is
+hosted.
 """
 
 from __future__ import annotations
@@ -16,12 +22,23 @@ import csv
 import gzip
 import io
 import json
+import os
 import zipfile
 from importlib import resources
 
 from .. import models
 
-_KIT_CACHE: dict[int, tuple[str, bytes]] = {}
+DEFAULT_PUBLIC_URL = "https://data.verity.codes"
+
+# split.id -> (split_hash, public_url, kit bytes)
+_KIT_CACHE: dict[int, tuple[str, str, bytes]] = {}
+
+
+def _public_url() -> str:
+    """The public base URL baked into kit instructions (no trailing slash)."""
+    configured = os.environ.get("VERITY_CATALOG_PUBLIC_URL", "").strip()
+    return (configured or DEFAULT_PUBLIC_URL).rstrip("/")
+
 
 _EVALUATE_PY = '''\
 """Score a benchmark submission offline — identical to the leaderboard scoring.
@@ -110,7 +127,7 @@ _README = """\
 * `pairs.csv.gz`     — the frozen pairs: `pair_id,hash_a,hash_b,label,source_a,source_b,folds`.
   `hash_a`/`hash_b` are SHA-256 content hashes of the marks (a multi-scan mark hashes its
   sorted scan hashes); `folds` lists the fold indices in which the pair is a *test* pair.
-* `folds.json`       — each frozen fold's held-out source set.
+{marks_entry}* `folds.json`       — each frozen fold's held-out source set.
 * `provenance.json`  — protocol, scorer config hash, datasets, and the `split_hash`.
 * `scoring.py`       — the scorer (numpy-only), byte-identical to the leaderboard's.
 * `evaluate.py`      — score a submission offline: `python evaluate.py my_submission.csv`.
@@ -123,7 +140,7 @@ A submission CSV has a `pair_id,lr` header and exactly one finite, strictly
 positive likelihood ratio per frozen pair. Offline `evaluate.py` output equals
 the leaderboard scoring; submit via:
 
-    POST https://data.verity.codes/benchmark/splits/{name}/submissions
+    POST {public_url}/benchmark/splits/{name}/submissions
     {{"submitter": "you", "method": "your-method", "url": "https://…", "csv": "<pair_id,lr…>"}}
 
 The underlying scans are public: resolve any `hash_a`/`hash_b` against the
@@ -131,12 +148,20 @@ Verity catalog (https://verity.codes/catalog, content-addressed) or recompute
 the hashes from the source datasets listed in `provenance.json`.
 """
 
+_MARKS_ENTRY = """\
+* `marks.csv.gz`     — the mark-hash → scan mapping:
+  `mark_hash,source,label,n_scans,scan_hashes` (`scan_hashes` is ";"-joined).
+  Composite (multi-scan) `hash_a`/`hash_b` values resolve to their individual
+  scan content hashes here.
+"""
+
 
 def build_kit(split: models.BenchmarkSplit, pairs: list[models.BenchmarkPair]) -> bytes:
-    """Assemble (and memoize, keyed by split_hash) the kit zip for a split."""
+    """Assemble (and memoize, keyed by split_hash + public URL) the kit zip."""
+    public_url = _public_url()
     cached = _KIT_CACHE.get(split.id)
-    if cached is not None and cached[0] == split.split_hash:
-        return cached[1]
+    if cached is not None and cached[0] == split.split_hash and cached[1] == public_url:
+        return cached[2]
 
     prov = json.loads(split.provenance)
     pairs_buf = io.BytesIO()
@@ -162,6 +187,7 @@ def build_kit(split: models.BenchmarkSplit, pairs: list[models.BenchmarkPair]) -
         indent=1,
     )
     scoring_src = resources.files("verity_catalog.benchmark").joinpath("scoring.py").read_text()
+    marks = split.marks_csv_gz
     readme = _README.format(
         name=split.name,
         title=split.title,
@@ -172,6 +198,8 @@ def build_kit(split: models.BenchmarkSplit, pairs: list[models.BenchmarkPair]) -
         n_sources=split.n_sources,
         n_folds=split.n_folds,
         contract=prov.get("protocol", {}).get("contract", ""),
+        marks_entry=_MARKS_ENTRY if marks else "",
+        public_url=public_url,
     )
 
     out = io.BytesIO()
@@ -179,10 +207,12 @@ def build_kit(split: models.BenchmarkSplit, pairs: list[models.BenchmarkPair]) -
         root = f"verity-benchmark-{split.name}"
         zf.writestr(f"{root}/README.md", readme)
         zf.writestr(f"{root}/pairs.csv.gz", pairs_buf.getvalue())
+        if marks:
+            zf.writestr(f"{root}/marks.csv.gz", marks)
         zf.writestr(f"{root}/folds.json", folds_json + "\n")
         zf.writestr(f"{root}/provenance.json", split.provenance)
         zf.writestr(f"{root}/scoring.py", scoring_src)
         zf.writestr(f"{root}/evaluate.py", _EVALUATE_PY)
     data = out.getvalue()
-    _KIT_CACHE[split.id] = (split.split_hash, data)
+    _KIT_CACHE[split.id] = (split.split_hash, public_url, data)
     return data

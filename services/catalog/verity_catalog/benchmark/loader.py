@@ -61,6 +61,7 @@ def load_split(session: Session, artifacts: SplitArtifacts) -> models.BenchmarkS
     split.n_sources = counts["n_sources"]
     split.n_folds = counts["n_folds"]
     split.provenance = json.dumps(prov)
+    split.marks_csv_gz = artifacts.marks_csv_gz
     session.add(split)
     session.commit()
     session.refresh(split)
