@@ -29,6 +29,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
 
 WORKDIR /app/services/catalog
+# uv.lock pins verity-x3p as a *path* source (../../bindings/python) for the
+# optional `ingest` extra. It is never installed here, but uv still resolves its
+# metadata — its pyproject.toml carries static name/version, so shipping just
+# that one file satisfies uv without any Rust toolchain.
+COPY bindings/python/pyproject.toml /app/bindings/python/pyproject.toml
 COPY services/catalog/pyproject.toml services/catalog/uv.lock services/catalog/README.md ./
 COPY services/catalog/verity_catalog ./verity_catalog
 
