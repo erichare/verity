@@ -10,6 +10,7 @@ catalog first (no hard-coded magic that could drift). Requires the `api` extra:
 from __future__ import annotations
 
 import pytest
+from sqlalchemy.exc import OperationalError
 from sqlmodel import Session, select
 
 pytest.importorskip("fastapi")
@@ -19,6 +20,23 @@ from verity_catalog import models  # noqa: E402
 from verity_catalog.api.app import app  # noqa: E402
 from verity_catalog.db import engine  # noqa: E402
 from verity_catalog.store import get_store  # noqa: E402
+
+
+def _local_catalog_ready() -> bool:
+    """This suite exercises the real, populated local catalog. Fresh clones and
+    CI have no ``verity_catalog.db`` — skip (like the ``a_scan`` fixture does
+    for missing blobs) instead of erroring on a missing schema."""
+    try:
+        with Session(engine) as session:
+            return session.exec(select(models.Scan)).first() is not None
+    except OperationalError:
+        return False
+
+
+pytestmark = pytest.mark.skipif(
+    not _local_catalog_ready(),
+    reason="requires a populated local catalog (verity_catalog.db); run the ingest CLI first",
+)
 
 
 def _catalog_scan_count() -> int:
