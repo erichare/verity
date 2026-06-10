@@ -72,13 +72,14 @@ deployed calibrated-LR API; and (5) a small methodological result --- a
 \diagcontrast{} scorer, selected over the Phase-1 mean-diagonal score and over
 multivariate fusion \emph{by data, not assumption}. On the Hamby-252 bullet
 benchmark Verity attains a barrel-disjoint (source-disjoint) test
-$\Cllr = \num{0.113} \pm \num{0.066}$ with test AUC $\num{1.000}$; we report results
-per study and never pool across firearm makes. Beyond bullets, the \emph{same}
-pipeline under \emph{one} scorer configuration is validated source-disjoint on
-impressed cartridge breech faces (Fadul) and striated screwdriver toolmarks
-(\code{tmaRks}), where CMR recovers Song's Congruent Matching Cells and the Chumbley
-statistic respectively --- one calibrated algorithm, three reductions, each
-\emph{demonstrated} rather than asserted.
+$\Cllr = \num{0.113} \pm \num{0.066}$ with test AUC $\num{1.000}$; we report
+validation results per study and never pool across firearm makes. Beyond bullets,
+the \emph{same} pipeline under \emph{one} scorer configuration is validated
+source-disjoint on impressed cartridge breech faces (Fadul) and striated
+screwdriver toolmarks (\code{tmaRks}), where CMR instantiates the counting
+principles of Song's Congruent Matching Cells and of the Chumbley statistic and
+approaches each specialist's performance --- one calibrated algorithm, three
+reductions, each \emph{measured} rather than asserted.
 \end{abstract}
 
 % ==========================================================================
@@ -140,20 +141,32 @@ Verity is downstream of, and indebted to, a specific body of work; naming it
 precisely is part of being honest about what is and is not new here.
 
 \paragraph{What Verity builds on.}
-The automatic comparison of bullet land impressions by cross-correlation of
-extracted striation signatures is the CSAFE / Iowa State method of Hare, Hofmann
-\& Carriquiry~\cite{hare2017}, with the open \code{bulletxtrctr} pipeline and the
-three-similarity-score study of Vanderplas et al.~\cite{vanderplas2020} as the
-reference implementation and benchmark. The cell-counting idea for impressed marks
+The automatic comparison of bullet land impressions is the CSAFE / Iowa State
+method of Hare, Hofmann \& Carriquiry~\cite{hare2017}: striation signatures are
+extracted from each land, compared on \emph{multiple} features (cross-correlation
+among them, alongside matching/non-matching striae counts and related measures),
+and combined by a trained random forest --- that paper is explicit that
+cross-correlation alone does not suffice. The open \code{bulletxtrctr} pipeline
+and the three-similarity-score study of Vanderplas et al.~\cite{vanderplas2020}
+are the reference implementation and benchmark; Verity's Phase-1 score adopts the
+signature-extraction-and-correlation front end of that line. The cell-counting idea
+for impressed marks
 --- partition one surface into cells, register each against the other, and count
 the cells whose best-fit translations and rotations agree --- is Song's Congruent
 Matching Cells (CMC)~\cite{song2013} and the NIST error-rate line built on
-it~\cite{song2018}. The objective comparison of striated toolmarks by a
-distribution-free statistic is Chumbley et al.~\cite{chumbley2010}. The surface
+it~\cite{song2018}, with \code{cmcR} as the open reference
+implementation~\cite{zemmels2023}. The objective comparison of striated toolmarks by a
+distribution-free statistic is Chumbley et al.~\cite{chumbley2010}, improved and
+made deterministic by Hadler \& Morris (the \code{toolmaRk}
+package)~\cite{hadler2018} and adapted to bullet lands by Krishnan \&
+Hofmann~\cite{krishnan2019}; open, fully automatic cartridge-case comparison is
+also due to Tai \& Eddy~\cite{tai2018}. The surface
 representation is the ISO~25178-72 X3P format, for which the reference reader is the
 \code{x3ptools} R package~\cite{x3ptools2024}. The evaluation metric $\Cllr$ and the
 calibration philosophy come from forensic speaker recognition, originally
-Br\"ummer \& du Preez~\cite{brummer2006}.
+Br\"ummer \& du Preez~\cite{brummer2006}, with logistic-regression calibration as
+codified for forensic use by Morrison~\cite{morrison2013} and the validation
+regime for LR methods set out by Meuwly, Ramos \& Haraksim~\cite{meuwly2017}.
 
 \paragraph{What is novel in Verity.} Five things, and we state them plainly so the
 boundary is clear:
@@ -315,7 +328,7 @@ within a tolerance. Each modality supplies a \emph{vote producer}
   \small
   \begin{tabular}{@{}llll@{}}
     \toprule
-    \textbf{Modality} & \textbf{Region} & \textbf{Transform group $G$} & \textbf{Recovers} \\
+    \textbf{Modality} & \textbf{Region} & \textbf{Transform group $G$} & \textbf{Specialist analogue} \\
     \midrule
     Striated (bullet land, toolmark) & 1-D profile window & translation (lag) &
       Chumbley / consecutive striae~\cite{chumbley2010} \\
@@ -325,8 +338,10 @@ within a tolerance. Each modality supplies a \emph{vote producer}
     \bottomrule
   \end{tabular}
   \caption{Congruent Matching Regions instantiated per modality. The 2-D row
-    \emph{is} CMC; the 1-D row \emph{is} the lag-agreement (consecutive-matching-striae)
-    statistic. One implementation, three marks.}
+    instantiates CMC-style cell counting; the 1-D row instantiates lag-agreement
+    (consecutive-matching-striae-style) counting. One implementation, three marks;
+    \S\ref{sec:crossmodal} measures how closely each generic reduction approaches
+    its tuned specialist.}
   \label{tab:cmr}
 \end{table}
 
@@ -358,8 +373,9 @@ reference explicitly, bound the LR to what that reference can support (below), a
 report a credible interval that propagates the reference's finiteness.
 
 \paragraph{Calibration map (Platt scaling).}
-The default calibration is a two-parameter logistic fit (Platt scaling) of the
-same-source posterior on the score. Two deliberate settings make it the right
+The default calibration is a two-parameter logistic fit (Platt scaling;
+logistic-regression calibration in the forensic-LR
+literature~\cite{morrison2013}) of the same-source posterior on the score. Two deliberate settings make it the right
 \emph{deployment} calibration: the fit is near-unregularized (so the calibration
 slope is not shrunk away), and classes are balanced --- fit as if the prior is
 $0.5$ --- so the posterior odds \emph{are} the likelihood ratio and the
@@ -368,22 +384,31 @@ $0.5$ --- so the posterior odds \emph{are} the likelihood ratio and the
 calibration and is used to compute the discrimination floor $\Cllrmin$, but it
 overfits when trained on few sources and is not deployed.
 
-\paragraph{The ELUB bound (the firewall's safety rail).}
+\paragraph{An empirical cap on the LR (the firewall's safety rail).}
 A near-unregularized logistic fit on a \emph{small} calibration set emits
 over-confident LRs: a hard held-out pair landing in the class overlap can receive a
-catastrophically wrong, large-magnitude LR that dominates $\Cllr$. Following the
-empirical-bound (ELUB) principle~\cite{vergeer2016}, Verity caps $|\log_{10}
-\mathrm{LR}|$ at what the data can support. The default cap is set from the rarer
-class count,
+catastrophically wrong, large-magnitude LR that dominates $\Cllr$. Inspired by the
+empirical lower-and-upper-bound (ELUB) principle of Vergeer et
+al.~\cite{vergeer2016}, Verity caps $|\log_{10}\mathrm{LR}|$ at what the data can
+support. The deployed cap is set from the rarer class count,
 \begin{equation}
   \big|\log_{10}\mathrm{LR}\big| \;\le\; \log_{10}\!\big(\max(n_{\text{minority}},10)\big),
   \label{eq:elub}
 \end{equation}
 the intuition being that one cannot assert evidence stronger than about
-$n_{\text{same}}\!:\!1$ from $n_{\text{same}}$ same-source examples. The cap is
+$n_{\text{same}}\!:\!1$ from $n_{\text{same}}$ same-source examples. We call this
+the \emph{empirical cap}, not ELUB, because it deliberately simplifies the cited
+procedure in two ways that should be visible: Vergeer et al.\ derive
+\emph{direction-specific} bounds from the validation LRs themselves (the upper
+bound governed chiefly by the different-source sample, the lower by the
+same-source sample), whereas Eq.~\eqref{eq:elub} is a single symmetric cap on the
+class counts; and the floor of $10$ means a reference with fewer than ten
+minority-class pairs is capped \emph{less} conservatively than the principle
+implies. Implementing the direction-specific ELUB procedure on the validation LRs
+is planned. The cap is
 \emph{monotone}, so the audit-firewall property (LR is a monotone transform of the
 score) is preserved, and it is tuning-free: it adapts to each reference's size
-automatically. Barrel-disjoint, the bound roughly halves the calibration loss
+automatically. Barrel-disjoint, the cap roughly halves the calibration loss
 (mean $\Cllr$ across the four bullet studies $0.44 \to 0.28$) while leaving the
 near-perfectly-discriminated Hamby-252 essentially untouched.
 
@@ -403,26 +428,32 @@ $\Cllrmin$ (the cost after PAV-optimal calibration) is the \emph{discrimination}
 floor --- the best any monotone calibration of these scores could achieve --- and
 the gap $\Cllr-\Cllrmin$ is the \emph{calibration} loss. Verity also reports the
 expected calibration error (ECE) of the LRs' implied posteriors, the equal error
-rate (EER), and Tippett plots.
+rate (EER), and Tippett plots. The verbal equivalents attached to reported LRs
+follow the ENFSI evaluative-reporting bands~\cite{enfsi2015}, and the validation
+regime --- accuracy, discrimination, and calibration characterized on named data
+--- follows the guideline of Meuwly, Ramos \& Haraksim~\cite{meuwly2017}.
 
-\paragraph{A credible interval on the LR.}
+\paragraph{An interval on the LR.}
 Because the score$\to$LR map is itself estimated from a finite reference, a point LR
-hides its own uncertainty. Verity reports a \emph{percentile credible interval on
-$\log_{10}\mathrm{LR}$} by resampling the reference and \emph{refitting the same
-bounded calibration in every replicate} --- so the firewall holds per draw and the
-interval inherits the monotone, bounded property. Two schemes are provided:
+hides its own uncertainty. Verity reports a \emph{bootstrap percentile interval on
+$\log_{10}\mathrm{LR}$} --- a resampling confidence interval, not a posterior
+credible interval (the API payload retains the historical field name
+\code{lr\_credible\_interval}) --- by resampling the reference and \emph{refitting
+the same bounded calibration in every replicate}, so the firewall holds per draw and
+the interval inherits the monotone, bounded property. Two schemes are provided:
 \emph{row-stratified} (resample within each class, holding the class sizes and hence
-the ELUB bound fixed, isolating calibration noise) and \emph{clustered / block}
+the empirical cap fixed, isolating calibration noise) and \emph{clustered / block}
 (resample whole sources --- the honest choice once references carry a source
 column, since pairs from one barrel are correlated and a row bootstrap understates
 the variance). The interval is a percentile interval because the LR distribution is
-asymmetric and piles at the ELUB cap; the reported point is the full-reference LR,
+asymmetric and piles at the cap; the reported point is the full-reference LR,
 not the bootstrap mean, to avoid resampling bias on the headline number.
 
 \paragraph{The applicability-domain scope guard.}
 Finally, the firewall has a gate. A calibration is valid only on data resembling
 its reference. Verity exposes the \emph{calibrated domains} it is willing to score
-(currently: striated bullet lands, and impressed breech-face marks) and declines to
+(currently: striated bullet lands, impressed breech-face marks, and striated
+screwdriver toolmarks) and declines to
 emit an LR for a scan outside them, rather than silently extrapolating a
 calibration past its evidence. This is the operational form of ``refuse to claim a
 universal error rate.''
@@ -440,8 +471,18 @@ cross-validation: in each fold the calibration is fit on a subset of barrels and
 evaluated only on comparisons among the \emph{held-out} barrels, so no barrel
 appears in both training and test. We report results \emph{per study} and never
 pool across firearm makes, because pooling across populations is precisely the move
-that manufactures a misleading single error rate. Reported $\Cllr$ values are the
-mean and standard deviation across folds.
+that manufactures a misleading single error rate. (The deployed interactive
+reference does pool the four bullet studies for calibration breadth --- but its
+different-source pairs are within-study only, it is labelled in-sample, and no
+validation claim rests on it; see \S\ref{sec:scorerablation}.) Reported $\Cllr$
+values are the mean and standard deviation across folds. Two properties of the
+fold design should be read alongside the SDs: the ten folds are repeated random
+source-level holdouts ($40\%$ of sources per fold, fixed seed) rather than a
+disjoint partition, so folds overlap in their held-out sources and the cross-fold
+SD is a stability measure, not an independent-replicate standard error; and each
+fold's test set is small in the source dimension (four held-out barrels on the
+ten-barrel sets; as few as 1--4 same-source pairs per fold on Fadul), so per-fold
+metrics carry wide sampling uncertainty of their own.
 
 \paragraph{Datasets.} Striated bullets are validated on the Hamby
 consecutively-rifled 10-barrel test sets (252 and 173)~\cite{hamby2009} and on two
@@ -449,8 +490,8 @@ NBTRD~\cite{nbtrd2020} collections (a PGPD Beretta set and a Phoenix PD Ruger
 P-95 set). Impressed marks are validated on the Fadul study of 10 consecutively
 manufactured cartridge-case slides (breech faces)~\cite{fadul2011}. Striated
 \emph{toolmarks} are validated on the MIT-licensed \code{tmaRks}
-consecutively-manufactured slotted-screwdriver set (580 marks across 56 tool edges),
-a non-firearm domain the pipeline was never tuned for. Consecutively
+consecutively-manufactured slotted-screwdriver set~\cite{tmarks} (580 marks across
+56 tool edges), a non-firearm domain the pipeline was never tuned for. Consecutively
 manufactured / rifled sources are the hardest available test: successive barrels or
 slides share the most subclass character, so a method that separates them is being
 held to the demanding case.
@@ -474,16 +515,18 @@ the number we stand behind: it is measured on barrels the calibration never saw.
     $\Cllrmin$          & \num{0.032}  & discrimination floor (PAV) \\
     ECE                 & \num{0.031}  & posterior reliability \\
     EER                 & \SI{2.1}{\percent} & equal error rate \\
-    ELUB bound          & $|\log_{10}\mathrm{LR}|\approx \num{1.66}$ & Eq.~\ref{eq:elub} \\
+    Empirical LR cap    & $|\log_{10}\mathrm{LR}|\approx \num{1.66}$ & Eq.~\ref{eq:elub} \\
     \midrule
-    \multicolumn{3}{@{}l}{\emph{Barrel-disjoint test (10 barrels, 46 KM / 549 KNM)}}\\
+    \multicolumn{3}{@{}l}{\emph{Barrel-disjoint test (full-study totals: 10 barrels, 46 KM / 549 KNM)}}\\
     Test $\Cllr$        & $\num{0.113}\pm\num{0.066}$ & mean $\pm$ SD over folds \\
     Test AUC            & $\num{1.000}\pm\num{0.001}$ & mean $\pm$ SD over folds \\
     \bottomrule
   \end{tabular}
   \caption{Hamby-252 validation for the deployed \diagcontrast{} scorer. The
     in-sample block characterizes the fitted system; the barrel-disjoint block is
-    the honest generalization estimate. We report the latter as the headline.}
+    the honest generalization estimate. We report the latter as the headline.
+    KM/KNM counts are full-study pair totals; each fold's test set comprises only
+    the pairs among its four held-out barrels.}
   \label{tab:hamby}
 \end{table}
 
@@ -627,10 +670,12 @@ in-sample AUC \num{0.997} ($\Cllr\,\num{0.220}$, $\Cllrmin\,\num{0.070}$) and a
 slide-disjoint $\Cllr$ of $\num{0.385}\pm\num{0.187}$ on the ten consecutively
 manufactured Fadul slides. Figure~\ref{fig:cartridge} places it against the two
 references on the \emph{same} slide-disjoint task: generic CMR-2D moves the naive global
-areal cross-correlation (pooled AUC \num{0.911}, $\Cllr\,\num{0.529}$) almost all the way
-to the \code{cmcR} Congruent Matching Cells specialist (AUC \num{1.000},
-$\Cllr\,\num{0.194}$) --- with no cartridge-specific engineering. CMR-2D \emph{is} CMC,
-and the numbers bear it out.
+areal cross-correlation (pooled AUC \num{0.911}, $\Cllr\,\num{0.529}$) most of the way
+to the \code{cmcR} Congruent Matching Cells specialist~\cite{zemmels2023} (AUC \num{1.000},
+$\Cllr\,\num{0.194}$) --- with no cartridge-specific engineering. CMR-2D instantiates
+the same counting principle as CMC; the remaining gap to the tuned specialist
+($\Cllr$ \num{0.385} vs \num{0.194}) is the measured price of keeping the
+implementation generic, and closing it is ongoing work, not a claim already made.
 
 \begin{figure}[t]
   \centering
@@ -646,25 +691,30 @@ and the numbers bear it out.
 
 \paragraph{Toolmarks (\code{tmaRks}, CMR-1D).} The 1-D reduction --- the
 consecutive-striae statistic of Table~\ref{tab:cmr} --- is validated on the MIT
-\code{tmaRks} consecutively-manufactured screwdriver set (580 marks across 56 tool
-edges), source-disjoint by the mark-generating edge. CMR-1D reaches AUC \num{0.957} at
+\code{tmaRks} consecutively-manufactured screwdriver set~\cite{tmarks} (580 marks
+across 56 tool edges), source-disjoint by the mark-generating edge. (A flat-head
+screwdriver carries two working edges; the split is disjoint by \emph{edge} --- the
+mark generator --- so same-tool cross-edge pairs are treated as different-source.
+The harness also supports tool-level-disjoint splits; locking that sensitivity
+analysis is planned.) CMR-1D reaches AUC \num{0.957} at
 $\Cllr\,\num{0.328}\pm\num{0.050}$ and, notably, \emph{beats} the same-pipeline global
 1-D cross-correlation on the identical set (AUC \num{0.942}, $\Cllr\,\num{0.447}$):
 requiring congruence among matching windows, rather than one global alignment, helps on
 real toolmarks. This is a \emph{non-firearm} domain the pipeline was never tuned for ---
-evidence the unification is not firearm-specific. (On the much smaller Ames Lab set the
-Chumbley \code{toolmaRk} $U$ specialist is itself weak --- pooled AUC \num{0.614} over 7
-tools --- a known small-sample effect, which is why we report \code{tmaRks} as the
-primary toolmark benchmark.)
+evidence the unification is not firearm-specific. (On the much smaller Ames Lab set, our run of the
+\code{toolmaRk} $U$ statistic~\cite{hadler2018} gives pooled AUC \num{0.614} over 7
+tools; with so few tools and replicates, that set is a weak benchmark for \emph{any}
+method, which is why we report \code{tmaRks} as the primary toolmark benchmark.)
 
 \paragraph{Reading these numbers.} The cross-modality $\Cllr$ values are larger than
 Hamby-252's \num{0.113}, as they should be: cartridges and toolmarks have far fewer
 sources (ten slides; the cross-edge toolmark task is genuinely hard), and the pooled
 bullet reference mixes the harder NBTRD sets. The claim is not that every modality is as
 strong as the best bullet study; it is that \emph{one calibrated algorithm, validated
-source-disjoint, recovers the field-standard method in each of the three reductions of
-Table~\ref{tab:cmr}} --- the Chumbley statistic on toolmarks, the CMC count on breech
-faces, and the bullet-land result --- rather than three bespoke pipelines.
+source-disjoint, matches or approaches the field-standard method in each of the three
+reductions of Table~\ref{tab:cmr}} --- Chumbley-style counting on toolmarks, CMC-style
+counting on breech faces, and the bullet-land result --- rather than three bespoke
+pipelines.
 
 % ==========================================================================
 \section{Limitations and honest scope}
@@ -673,12 +723,27 @@ faces, and the bullet-land result --- rather than three bespoke pipelines.
 We would rather state the boundaries plainly than have a reviewer find them.
 
 \begin{itemize}
+  \item \textbf{Model selection used the validation studies; no untouched
+        confirmation set exists yet.} The deployed scorer (\diagcontrast), the
+        FFT orientation front-end (\S\ref{sec:region}), and the filter cutoffs
+        were chosen by barrel-disjoint ablations on the \emph{same} four bullet
+        studies reported in \S\ref{sec:validation}. Each fold is honest --- the
+        calibration never sees a held-out source --- but repeated evaluation
+        against the same source-disjoint splits during development means the
+        headline numbers are best read as \emph{development-set performance under
+        a source-disjoint protocol}, not as a one-shot confirmation on new data.
+        This is the same selection-leakage failure mode Cuellar et
+        al.~\cite{cuellar2024} flag in black-box studies, and it applies to us
+        until a confirmation set is run. The frozen open-benchmark splits commit
+        the protocol going forward; a one-shot validation on data never used in
+        development (new NBTRD collections; the LAPD corpus) is the next
+        validation milestone.
   \item \textbf{Small source-disjoint sets widen uncertainty.} Consecutively
         manufactured benchmarks are small in the dimension that matters --- sources.
         Fadul has $\approx\!10$ slides; the bullet sets have 8--10 barrels. With so
         few held-out sources the fold-to-fold $\Cllr$ has a large standard deviation
-        (Fig.~\ref{fig:cllr}), and the ELUB bound (Eq.~\ref{eq:elub}) is
-        correspondingly conservative. More independent sources would tighten both.
+        (Fig.~\ref{fig:cllr}), and the empirical LR cap (Eq.~\ref{eq:elub}) is
+        correspondingly low. More independent sources would tighten both.
   \item \textbf{Score-based LR limitations.} As in \S\ref{sec:calibration}, the
         reported LR is a property of the score and the named reference, not an
         unconditional weight of evidence~\cite{hepler2012,neumann2020}; a reference
@@ -700,8 +765,8 @@ We would rather state the boundaries plainly than have a reviewer find them.
         (Fadul, $\approx\!10$ slides) and toolmark (\code{tmaRks}) reductions are now
         demonstrated source-disjoint (\S\ref{sec:crossmodal}) --- and CMR-1D even beats
         the same-pipeline global baseline on toolmarks --- but with far fewer independent
-        sources than the bullet benchmarks, so the wider $\Cllr$ and conservative ELUB
-        bounds reflect that. They are a genuine cross-modality demonstration of the CMR
+        sources than the bullet benchmarks, so the wider $\Cllr$ and low LR caps
+        reflect that. They are a genuine cross-modality demonstration of the CMR
         unification, not yet a definitive per-modality error characterization.
 \end{itemize}
 
@@ -720,14 +785,24 @@ fast, and inspectable. Verity is built as production software, not a script.
         giving fast, portable scan I/O for both research and deployment.
   \item \textbf{A calibrated-LR REST API.} A deployed service exposes \code{/detect}
         (suggest a mark type from a scan), \code{/compare} (return the calibrated,
-        bounded LR with its credible interval and the region attribution), and a
+        bounded LR with its bootstrap interval and the region attribution), and a
         \code{/health} endpoint that publishes the currently calibrated domains ---
         the scope guard, machine-readable.
   \item \textbf{A local-first data catalog.} A catalog service harvests and labels
-        the open NBTRD~\cite{nbtrd2020} 3-D scans --- which have no public API --- the
-        first open programmatic harvester for that benchmark (the prior CSAFE scraper
-        has been unmaintained since 2020), alongside the Fadul and \code{tmaRks} sets,
-        so validation runs against versioned, content-addressed, reproducible data.
+        the open NBTRD~\cite{nbtrd2020} 3-D scans --- which have no public API ---
+        succeeding the earlier CSAFE scraper (unmaintained since 2020) with a
+        maintained, reproducible harvester, alongside the Fadul and \code{tmaRks}
+        sets, so validation runs against versioned, content-addressed, reproducible
+        data.
+  \item \textbf{An open, frozen benchmark.} Frozen source-disjoint splits
+        (bullets, cartridge, toolmark) with published split hashes, a downloadable
+        replication kit whose offline scorer matches the server exactly, and a
+        public leaderboard ranked by total $\Cllr$. The leaderboard protocol
+        scores one LR per pair via a single leave-the-pair's-sources-out
+        calibration, which differs from the per-fold refits reported above ---
+        e.g.\ Fadul source-disjoint $\Cllr$ is \num{0.385} under
+        \S\ref{sec:crossmodal}'s protocol and \num{0.398} on the leaderboard. Both
+        are source-disjoint; the kit reproduces the leaderboard numbers exactly.
   \item \textbf{Reproducible validation reports.} Every number in
         \S\ref{sec:validation} is recomputed from a committed calibration reference by a
         checked-in harness and persisted as the paper's source of truth:
@@ -839,6 +914,48 @@ any author of the cited works.
   \textbf{56}(6), 482--491.
   \href{https://doi.org/10.1016/j.scijus.2016.06.003}{doi:10.1016/j.scijus.2016.06.003}.
   {\footnotesize (Empirical-bound / ELUB principle.)}
+
+\bibitem{zemmels2023} J.~Zemmels, S.~Vanderplas \& H.~Hofmann (2023). A study in
+  reproducibility: the congruent matching cells algorithm and \code{cmcR} package.
+  \emph{The R Journal} \textbf{14}(4), 79--102.
+  \href{https://journal.r-project.org/articles/RJ-2023-014/}{RJ-2023-014}.
+
+\bibitem{hadler2018} J.~R.~Hadler \& M.~D.~Morris (2018). An improved version of
+  a tool mark comparison algorithm. \emph{Journal of Forensic Sciences}
+  \textbf{63}(3), 849--855. {\footnotesize (Implemented in the \code{toolmaRk} R
+  package.)}
+
+\bibitem{krishnan2019} G.~Krishnan \& H.~Hofmann (2019). Adapting the Chumbley
+  score to match striae on land engraved areas (LEAs) of bullets. \emph{Journal of
+  Forensic Sciences} \textbf{64}(3), 728--740.
+  \href{https://doi.org/10.1111/1556-4029.13950}{doi:10.1111/1556-4029.13950}.
+
+\bibitem{tai2018} X.~H.~Tai \& W.~F.~Eddy (2018). A fully automatic method for
+  comparing cartridge case images. \emph{Journal of Forensic Sciences}
+  \textbf{63}(2), 440--448.
+  \href{https://doi.org/10.1111/1556-4029.13577}{doi:10.1111/1556-4029.13577}.
+
+\bibitem{morrison2013} G.~S.~Morrison (2013). Tutorial on logistic-regression
+  calibration and fusion: converting a score to a likelihood ratio.
+  \emph{Australian Journal of Forensic Sciences} \textbf{45}(2), 173--197.
+  \href{https://doi.org/10.1080/00450618.2012.733025}{doi:10.1080/00450618.2012.733025}.
+
+\bibitem{meuwly2017} D.~Meuwly, D.~Ramos \& R.~Haraksim (2017). A guideline for
+  the validation of likelihood ratio methods used for forensic evidence
+  evaluation. \emph{Forensic Science International} \textbf{276}, 142--153.
+  \href{https://doi.org/10.1016/j.forsciint.2016.03.048}{doi:10.1016/j.forsciint.2016.03.048}.
+
+\bibitem{enfsi2015} S.~M.~Willis et al.\ (2015). \emph{ENFSI Guideline for
+  Evaluative Reporting in Forensic Science} (Strengthening the Evaluation of
+  Forensic Results across Europe, v3.0). European Network of Forensic Science
+  Institutes.
+  \href{https://enfsi.eu/wp-content/uploads/2016/09/m1_guideline.pdf}{enfsi.eu}.
+
+\bibitem{tmarks} M.~Cuellar, S.~Gao \& H.~Hofmann (2024). An algorithm for
+  forensic toolmark comparisons. \emph{Forensic Science International: Synergy}.
+  \href{https://arxiv.org/abs/2312.00032}{arXiv:2312.00032}. Data: the
+  \code{tmaRks} consecutively-manufactured screwdriver toolmark scans,
+  \href{https://github.com/heike/tmaRks}{github.com/heike/tmaRks} (MIT license).
 
 \end{thebibliography}
 

@@ -22,7 +22,7 @@ const POINTS: Point[] = [
   {
     finding: "Black-box studies don't bound what the evidence can support.",
     answer:
-      "Verity bounds the likelihood ratio to what the reference data can support (an ELUB bound) and refuses to extrapolate beyond it.",
+      "Verity bounds the likelihood ratio to what the reference data can support (an empirical cap, ELUB-inspired) and refuses to extrapolate beyond it.",
   },
   {
     finding: "Claims of validity outrun the data behind them.",

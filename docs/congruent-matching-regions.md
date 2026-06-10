@@ -29,7 +29,7 @@ For two marks `A` and `B`:
    the largest cluster whose transforms agree to within a tolerance. Its size is
    the **CMR count** — the number of congruent matching regions.
 4. **Calibrate.** The CMR count is a *score*; it flows into Verity's existing
-   transparent, ELUB-bounded score→LR layer like any other score. CMR improves the
+   transparent, empirically-capped (ELUB-inspired) score→LR layer like any other score. CMR improves the
    *similarity* stage; it never touches the decision firewall.
 
 A genuine same-source pair has many regions that independently agree on one
@@ -48,7 +48,7 @@ per-region registration over its group). That is the whole generalization:
 | modality      | region            | group `G`              | congruence on    | reduces to        |
 |---------------|-------------------|------------------------|------------------|-------------------|
 | Striated      | 1-D profile window| 1-D translation        | common lag       | ≈ Chumbley / CMS  |
-| Impressed     | 2-D grid cell     | 2-D translation+rotation | (dx, dy, θ)    | **= CMC**         |
+| Impressed     | 2-D grid cell     | 2-D translation+rotation | (dx, dy, θ)    | ≈ CMC             |
 | Fractured     | 3-D mesh patch    | 3-D rigid              | pose             | (research)        |
 
 This maps one-to-one onto the `register(source, target, group)` dispatcher the
@@ -57,8 +57,10 @@ consensus vote.
 
 ### What it subsumes
 
-- **2-D / impressed → CMC.** With 2-D grid cells and translation+rotation, CMR *is*
-  CMC. This is the path to close the cartridge-case gap: on the Fadul
+- **2-D / impressed → CMC.** With 2-D grid cells and translation+rotation, CMR
+  instantiates CMC's counting principle (the tuned `cmcR` specialist still leads
+  on Fadul — see the whitepaper's Table 4). This is the path to close the
+  cartridge-case gap: on the Fadul
   consecutively-manufactured slides, Verity's *global* CCFmax reaches AUC 0.91 while
   CMC reaches 1.00, precisely because global correlation is inflated by shared
   subclass structure that cell congruence ignores.
