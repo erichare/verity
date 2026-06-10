@@ -1,0 +1,60 @@
+{
+ "format_version": 1,
+ "protocol_version": 1,
+ "name": "cartridge-v1",
+ "title": "Cartridge breech faces (Fadul, 10 consecutively-manufactured slides)",
+ "modality": "impressed",
+ "split_hash": "31aea8c30185259071988e43af7286dd8de391af86a18385a1470d0ef213bc6c",
+ "protocol": {
+  "n_splits": 10,
+  "test_frac": 0.4,
+  "seed": 0,
+  "fold_rule": "repeated source-disjoint splits: per fold, hold out round(0.4 * n_sources) sources; a pair is a test pair iff both its sources are held out; folds keeping <3 train or <1 test same-source pairs are skipped",
+  "contract": "One likelihood ratio per pair. The LR for a pair must be produced without using the benchmark labels of any pair involving either of its sources (leave-the-pair's-sources-out) \u2014 the same source-disjoint discipline the frozen folds score.",
+  "headline_metric": "calibration_loss (Cllr - Cllr_min, mean over folds)"
+ },
+ "counts": {
+  "n_marks": 20,
+  "n_sources": 10,
+  "n_pairs": 190,
+  "n_km": 10,
+  "n_knm": 180,
+  "n_folds": 10,
+  "n_duplicate_pairs_dropped": 0
+ },
+ "scorer": {
+  "score_kind": "cmr-2d",
+  "scorer_config_hash": "ea4ddd513b57ce8a3dd117dabc6d539432f7ddfab382c425837ead8199a6e127",
+  "reference_npz": "cartridge_fadul.npz",
+  "reference_generator": "build_cartridge_fadul_reference",
+  "reference_git_commit": "cdec955"
+ },
+ "datasets": [
+  {
+   "external_id": "fadul-cartridge-cases",
+   "tag": "Fadul-2011",
+   "source": "CSAFE-ISU/cartridgeCaseScans (fadulMasked, CC-BY 4.0)"
+  }
+ ],
+ "git_commit": "93d3828",
+ "verity_baseline": {
+  "protocol_version": 1,
+  "n_folds": 10,
+  "cllr": 0.3980918029649074,
+  "cllr_std": 0.20204523605876804,
+  "cllr_min": 0.281814366648309,
+  "cllr_min_std": 0.22575545513466808,
+  "auc": 0.9223958333333334,
+  "auc_std": 0.0666768384167246,
+  "calibration_loss": 0.11627743631659843,
+  "pooled": {
+   "n_pairs": 190,
+   "n_km": 10,
+   "n_knm": 180,
+   "cllr": 0.3425930135452137,
+   "cllr_min": 0.28424099166293587,
+   "auc": 0.9413888888888888,
+   "ece": 0.10019584444640485
+  }
+ }
+}

@@ -1,0 +1,212 @@
+[
+ {
+  "index": 0,
+  "n_test_pairs": 396,
+  "test_sources": [
+   "b5fbda3e-d889-4211-be7e-654e19b7cd40:Barrel2",
+   "b5fbda3e-d889-4211-be7e-654e19b7cd40:Barrel3",
+   "b5fbda3e-d889-4211-be7e-654e19b7cd40:Barrel4",
+   "bc68296a-f4b0-4afd-b767-4dbfa2961780:Barrel1",
+   "bc68296a-f4b0-4afd-b767-4dbfa2961780:Barrel2",
+   "bc68296a-f4b0-4afd-b767-4dbfa2961780:Barrel8",
+   "c09aaa86-5d60-4acb-9031-46dad2c0ad32:Barrel2",
+   "c09aaa86-5d60-4acb-9031-46dad2c0ad32:Barrel3",
+   "c09aaa86-5d60-4acb-9031-46dad2c0ad32:Barrel4",
+   "c09aaa86-5d60-4acb-9031-46dad2c0ad32:Barrel5",
+   "c09aaa86-5d60-4acb-9031-46dad2c0ad32:Barrel6",
+   "c09aaa86-5d60-4acb-9031-46dad2c0ad32:Barrel8",
+   "c09aaa86-5d60-4acb-9031-46dad2c0ad32:Barrel9",
+   "fcafffb1-b96c-49c7-9a9f-b1ec9849f884:Barrel4",
+   "fcafffb1-b96c-49c7-9a9f-b1ec9849f884:Barrel8"
+  ]
+ },
+ {
+  "index": 1,
+  "n_test_pairs": 312,
+  "test_sources": [
+   "b5fbda3e-d889-4211-be7e-654e19b7cd40:Barrel4",
+   "b5fbda3e-d889-4211-be7e-654e19b7cd40:Barrel5",
+   "b5fbda3e-d889-4211-be7e-654e19b7cd40:Barrel7",
+   "b5fbda3e-d889-4211-be7e-654e19b7cd40:Barrel8",
+   "b5fbda3e-d889-4211-be7e-654e19b7cd40:Barrel9",
+   "bc68296a-f4b0-4afd-b767-4dbfa2961780:Barrel5",
+   "bc68296a-f4b0-4afd-b767-4dbfa2961780:Barrel7",
+   "c09aaa86-5d60-4acb-9031-46dad2c0ad32:Barrel10",
+   "c09aaa86-5d60-4acb-9031-46dad2c0ad32:Barrel5",
+   "c09aaa86-5d60-4acb-9031-46dad2c0ad32:Barrel7",
+   "c09aaa86-5d60-4acb-9031-46dad2c0ad32:Barrel8",
+   "fcafffb1-b96c-49c7-9a9f-b1ec9849f884:Barrel2",
+   "fcafffb1-b96c-49c7-9a9f-b1ec9849f884:Barrel5",
+   "fcafffb1-b96c-49c7-9a9f-b1ec9849f884:Barrel7",
+   "fcafffb1-b96c-49c7-9a9f-b1ec9849f884:Barrel8"
+  ]
+ },
+ {
+  "index": 2,
+  "n_test_pairs": 322,
+  "test_sources": [
+   "b5fbda3e-d889-4211-be7e-654e19b7cd40:Barrel1",
+   "b5fbda3e-d889-4211-be7e-654e19b7cd40:Barrel10",
+   "bc68296a-f4b0-4afd-b767-4dbfa2961780:Barrel2",
+   "bc68296a-f4b0-4afd-b767-4dbfa2961780:Barrel4",
+   "bc68296a-f4b0-4afd-b767-4dbfa2961780:Barrel8",
+   "c09aaa86-5d60-4acb-9031-46dad2c0ad32:Barrel10",
+   "c09aaa86-5d60-4acb-9031-46dad2c0ad32:Barrel3",
+   "c09aaa86-5d60-4acb-9031-46dad2c0ad32:Barrel4",
+   "c09aaa86-5d60-4acb-9031-46dad2c0ad32:Barrel6",
+   "fcafffb1-b96c-49c7-9a9f-b1ec9849f884:Barrel2",
+   "fcafffb1-b96c-49c7-9a9f-b1ec9849f884:Barrel3",
+   "fcafffb1-b96c-49c7-9a9f-b1ec9849f884:Barrel5",
+   "fcafffb1-b96c-49c7-9a9f-b1ec9849f884:Barrel6",
+   "fcafffb1-b96c-49c7-9a9f-b1ec9849f884:Barrel7",
+   "fcafffb1-b96c-49c7-9a9f-b1ec9849f884:Barrel8"
+  ]
+ },
+ {
+  "index": 3,
+  "n_test_pairs": 252,
+  "test_sources": [
+   "b5fbda3e-d889-4211-be7e-654e19b7cd40:Barrel10",
+   "b5fbda3e-d889-4211-be7e-654e19b7cd40:Barrel6",
+   "b5fbda3e-d889-4211-be7e-654e19b7cd40:Barrel7",
+   "bc68296a-f4b0-4afd-b767-4dbfa2961780:Barrel1",
+   "bc68296a-f4b0-4afd-b767-4dbfa2961780:Barrel3",
+   "bc68296a-f4b0-4afd-b767-4dbfa2961780:Barrel5",
+   "bc68296a-f4b0-4afd-b767-4dbfa2961780:Barrel6",
+   "bc68296a-f4b0-4afd-b767-4dbfa2961780:Barrel8",
+   "c09aaa86-5d60-4acb-9031-46dad2c0ad32:Barrel10",
+   "c09aaa86-5d60-4acb-9031-46dad2c0ad32:Barrel2",
+   "c09aaa86-5d60-4acb-9031-46dad2c0ad32:Barrel7",
+   "c09aaa86-5d60-4acb-9031-46dad2c0ad32:Barrel9",
+   "fcafffb1-b96c-49c7-9a9f-b1ec9849f884:Barrel3",
+   "fcafffb1-b96c-49c7-9a9f-b1ec9849f884:Barrel5",
+   "fcafffb1-b96c-49c7-9a9f-b1ec9849f884:Barrel8"
+  ]
+ },
+ {
+  "index": 4,
+  "n_test_pairs": 321,
+  "test_sources": [
+   "b5fbda3e-d889-4211-be7e-654e19b7cd40:Barrel1",
+   "b5fbda3e-d889-4211-be7e-654e19b7cd40:Barrel10",
+   "b5fbda3e-d889-4211-be7e-654e19b7cd40:Barrel4",
+   "b5fbda3e-d889-4211-be7e-654e19b7cd40:Barrel7",
+   "b5fbda3e-d889-4211-be7e-654e19b7cd40:Barrel9",
+   "bc68296a-f4b0-4afd-b767-4dbfa2961780:Barrel2",
+   "bc68296a-f4b0-4afd-b767-4dbfa2961780:Barrel3",
+   "bc68296a-f4b0-4afd-b767-4dbfa2961780:Barrel7",
+   "c09aaa86-5d60-4acb-9031-46dad2c0ad32:Barrel10",
+   "c09aaa86-5d60-4acb-9031-46dad2c0ad32:Barrel2",
+   "c09aaa86-5d60-4acb-9031-46dad2c0ad32:Barrel3",
+   "c09aaa86-5d60-4acb-9031-46dad2c0ad32:Barrel4",
+   "fcafffb1-b96c-49c7-9a9f-b1ec9849f884:Barrel1",
+   "fcafffb1-b96c-49c7-9a9f-b1ec9849f884:Barrel4",
+   "fcafffb1-b96c-49c7-9a9f-b1ec9849f884:Barrel9"
+  ]
+ },
+ {
+  "index": 5,
+  "n_test_pairs": 262,
+  "test_sources": [
+   "b5fbda3e-d889-4211-be7e-654e19b7cd40:Barrel1",
+   "b5fbda3e-d889-4211-be7e-654e19b7cd40:Barrel3",
+   "b5fbda3e-d889-4211-be7e-654e19b7cd40:Barrel9",
+   "bc68296a-f4b0-4afd-b767-4dbfa2961780:Barrel3",
+   "bc68296a-f4b0-4afd-b767-4dbfa2961780:Barrel5",
+   "bc68296a-f4b0-4afd-b767-4dbfa2961780:Barrel6",
+   "bc68296a-f4b0-4afd-b767-4dbfa2961780:Barrel7",
+   "c09aaa86-5d60-4acb-9031-46dad2c0ad32:Barrel10",
+   "c09aaa86-5d60-4acb-9031-46dad2c0ad32:Barrel2",
+   "c09aaa86-5d60-4acb-9031-46dad2c0ad32:Barrel4",
+   "c09aaa86-5d60-4acb-9031-46dad2c0ad32:Barrel8",
+   "c09aaa86-5d60-4acb-9031-46dad2c0ad32:Barrel9",
+   "fcafffb1-b96c-49c7-9a9f-b1ec9849f884:Barrel1",
+   "fcafffb1-b96c-49c7-9a9f-b1ec9849f884:Barrel3",
+   "fcafffb1-b96c-49c7-9a9f-b1ec9849f884:Barrel8"
+  ]
+ },
+ {
+  "index": 6,
+  "n_test_pairs": 379,
+  "test_sources": [
+   "b5fbda3e-d889-4211-be7e-654e19b7cd40:Barrel10",
+   "b5fbda3e-d889-4211-be7e-654e19b7cd40:Barrel2",
+   "b5fbda3e-d889-4211-be7e-654e19b7cd40:Barrel3",
+   "b5fbda3e-d889-4211-be7e-654e19b7cd40:Barrel5",
+   "b5fbda3e-d889-4211-be7e-654e19b7cd40:Barrel6",
+   "b5fbda3e-d889-4211-be7e-654e19b7cd40:Barrel7",
+   "b5fbda3e-d889-4211-be7e-654e19b7cd40:Barrel9",
+   "bc68296a-f4b0-4afd-b767-4dbfa2961780:Barrel2",
+   "bc68296a-f4b0-4afd-b767-4dbfa2961780:Barrel4",
+   "bc68296a-f4b0-4afd-b767-4dbfa2961780:Barrel5",
+   "bc68296a-f4b0-4afd-b767-4dbfa2961780:Barrel6",
+   "bc68296a-f4b0-4afd-b767-4dbfa2961780:Barrel8",
+   "c09aaa86-5d60-4acb-9031-46dad2c0ad32:Barrel5",
+   "fcafffb1-b96c-49c7-9a9f-b1ec9849f884:Barrel6",
+   "fcafffb1-b96c-49c7-9a9f-b1ec9849f884:Barrel9"
+  ]
+ },
+ {
+  "index": 7,
+  "n_test_pairs": 367,
+  "test_sources": [
+   "b5fbda3e-d889-4211-be7e-654e19b7cd40:Barrel5",
+   "b5fbda3e-d889-4211-be7e-654e19b7cd40:Barrel7",
+   "b5fbda3e-d889-4211-be7e-654e19b7cd40:Barrel8",
+   "b5fbda3e-d889-4211-be7e-654e19b7cd40:Barrel9",
+   "bc68296a-f4b0-4afd-b767-4dbfa2961780:Barrel8",
+   "c09aaa86-5d60-4acb-9031-46dad2c0ad32:Barrel2",
+   "c09aaa86-5d60-4acb-9031-46dad2c0ad32:Barrel3",
+   "c09aaa86-5d60-4acb-9031-46dad2c0ad32:Barrel5",
+   "c09aaa86-5d60-4acb-9031-46dad2c0ad32:Barrel6",
+   "fcafffb1-b96c-49c7-9a9f-b1ec9849f884:Barrel10",
+   "fcafffb1-b96c-49c7-9a9f-b1ec9849f884:Barrel2",
+   "fcafffb1-b96c-49c7-9a9f-b1ec9849f884:Barrel3",
+   "fcafffb1-b96c-49c7-9a9f-b1ec9849f884:Barrel4",
+   "fcafffb1-b96c-49c7-9a9f-b1ec9849f884:Barrel7",
+   "fcafffb1-b96c-49c7-9a9f-b1ec9849f884:Barrel9"
+  ]
+ },
+ {
+  "index": 8,
+  "n_test_pairs": 327,
+  "test_sources": [
+   "b5fbda3e-d889-4211-be7e-654e19b7cd40:Barrel3",
+   "b5fbda3e-d889-4211-be7e-654e19b7cd40:Barrel6",
+   "b5fbda3e-d889-4211-be7e-654e19b7cd40:Barrel7",
+   "bc68296a-f4b0-4afd-b767-4dbfa2961780:Barrel2",
+   "bc68296a-f4b0-4afd-b767-4dbfa2961780:Barrel5",
+   "bc68296a-f4b0-4afd-b767-4dbfa2961780:Barrel8",
+   "c09aaa86-5d60-4acb-9031-46dad2c0ad32:Barrel1",
+   "c09aaa86-5d60-4acb-9031-46dad2c0ad32:Barrel2",
+   "c09aaa86-5d60-4acb-9031-46dad2c0ad32:Barrel3",
+   "c09aaa86-5d60-4acb-9031-46dad2c0ad32:Barrel5",
+   "c09aaa86-5d60-4acb-9031-46dad2c0ad32:Barrel7",
+   "c09aaa86-5d60-4acb-9031-46dad2c0ad32:Barrel8",
+   "fcafffb1-b96c-49c7-9a9f-b1ec9849f884:Barrel4",
+   "fcafffb1-b96c-49c7-9a9f-b1ec9849f884:Barrel7",
+   "fcafffb1-b96c-49c7-9a9f-b1ec9849f884:Barrel9"
+  ]
+ },
+ {
+  "index": 9,
+  "n_test_pairs": 289,
+  "test_sources": [
+   "b5fbda3e-d889-4211-be7e-654e19b7cd40:Barrel10",
+   "b5fbda3e-d889-4211-be7e-654e19b7cd40:Barrel2",
+   "b5fbda3e-d889-4211-be7e-654e19b7cd40:Barrel3",
+   "b5fbda3e-d889-4211-be7e-654e19b7cd40:Barrel7",
+   "bc68296a-f4b0-4afd-b767-4dbfa2961780:Barrel2",
+   "bc68296a-f4b0-4afd-b767-4dbfa2961780:Barrel3",
+   "bc68296a-f4b0-4afd-b767-4dbfa2961780:Barrel4",
+   "bc68296a-f4b0-4afd-b767-4dbfa2961780:Barrel6",
+   "bc68296a-f4b0-4afd-b767-4dbfa2961780:Barrel8",
+   "c09aaa86-5d60-4acb-9031-46dad2c0ad32:Barrel1",
+   "c09aaa86-5d60-4acb-9031-46dad2c0ad32:Barrel10",
+   "c09aaa86-5d60-4acb-9031-46dad2c0ad32:Barrel3",
+   "c09aaa86-5d60-4acb-9031-46dad2c0ad32:Barrel8",
+   "fcafffb1-b96c-49c7-9a9f-b1ec9849f884:Barrel4",
+   "fcafffb1-b96c-49c7-9a9f-b1ec9849f884:Barrel6"
+  ]
+ }
+]

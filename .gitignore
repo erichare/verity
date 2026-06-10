@@ -32,3 +32,8 @@ diag/
 .vscode/
 .vercel
 .claude
+
+# Frozen benchmark artifacts too large for git (regenerate: verity-build-benchmark;
+# reproducibility is pinned by the committed provenance.json split_hash)
+services/catalog/benchmarks/toolmark-v1/pairs.csv.gz
+services/catalog/benchmarks/toolmark-v1/verity_submission.csv.gz
