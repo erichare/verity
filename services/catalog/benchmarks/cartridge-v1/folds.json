@@ -1,0 +1,102 @@
+[
+ {
+  "index": 0,
+  "n_test_pairs": 28,
+  "test_sources": [
+   "fadul-slide-2",
+   "fadul-slide-4",
+   "fadul-slide-6",
+   "fadul-slide-7"
+  ]
+ },
+ {
+  "index": 1,
+  "n_test_pairs": 28,
+  "test_sources": [
+   "fadul-slide-2",
+   "fadul-slide-3",
+   "fadul-slide-6",
+   "fadul-slide-9"
+  ]
+ },
+ {
+  "index": 2,
+  "n_test_pairs": 28,
+  "test_sources": [
+   "fadul-slide-1",
+   "fadul-slide-4",
+   "fadul-slide-5",
+   "fadul-slide-9"
+  ]
+ },
+ {
+  "index": 3,
+  "n_test_pairs": 28,
+  "test_sources": [
+   "fadul-slide-4",
+   "fadul-slide-5",
+   "fadul-slide-6",
+   "fadul-slide-7"
+  ]
+ },
+ {
+  "index": 4,
+  "n_test_pairs": 28,
+  "test_sources": [
+   "fadul-slide-10",
+   "fadul-slide-2",
+   "fadul-slide-7",
+   "fadul-slide-8"
+  ]
+ },
+ {
+  "index": 5,
+  "n_test_pairs": 28,
+  "test_sources": [
+   "fadul-slide-2",
+   "fadul-slide-3",
+   "fadul-slide-4",
+   "fadul-slide-6"
+  ]
+ },
+ {
+  "index": 6,
+  "n_test_pairs": 28,
+  "test_sources": [
+   "fadul-slide-1",
+   "fadul-slide-6",
+   "fadul-slide-8",
+   "fadul-slide-9"
+  ]
+ },
+ {
+  "index": 7,
+  "n_test_pairs": 28,
+  "test_sources": [
+   "fadul-slide-1",
+   "fadul-slide-2",
+   "fadul-slide-6",
+   "fadul-slide-8"
+  ]
+ },
+ {
+  "index": 8,
+  "n_test_pairs": 28,
+  "test_sources": [
+   "fadul-slide-10",
+   "fadul-slide-3",
+   "fadul-slide-5",
+   "fadul-slide-6"
+  ]
+ },
+ {
+  "index": 9,
+  "n_test_pairs": 28,
+  "test_sources": [
+   "fadul-slide-4",
+   "fadul-slide-5",
+   "fadul-slide-6",
+   "fadul-slide-7"
+  ]
+ }
+]

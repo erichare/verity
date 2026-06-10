@@ -1,0 +1,60 @@
+{
+ "format_version": 1,
+ "protocol_version": 1,
+ "name": "toolmark-v1",
+ "title": "Screwdriver toolmarks (tmaRks, consecutively manufactured; tool edges)",
+ "modality": "striated-toolmark",
+ "split_hash": "4ead8b698bee3ce2224ed502f2bb6169118617c883b47e2e46df3056f11c9b20",
+ "protocol": {
+  "n_splits": 10,
+  "test_frac": 0.4,
+  "seed": 0,
+  "fold_rule": "repeated source-disjoint splits: per fold, hold out round(0.4 * n_sources) sources; a pair is a test pair iff both its sources are held out; folds keeping <3 train or <1 test same-source pairs are skipped",
+  "contract": "One likelihood ratio per pair. The LR for a pair must be produced without using the benchmark labels of any pair involving either of its sources (leave-the-pair's-sources-out) \u2014 the same source-disjoint discipline the frozen folds score.",
+  "headline_metric": "calibration_loss (Cllr - Cllr_min, mean over folds)"
+ },
+ "counts": {
+  "n_marks": 580,
+  "n_sources": 56,
+  "n_pairs": 167332,
+  "n_km": 3530,
+  "n_knm": 163802,
+  "n_folds": 10,
+  "n_duplicate_pairs_dropped": 578
+ },
+ "scorer": {
+  "score_kind": "cmr-1d",
+  "scorer_config_hash": "ea4ddd513b57ce8a3dd117dabc6d539432f7ddfab382c425837ead8199a6e127",
+  "reference_npz": "toolmark_tmaRks.npz",
+  "reference_generator": "build_toolmark_reference",
+  "reference_git_commit": "dfe1195"
+ },
+ "datasets": [
+  {
+   "external_id": "tmaRks-toolmarks",
+   "tag": "tmaRks",
+   "source": "heike/tmaRks data/toolmarks.rda (MIT)"
+  }
+ ],
+ "git_commit": "93d3828",
+ "verity_baseline": {
+  "protocol_version": 1,
+  "n_folds": 10,
+  "cllr": 0.3299289908044809,
+  "cllr_std": 0.04743406275907,
+  "cllr_min": 0.30888044075273946,
+  "cllr_min_std": 0.042841388524132794,
+  "auc": 0.943469420775194,
+  "auc_std": 0.01152433857683478,
+  "calibration_loss": 0.021048550051741444,
+  "pooled": {
+   "n_pairs": 167332,
+   "n_km": 3530,
+   "n_knm": 163802,
+   "cllr": 0.3005535260657133,
+   "cllr_min": 0.287335740497406,
+   "auc": 0.9513619791019027,
+   "ece": 0.11108711085795768
+  }
+ }
+}

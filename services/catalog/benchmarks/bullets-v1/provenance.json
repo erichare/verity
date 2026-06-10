@@ -1,0 +1,71 @@
+{
+ "format_version": 1,
+ "protocol_version": 1,
+ "name": "bullets-v1",
+ "title": "Bullet lands, pooled (Hamby-252 & 173, PGPD Beretta, Phoenix)",
+ "modality": "striated-bullet",
+ "split_hash": "7aa24c56cf76cd92e828428155d95776860f28e5fb7d98dfc901d59e8ab43a22",
+ "protocol": {
+  "n_splits": 10,
+  "test_frac": 0.4,
+  "seed": 0,
+  "fold_rule": "repeated source-disjoint splits: per fold, hold out round(0.4 * n_sources) sources; a pair is a test pair iff both its sources are held out; folds keeping <3 train or <1 test same-source pairs are skipped",
+  "contract": "One likelihood ratio per pair. The LR for a pair must be produced without using the benchmark labels of any pair involving either of its sources (leave-the-pair's-sources-out) \u2014 the same source-disjoint discipline the frozen folds score.",
+  "headline_metric": "calibration_loss (Cllr - Cllr_min, mean over folds)"
+ },
+ "counts": {
+  "n_marks": 124,
+  "n_sources": 38,
+  "n_pairs": 1901,
+  "n_km": 146,
+  "n_knm": 1755,
+  "n_folds": 10,
+  "n_duplicate_pairs_dropped": 0
+ },
+ "scorer": {
+  "score_kind": "bullet-contrast",
+  "scorer_config_hash": "ea4ddd513b57ce8a3dd117dabc6d539432f7ddfab382c425837ead8199a6e127",
+  "reference_npz": "bullet_pooled.npz",
+  "reference_generator": "build_bullet_pooled_reference",
+  "reference_git_commit": "cdec955"
+ },
+ "datasets": [
+  {
+   "external_id": "c09aaa86-5d60-4acb-9031-46dad2c0ad32",
+   "tag": "Hamby-252"
+  },
+  {
+   "external_id": "fcafffb1-b96c-49c7-9a9f-b1ec9849f884",
+   "tag": "PGPD-Beretta"
+  },
+  {
+   "external_id": "bc68296a-f4b0-4afd-b767-4dbfa2961780",
+   "tag": "Phoenix-Ruger"
+  },
+  {
+   "external_id": "b5fbda3e-d889-4211-be7e-654e19b7cd40",
+   "tag": "Hamby-173"
+  }
+ ],
+ "git_commit": "93d3828",
+ "verity_baseline": {
+  "protocol_version": 1,
+  "n_folds": 10,
+  "cllr": 0.20480970435353832,
+  "cllr_std": 0.12515477963448943,
+  "cllr_min": 0.13570523158193168,
+  "cllr_min_std": 0.10880787306881311,
+  "auc": 0.9792200856315508,
+  "auc_std": 0.024681690831350335,
+  "calibration_loss": 0.06910447277160664,
+  "pooled": {
+   "n_pairs": 1901,
+   "n_km": 146,
+   "n_knm": 1755,
+   "cllr": 0.22168041015319678,
+   "cllr_min": 0.1890915375469392,
+   "auc": 0.9747843734145103,
+   "ece": 0.06112169754772934
+  }
+ }
+}
