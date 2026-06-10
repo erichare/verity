@@ -30,7 +30,9 @@ jobs:
   python:
     name: python (${{ matrix.service }})
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # The api suite's toolmark compare pays a cold 1000-replicate bootstrap
+    # ensemble build (memoized only in-memory) — minutes on a 2-core runner.
+    timeout-minutes: 25
     strategy:
       fail-fast: false
       matrix:
@@ -64,7 +66,7 @@ jobs:
         # CI runners are slower than dev machines; give CPU-bound comparisons
         # more wall-clock than the 60s production default.
         env:
-          VERITY_COMPARE_TIMEOUT_S: "300"
+          VERITY_COMPARE_TIMEOUT_S: "900"
         run: uv run ${{ matrix.extras }} pytest
 
   bindings-python:
