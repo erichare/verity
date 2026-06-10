@@ -95,6 +95,25 @@ def _get_split(session: Session, name: str) -> models.BenchmarkSplit:
     return split
 
 
+def _require_complete_pairs(session: Session, split: models.BenchmarkSplit) -> None:
+    """The kit and submission scoring are only meaningful against the *complete*
+    frozen pair set. A partial load (e.g. metadata published before the bulk
+    pair load) must fail loudly, never serve a silently-truncated benchmark."""
+    n = session.exec(
+        select(func.count())
+        .select_from(models.BenchmarkPair)
+        .where(models.BenchmarkPair.split_id == split.id)
+    ).one()
+    if int(n) != split.n_pairs:
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                f"split {split.name!r} is not fully published yet "
+                f"({int(n)}/{split.n_pairs} pairs loaded) — try again later"
+            ),
+        )
+
+
 @router.get(
     "/splits",
     summary="List the frozen benchmark splits",
@@ -136,6 +155,7 @@ def get_kit(name: str, session: Session = Depends(get_session)) -> Response:
     """Frozen pairs + folds + provenance + the scorer + a standalone
     ``evaluate.py``. Offline evaluation equals the leaderboard scoring."""
     split = _get_split(session, name)
+    _require_complete_pairs(session, split)
     pairs = session.exec(
         select(models.BenchmarkPair)
         .where(models.BenchmarkPair.split_id == split.id)
@@ -205,6 +225,7 @@ def submit(
     _maybe_require_token(request)
     _rate_limited(request)
     split = _get_split(session, name)
+    _require_complete_pairs(session, split)
     lrs_by_id = _parse_lrs(body)
 
     rows = session.exec(
