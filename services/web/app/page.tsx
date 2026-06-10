@@ -252,7 +252,9 @@ export default function Home() {
             <p className="text-xs text-muted">
               {domain === "striated"
                 ? "Each mark is a bullet — select all of its land scans (e.g. 6). A single land is only weakly diagnostic; the strength comes from aggregating the lands."
-                : "One breech-face scan per mark."}
+                : domain === "toolmark"
+                  ? "One striated profile scan per toolmark (e.g. a screwdriver mark)."
+                  : "One breech-face scan per mark."}
             </p>
             <button
               onClick={onCompare}

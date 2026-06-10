@@ -155,8 +155,7 @@ export const REFERENCES: Reference[] = [
       "The identification of bullets fired from 10 consecutively rifled 9 mm Ruger pistol barrels: a research project involving 507 participants from 20 countries",
     venue: "AFTE Journal 41(2), 99–110",
     group: "standards",
-    url: "https://afte.org/afte-journal/afte-journal-index",
-    urlUnverified: true,
+    url: "https://afte.org/resources/searchable-journal-index",
     relevance:
       "The Hamby 10-barrel test sets (e.g. 252, 173) — the canonical bullet benchmark Verity is validated on.",
   },
@@ -169,7 +168,6 @@ export const REFERENCES: Reference[] = [
     venue: "AFTE Journal 43(3) · NIJ Award 2009-DN-BX-K230",
     group: "standards",
     url: "https://www.ojp.gov/ncjrs/virtual-library/abstracts/empirical-study-improve-scientific-foundation-forensic-firearm-and",
-    urlUnverified: true,
     relevance:
       "The Fadul consecutively-manufactured cartridge-case study — the impressed-mark benchmark Verity reports on.",
   },
