@@ -15,7 +15,13 @@ import numpy as np
 
 from .aggregate import bullet_comparison
 from .areal import areal_signature
-from .cmr import areal_votes, cmr_regions_1d_pair, consensus_members, regions_from_members
+from .cmr import (
+    areal_votes,
+    cmr_regions_1d_pair,
+    cmr_score_1d,
+    consensus_members,
+    regions_from_members,
+)
 from .decision.scorer import BulletScorer, ContrastScorer
 from .decision.scorer_config import DEFAULT_SCORER_CONFIG, ScorerConfig
 from .preprocess import isolate_roughness, remove_form
@@ -30,7 +36,10 @@ from .surface import Surface
 # functions below take an optional per-request config (None ⇒ the deployed default, so
 # behaviour is byte-identical unless a caller deliberately overrides). The API refuses to
 # *calibrate* a score whose config doesn't match the reference's (the firewall).
-DOMAINS = ("striated", "impressed")
+# "striated" = bullet lands (single-land CCF; whole bullets via diag_contrast).
+# "toolmark" = one striated toolmark surface per mark, scored with the deployed CMR-1D
+# consensus count — the same statistic the bundled tmaRks reference was built with.
+DOMAINS = ("striated", "impressed", "toolmark")
 
 
 def _areal_sigs(
@@ -90,6 +99,11 @@ def comparison_score(
         return float(len(members)), "cmr-2d"
     if domain == "striated":
         return _striated_score(surface_a, surface_b, cfg), "ccf"
+    if domain == "toolmark":
+        sig_a = striation_signature(surface_a, lambda_s=cfg.lambda_s, lambda_c=cfg.lambda_c)
+        sig_b = striation_signature(surface_b, lambda_s=cfg.lambda_s, lambda_c=cfg.lambda_c)
+        score = cmr_score_1d(sig_a, sig_b, corr_thresh=cfg.cmr_1d_corr, lag_tol=cfg.cmr_1d_lag)
+        return float(score), "cmr-1d"
     raise ValueError(f"domain must be one of {DOMAINS}, got {domain!r}")
 
 
@@ -126,13 +140,18 @@ def compare_with_previews(
         attribution = regions_from_members(members, sig_a.shape)
         attribution_b = regions_from_members(members, sig_b.shape, shift=True)
         previews = {"a": _to_preview(sig_a, preview_size), "b": _to_preview(sig_b, preview_size)}
-    elif domain == "striated":
+    elif domain in ("striated", "toolmark"):
         sig_a, band_a = _land_fields(surface_a, cfg)
         sig_b, band_b = _land_fields(surface_b, cfg)
-        score, score_kind = float(align_1d(sig_a, sig_b)[1]), "ccf"
         attribution, attribution_b = cmr_regions_1d_pair(
             sig_a, sig_b, corr_thresh=cfg.cmr_1d_corr, lag_tol=cfg.cmr_1d_lag
         )
+        if domain == "toolmark":
+            # The deployed toolmark score IS the CMR-1D consensus count — the very
+            # congruent regions returned as attribution — matching the tmaRks reference.
+            score, score_kind = float(len(attribution)), "cmr-1d"
+        else:
+            score, score_kind = float(align_1d(sig_a, sig_b)[1]), "ccf"
         previews = {"a": _to_preview(band_a, preview_size), "b": _to_preview(band_b, preview_size)}
     else:
         raise ValueError(f"domain must be one of {DOMAINS}, got {domain!r}")

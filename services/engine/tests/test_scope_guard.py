@@ -104,3 +104,17 @@ def test_warn_mode_never_blocks_but_records_failures():
     assert _check(rep, "resolution").severity == "refuse"  # but the failure is recorded
     assert "exceeds" in rep.overall_reason
     json.dumps(rep.to_dict())  # serializable for the API
+
+
+def test_toolmark_domain_expects_striated_physics():
+    """Requesting the toolmark reference on a striated scan passes the modality
+    check (a toolmark IS striated physics); on an isotropic scan it refuses the
+    same way a striated request would."""
+    from verity.decision.scope_guard import check_applicability
+
+    report = check_applicability(_striated_surface(), domain="toolmark")
+    modality = _check(report, "modality")
+    assert modality.passed, modality.reason
+
+    striated_eq = check_applicability(_striated_surface(), domain="striated")
+    assert _check(striated_eq, "modality").passed == modality.passed

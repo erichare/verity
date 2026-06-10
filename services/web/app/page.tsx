@@ -20,7 +20,8 @@ const HeroSurface = dynamic(() => import("@/components/three/HeroSurface"), {
 
 const DOMAIN_LABELS: Record<string, string> = {
   impressed: "Impressed — cartridge breech face",
-  striated: "Striated — bullet land / toolmark",
+  striated: "Striated — bullet land(s)",
+  toolmark: "Toolmark — striated (screwdriver, pry…)",
 };
 
 interface Result {

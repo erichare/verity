@@ -91,3 +91,60 @@ def test_v1_compare_scorer_config_firewall():
 def test_cors_header_present_for_web_origin():
     r = client.get("/health", headers={"Origin": "http://localhost:3000"})
     assert r.headers.get("access-control-allow-origin") == "http://localhost:3000"
+
+
+# --- toolmark domain ---------------------------------------------------------- #
+def _toolmark_x3p(tmp_path: Path, name: str, shift: int = 0) -> Path:
+    """A synthetic striated toolmark scan: anisotropic vertical striae with real
+    (~0.5 µm) amplitude at 1.5 µm pitch — passes the modality + resolution scope."""
+    import numpy as np
+    import verity_x3p
+
+    rng = np.random.default_rng(0)
+    x = np.arange(256)
+    stripes = 0.5e-6 * (
+        np.sin(2 * np.pi * x / 12.0) + 0.4 * np.sin(2 * np.pi * x / 7.0 + 1.3)
+    )
+    z = np.tile(np.roll(stripes, shift), (256, 1)) + rng.normal(scale=0.03e-6, size=(256, 256))
+    path = tmp_path / name
+    verity_x3p.write_x3p(
+        verity_x3p.Surface(data=z, increment_x=1.5e-6, increment_y=1.5e-6), str(path)
+    )
+    return path
+
+
+def test_health_lists_toolmark_domain():
+    r = client.get("/health")
+    assert "toolmark" in r.json()["domains"]
+
+
+def test_toolmark_reference_metadata_served():
+    r = client.get("/v1/references/toolmark")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["name"].startswith("tmaRks")
+    assert body["diagnostics"]["n_km"] > 1000  # the full tmaRks enumeration
+    assert body["scorer_config_hash"]
+
+
+def test_compare_toolmark_same_source(tmp_path):
+    pa = _toolmark_x3p(tmp_path, "tm_a.x3p", shift=0)
+    pb = _toolmark_x3p(tmp_path, "tm_b.x3p", shift=0)  # identical striae -> same source
+    with pa.open("rb") as fa, pb.open("rb") as fb:
+        r = client.post(
+            "/compare",
+            data={"domain": "toolmark"},
+            files={
+                "mark_a": ("tm_a.x3p", fa, "application/octet-stream"),
+                "mark_b": ("tm_b.x3p", fb, "application/octet-stream"),
+            },
+        )
+    assert r.status_code == 200, r.text
+    rep = r.json()
+    assert rep["domain"] == "toolmark"
+    assert rep["score_kind"] == "cmr-1d"
+    assert rep["reference"]["name"].startswith("tmaRks")
+    assert rep["likelihood_ratio"] > 1  # identical marks -> same-source support
+    # the score IS the congruent-striae count returned as attribution
+    assert rep["score"] == float(len(rep["attribution"])) > 0
+    assert "previews" in rep
