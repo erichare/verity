@@ -18,7 +18,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 
 from .. import __version__
 from .envelope import Envelope
-from .routers import bullets, datasets, firearms, meta, scans, studies
+from .routers import benchmark, bullets, datasets, firearms, meta, scans, studies
 
 _DESCRIPTION = """\
 **Verity data catalog** — a faceted, reproducible REST API over a normalized
@@ -47,6 +47,13 @@ _TAGS = [
         "name": "datasets",
         "description": "Named, pinned dataset manifests resolved to content hashes.",
     },
+    {
+        "name": "benchmark",
+        "description": (
+            "The open, frozen, source-disjoint benchmark: splits, replication "
+            "kits, leaderboards, and submissions (ranked by calibration loss)."
+        ),
+    },
     {"name": "meta", "description": "Liveness and version."},
 ]
 
@@ -71,8 +78,9 @@ _cors_origins = [
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_cors_origins,
-    allow_methods=["GET", "OPTIONS"],
-    allow_headers=["*"],
+    # POST is benchmark submissions only; everything else stays read-only.
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["*", "X-Benchmark-Token"],
     expose_headers=["ETag"],
 )
 
@@ -112,6 +120,7 @@ app.include_router(firearms.router)
 app.include_router(bullets.router)
 app.include_router(scans.router)
 app.include_router(datasets.router)
+app.include_router(benchmark.router)
 app.include_router(meta.router)
 
 

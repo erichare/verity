@@ -252,6 +252,94 @@ class PairDiagnostic(SQLModel, table=True):
     created_at: datetime = Field(default_factory=_utcnow)
 
 
+class BenchmarkSplit(SQLModel, table=True):
+    """A frozen open-benchmark split — the public contract.
+
+    Pairs and folds are produced by the engine's ``verity-build-benchmark`` and
+    loaded verbatim; ``split_hash`` commits to the pairs, labels, and fold
+    structure (hash equality ⇒ same benchmark). ``provenance`` is the full
+    builder provenance JSON, served with the replication kit."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    name: str = Field(index=True, unique=True)  # e.g. "bullets-v1"
+    title: str
+    modality: str = Field(index=True)
+    split_hash: str = Field(index=True)
+    protocol_version: int = 1
+    n_pairs: int
+    n_km: int
+    n_sources: int
+    n_folds: int
+    provenance: str  # builder provenance.json, verbatim
+    created_at: datetime = Field(default_factory=_utcnow)
+
+    folds: list["BenchmarkFold"] = Relationship(back_populates="split")
+    pairs: list["BenchmarkPair"] = Relationship(back_populates="split")
+    submissions: list["BenchmarkSubmission"] = Relationship(back_populates="split")
+
+
+class BenchmarkFold(SQLModel, table=True):
+    """One frozen source-disjoint evaluation fold: the held-out source set."""
+
+    __table_args__ = (
+        UniqueConstraint("split_id", "fold_index", name="uq_benchmarkfold_split_index"),
+    )
+
+    id: int | None = Field(default=None, primary_key=True)
+    split_id: int = Field(foreign_key="benchmarksplit.id", index=True)
+    fold_index: int
+    n_test_pairs: int
+    test_sources: str  # JSON array of source ids
+
+    split: BenchmarkSplit | None = Relationship(back_populates="folds")
+
+
+class BenchmarkPair(SQLModel, table=True):
+    """One frozen comparison pair. ``pair_id`` is content-derived (SHA-256 over
+    the two mark hashes), so it is portable across catalogs; ``folds`` is the
+    semicolon-joined list of fold indices in which this pair is a test pair."""
+
+    __table_args__ = (
+        UniqueConstraint("split_id", "pair_id", name="uq_benchmarkpair_split_pair"),
+    )
+
+    id: int | None = Field(default=None, primary_key=True)
+    split_id: int = Field(foreign_key="benchmarksplit.id", index=True)
+    pair_id: str = Field(index=True)
+    hash_a: str
+    hash_b: str
+    label: int  # 1 = same source (KM), 0 = different (KNM)
+    source_a: str
+    source_b: str
+    folds: str = ""  # ";"-joined fold indices ("" = never a test pair)
+
+    split: BenchmarkSplit | None = Relationship(back_populates="pairs")
+
+
+class BenchmarkSubmission(SQLModel, table=True):
+    """A scored leaderboard entry. The headline metrics are flattened into
+    columns (sortable straight from PostgREST); ``metrics`` keeps the full
+    per-fold breakdown. ``is_reference`` marks Verity's own baseline rows."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    split_id: int = Field(foreign_key="benchmarksplit.id", index=True)
+    submitter: str = Field(index=True)
+    method: str
+    url: str | None = None
+    is_reference: bool = Field(default=False, index=True)
+
+    cllr: float = Field(index=True)
+    cllr_std: float
+    cllr_min: float
+    auc: float
+    calibration_loss: float = Field(index=True)  # the headline column
+    metrics: str  # full scoring JSON (per-fold rows, pooled, ece)
+
+    created_at: datetime = Field(default_factory=_utcnow)
+
+    split: BenchmarkSplit | None = Relationship(back_populates="submissions")
+
+
 # Convenience grouping for callers that want to iterate every table.
 ALL_MODELS = (
     Study,
@@ -266,4 +354,8 @@ ALL_MODELS = (
     Scan,
     ScanTrace,
     PairDiagnostic,
+    BenchmarkSplit,
+    BenchmarkFold,
+    BenchmarkPair,
+    BenchmarkSubmission,
 )

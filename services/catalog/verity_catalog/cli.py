@@ -135,6 +135,43 @@ def sync_blobs_cmd(
     typer.echo(f"done: {stats}")
 
 
+@app.command("load-benchmark")
+def load_benchmark_cmd(
+    directory: Path = typer.Argument(
+        ..., help="A verity-build-benchmark output dir (one split, or a parent of several)"
+    ),
+    to: str | None = typer.Option(
+        None, "--to", help="Target DB URL (default: the configured catalog DB)"
+    ),
+) -> None:
+    """Load frozen benchmark split(s) — pairs, folds, provenance, and Verity's
+    reference submission — into the catalog DB. Idempotent by split name."""
+    from sqlmodel import create_engine
+
+    from .benchmark.io import read_split_dir
+    from .benchmark.loader import load_split
+
+    split_dirs = (
+        [directory]
+        if (directory / "provenance.json").exists()
+        else sorted(d for d in directory.iterdir() if (d / "provenance.json").exists())
+    )
+    if not split_dirs:
+        raise typer.BadParameter(f"no provenance.json found under {directory}")
+
+    target = create_engine(to) if to else engine
+    with Session(target) as session:
+        for split_dir in split_dirs:
+            artifacts = read_split_dir(split_dir)
+            typer.echo(
+                f"loading {artifacts.name}: {len(artifacts.pairs)} pairs, "
+                f"{len(artifacts.folds)} folds, split_hash "
+                f"{artifacts.provenance['split_hash'][:16]}…"
+            )
+            split = load_split(session, artifacts)
+            typer.echo(f"  loaded as split id {split.id}")
+
+
 @app.command("crawl-study")
 def crawl_study_cmd(
     study_guid: str = typer.Argument(..., help="NBTRD study GUID"),
