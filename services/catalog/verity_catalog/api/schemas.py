@@ -130,6 +130,59 @@ class DatasetDetail(DatasetSummary):
     files: list[PinnedScan]
 
 
+class BenchmarkSplitSummary(_Read):
+    name: str
+    title: str
+    modality: str
+    split_hash: str
+    protocol_version: int
+    n_pairs: int
+    n_km: int
+    n_sources: int
+    n_folds: int
+    created_at: datetime
+
+
+class BenchmarkSplitDetail(BenchmarkSplitSummary):
+    """Summary plus the builder provenance (protocol, contract, datasets,
+    scorer config hash) and the current submission count."""
+
+    provenance: dict
+    n_submissions: int
+
+
+class LeaderboardEntry(_Read):
+    submitter: str
+    method: str
+    url: str | None = None
+    is_reference: bool
+    cllr: float
+    cllr_std: float
+    cllr_min: float
+    auc: float
+    calibration_loss: float
+    created_at: datetime
+
+
+class BenchmarkSubmissionRequest(BaseModel):
+    """One submission: identity + one LR per frozen pair, as either a
+    ``{pair_id: lr}`` object or a ``pair_id,lr`` CSV string (exactly one)."""
+
+    submitter: str = Field(min_length=1, max_length=80)
+    method: str = Field(min_length=1, max_length=120)
+    url: str | None = Field(default=None, max_length=300)
+    lrs: dict[str, float] | None = None
+    csv: str | None = None
+
+
+class BenchmarkSubmissionResult(BaseModel):
+    split: str
+    split_hash: str
+    submitter: str
+    method: str
+    metrics: dict
+
+
 class HealthStatus(BaseModel):
     status: str
     database: str

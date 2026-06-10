@@ -11,6 +11,9 @@ dependencies = [
     "pydantic-settings>=2.4",
     "alembic>=1.13",
     "typer>=0.12",
+    # Benchmark submission scoring (Cllr / PAV / AUC) — deliberately numpy-only,
+    # no scikit-learn; parity with the engine's metrics is pinned by test.
+    "numpy>=1.26",
 ]
 
 [project.optional-dependencies]
