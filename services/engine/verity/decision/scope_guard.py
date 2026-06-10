@@ -125,7 +125,11 @@ def _resolution_check(surface: Surface, reference_meta: dict | None) -> ScopeChe
 
 def _modality_check(surface: Surface, requested_domain: str | None) -> tuple[ScopeCheck, str]:
     detected, coherence = detect_domain(surface)
-    if requested_domain is None or detected == requested_domain:
+    # detect_domain distinguishes the surface *physics* (striated vs impressed); a
+    # toolmark is physically striated, so requesting the toolmark reference expects a
+    # striated detection.
+    expected = "striated" if requested_domain == "toolmark" else requested_domain
+    if requested_domain is None or detected == expected:
         return (
             ScopeCheck(
                 "modality",

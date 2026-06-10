@@ -155,3 +155,43 @@ def test_config_override_default_invariance_and_effect():
     ia, ib = _areal(0), _areal(1)
     ibase = comparison_score(ia, ib, domain="impressed")[0]
     assert comparison_score(ia, ib, domain="impressed", config=DEFAULT_SCORER_CONFIG)[0] == ibase
+
+
+# --- toolmark domain: CMR-1D consensus count, matched to the tmaRks reference --- #
+def test_compare_toolmark_scores_with_cmr_1d():
+    scores, labels = _ref()
+    rep = compare_surfaces(
+        _striated(0), _striated(3), domain="toolmark",
+        reference_scores=scores, reference_labels=labels, reference_name="synthetic",
+    )
+    assert rep.domain == "toolmark" and rep.score_kind == "cmr-1d"
+    assert np.isfinite(rep.likelihood_ratio)
+    assert rep.provenance["scorer"] == "cmr-1d"
+
+
+def test_toolmark_score_is_the_attribution_count():
+    """The toolmark score IS the number of congruent matching striae returned as
+    attribution — the score and the explanation cannot disagree."""
+    from verity.compare import compare_with_previews
+
+    scores, labels = _ref()
+    report, previews = compare_with_previews(
+        _striated(0), _striated(0), domain="toolmark",  # identical -> congruent
+        reference_scores=scores, reference_labels=labels, reference_name="synthetic",
+    )
+    assert report.score_kind == "cmr-1d"
+    assert report.score == float(len(report.attribution)) > 0
+    assert set(previews) == {"a", "b"} and len(previews["a"]) > 0
+
+
+def test_toolmark_comparison_score_matches_cmr_score_1d():
+    from verity.cmr import cmr_score_1d
+    from verity.decision.scorer_config import DEFAULT_SCORER_CONFIG as cfg
+    from verity.signature import striation_signature
+
+    a, b = _striated(0), _striated(5)
+    score, kind = comparison_score(a, b, domain="toolmark")
+    sig_a = striation_signature(a, lambda_s=cfg.lambda_s, lambda_c=cfg.lambda_c)
+    sig_b = striation_signature(b, lambda_s=cfg.lambda_s, lambda_c=cfg.lambda_c)
+    expected = cmr_score_1d(sig_a, sig_b, corr_thresh=cfg.cmr_1d_corr, lag_tol=cfg.cmr_1d_lag)
+    assert kind == "cmr-1d" and score == float(expected)

@@ -27,6 +27,13 @@ _REFERENCES = {
         "bullet_pooled.npz",
         "pooled bullet-land reference (Hamby-252 & 173, Beretta, Phoenix)",
     ),
+    # Striated toolmarks are calibrated against the tmaRks screwdriver reference,
+    # scored with the deployed CMR-1D consensus count (NOT the bullet-land CCF) —
+    # the score the reference .npz was built with.
+    "toolmark": (
+        "toolmark_tmaRks.npz",
+        "tmaRks screwdriver toolmarks (consecutively manufactured; tool-edge sources)",
+    ),
 }
 
 # A single striated land is a weaker comparison object than a whole bullet, scored on
