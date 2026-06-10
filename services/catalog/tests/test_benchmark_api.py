@@ -334,3 +334,38 @@ def test_submit_token_gate(split_env, monkeypatch):
         client.post(url, json=payload, headers={"X-Benchmark-Token": "sekrit"}).status_code
         == 201
     )
+
+
+def test_kit_and_submit_refuse_partially_published_split(split_env):
+    """A split whose pair rows are incomplete (metadata published before the
+    bulk pair load) must 503, never serve a truncated kit or score against a
+    truncated pair set."""
+    from sqlmodel import select
+
+    from verity_catalog import models
+    from verity_catalog.benchmark.loader import load_split
+
+    client, artifacts, _ = split_env
+    override = app.dependency_overrides[deps.get_session]
+    session = next(override())
+    split = session.exec(
+        select(models.BenchmarkSplit).where(models.BenchmarkSplit.name == "synthetic-v1")
+    ).first()
+    victims = session.exec(
+        select(models.BenchmarkPair).where(models.BenchmarkPair.split_id == split.id).limit(5)
+    ).all()
+    for v in victims:
+        session.delete(v)
+    session.commit()
+
+    r = client.get("/benchmark/splits/synthetic-v1/kit")
+    assert r.status_code == 503 and "not fully published" in r.json()["error"]
+    r = client.post(
+        "/benchmark/splits/synthetic-v1/submissions",
+        json={"submitter": "x", "method": "m", "lrs": artifacts.verity_lrs},
+    )
+    assert r.status_code == 503
+
+    # Restore for any later test: reload the split from the artifacts.
+    load_split(session, artifacts)
+    assert client.get("/benchmark/splits/synthetic-v1/kit").status_code == 200
