@@ -61,6 +61,10 @@ jobs:
       - name: ruff
         run: uv run ${{ matrix.extras }} ruff check .
       - name: pytest
+        # CI runners are slower than dev machines; give CPU-bound comparisons
+        # more wall-clock than the 60s production default.
+        env:
+          VERITY_COMPARE_TIMEOUT_S: "300"
         run: uv run ${{ matrix.extras }} pytest
 
   bindings-python:
