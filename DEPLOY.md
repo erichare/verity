@@ -61,6 +61,19 @@ railway variables --set "PORT=8000"   # triggers a redeploy
 it down, set a Railway service variable, e.g.
 `VERITY_CORS_ORIGINS=https://verity.codes`.
 
+**Bootstrap-ensemble cost (optional):** every fresh process rebuilds each
+reference's 1000-replicate bootstrap calibration ensemble (the toolmark reference
+is 167k clustered pairs — minutes on small machines). Two knobs:
+
+- `VERITY_LR_BOOTSTRAP_N` — replicate count (default 1000). Lower it on CI or
+  constrained hosts. It is recorded in each comparison's content-addressed
+  recipe, so a deployment running fewer replicates (correctly) reports different
+  recipe handles.
+- `VERITY_ENSEMBLE_CACHE_DIR` — when set (e.g. to a mounted volume), fitted
+  ensembles persist to a content-keyed disk cache (~3 KB per reference), so a
+  warm restart restores them in milliseconds instead of refitting. A cache hit
+  is bit-identical to a cold fit — same seed, method, and bound per replicate.
+
 Any other container host works the same way — point it at `services/api/Dockerfile`
 with the repo root as build context (`fly launch --dockerfile services/api/Dockerfile`,
 Render, Cloud Run, …).

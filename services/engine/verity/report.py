@@ -90,7 +90,7 @@ def build_comparison_report(
     provenance: dict | None = None,
     lr_bound: str | float | None = "auto",
     ci: bool = True,
-    ci_n_boot: int = 1000,
+    ci_n_boot: int | None = None,
     ci_seed: int = 0,
     ci_clusters: np.ndarray | None = None,
 ) -> ComparisonReport:
@@ -101,8 +101,10 @@ def build_comparison_report(
     When ``ci`` is set, a percentile **credible interval** on ``log10 LR`` is added
     by bootstrapping the reference (see :mod:`verity.decision.uncertainty`); the
     ensemble is memoized per reference, so repeated calls against a bundled
-    reference pay the bootstrap cost only once. ``ci_clusters`` (the source/barrel
-    of each reference comparison) switches it to the honest clustered bootstrap."""
+    reference pay the bootstrap cost only once. ``ci_n_boot=None`` resolves
+    :func:`verity.decision.uncertainty.default_n_boot` (``VERITY_LR_BOOTSTRAP_N``,
+    default 1000). ``ci_clusters`` (the source/barrel of each reference comparison)
+    switches it to the honest clustered bootstrap."""
     reference_scores = np.asarray(reference_scores, dtype=np.float64)
     reference_labels = np.asarray(reference_labels, dtype=np.float64)
 

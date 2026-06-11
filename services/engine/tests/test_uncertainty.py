@@ -3,11 +3,16 @@
 from __future__ import annotations
 
 import json
+import logging
 
 import numpy as np
+import pytest
 
+from verity.decision import uncertainty
 from verity.decision.uncertainty import (
     BootstrapCalibration,
+    cached_bootstrap_calibration,
+    default_n_boot,
     lr_credible_interval,
 )
 from verity.report import build_comparison_report
@@ -132,3 +137,94 @@ def test_report_ci_can_be_disabled():
     assert rep.log10_lr_ci_lo is None
     assert rep.log10_lr_ci_hi is None
     assert rep.lr_ci_method is None
+
+
+# --- the VERITY_LR_BOOTSTRAP_N knob ------------------------------------------
+
+
+def test_default_n_boot_env_knob(monkeypatch):
+    monkeypatch.delenv("VERITY_LR_BOOTSTRAP_N", raising=False)
+    monkeypatch.delenv("VERITY_ENSEMBLE_CACHE_DIR", raising=False)
+    assert default_n_boot() == 1000
+    monkeypatch.setenv("VERITY_LR_BOOTSTRAP_N", "25")
+    assert default_n_boot() == 25
+    # threads through everywhere n_boot is left unspecified
+    scores, labels = _reference()
+    cal = cached_bootstrap_calibration(scores, labels, seed=11)
+    assert cal.n_boot == 25
+
+
+def test_default_n_boot_rejects_malformed_values(monkeypatch):
+    for bad in ("abc", "0", "-5"):
+        monkeypatch.setenv("VERITY_LR_BOOTSTRAP_N", bad)
+        with pytest.raises(ValueError, match="VERITY_LR_BOOTSTRAP_N"):
+            default_n_boot()
+
+
+# --- the VERITY_ENSEMBLE_CACHE_DIR disk cache ---------------------------------
+
+
+def _forbid_refit(monkeypatch):
+    def boom(*args, **kwargs):
+        raise AssertionError("expected a disk-cache hit, but a refit happened")
+
+    monkeypatch.setattr(BootstrapCalibration, "fit", boom)
+
+
+def test_disk_cache_restores_identical_ensemble(monkeypatch, tmp_path):
+    monkeypatch.setenv("VERITY_ENSEMBLE_CACHE_DIR", str(tmp_path))
+    scores, labels = _reference()
+    uncertainty._ENSEMBLE_CACHE.clear()
+    fresh = lr_credible_interval(scores, labels, 1.0, n_boot=60, seed=9)
+    assert len(list(tmp_path.glob("*.npz"))) == 1
+    # a "fresh process": empty in-memory cache, and refitting forbidden
+    uncertainty._ENSEMBLE_CACHE.clear()
+    _forbid_refit(monkeypatch)
+    warm = lr_credible_interval(scores, labels, 1.0, n_boot=60, seed=9)
+    # LRInterval is a frozen dataclass: == compares every field, so the restored
+    # ensemble reproduces the cold fit exactly — the audit property of the cache.
+    assert warm == fresh
+
+
+def test_disk_cache_roundtrip_clustered(monkeypatch, tmp_path):
+    # clustered + "auto" bound → the resolved bound varies per replicate; the
+    # cache must restore each replicate's own bound, not one shared value
+    monkeypatch.setenv("VERITY_ENSEMBLE_CACHE_DIR", str(tmp_path))
+    scores, labels, clusters = _clustered_reference()
+    uncertainty._ENSEMBLE_CACHE.clear()
+    fresh = lr_credible_interval(scores, labels, 0.0, n_boot=80, seed=13, cluster_ids=clusters)
+    uncertainty._ENSEMBLE_CACHE.clear()
+    _forbid_refit(monkeypatch)
+    warm = lr_credible_interval(scores, labels, 0.0, n_boot=80, seed=13, cluster_ids=clusters)
+    assert warm == fresh
+    assert warm.resample == "clustered"
+    assert warm.n_sources == 16
+
+
+def test_disk_cache_corrupt_entry_falls_back_to_refit(monkeypatch, tmp_path, caplog):
+    monkeypatch.setenv("VERITY_ENSEMBLE_CACHE_DIR", str(tmp_path))
+    scores, labels = _reference()
+    uncertainty._ENSEMBLE_CACHE.clear()
+    fresh = lr_credible_interval(scores, labels, 1.0, n_boot=40, seed=17)
+    (entry,) = tmp_path.glob("*.npz")
+    entry.write_bytes(b"not an npz")
+    uncertainty._ENSEMBLE_CACHE.clear()
+    with caplog.at_level(logging.WARNING, logger="verity.decision.uncertainty"):
+        refit = lr_credible_interval(scores, labels, 1.0, n_boot=40, seed=17)
+    assert refit == fresh  # fixed seed → the refit reproduces the same ensemble
+    assert "ignoring unreadable" in caplog.text
+    # the refit overwrote the corrupt entry, so the next process loads cleanly
+    uncertainty._ENSEMBLE_CACHE.clear()
+    _forbid_refit(monkeypatch)
+    assert lr_credible_interval(scores, labels, 1.0, n_boot=40, seed=17) == fresh
+
+
+def test_disk_cache_skips_isotonic(monkeypatch, tmp_path):
+    # isotonic state is variable-length and only used diagnostically — it stays
+    # in-memory only, and nothing lands on disk
+    monkeypatch.setenv("VERITY_ENSEMBLE_CACHE_DIR", str(tmp_path))
+    scores, labels = _reference()
+    uncertainty._ENSEMBLE_CACHE.clear()
+    cal = cached_bootstrap_calibration(scores, labels, method="isotonic", n_boot=20, seed=19)
+    assert cal.n_boot == 20
+    assert list(tmp_path.glob("*.npz")) == []

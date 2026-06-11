@@ -150,6 +150,21 @@ def test_build_recipe_structure_and_deterministic_handle():
     )
 
 
+def test_recipe_n_boot_follows_env_knob_and_changes_handle(monkeypatch):
+    rp = {"scorer_config_hash": "refhash"}
+    monkeypatch.delenv("VERITY_LR_BOOTSTRAP_N", raising=False)
+    base = build_recipe(_recipe_resp(), domain="impressed", reference_provenance=rp)
+    unc = next(s for s in base["steps"] if s["step"] == "uncertainty")
+    assert unc["params"]["n_boot"] == 1000
+    monkeypatch.setenv("VERITY_LR_BOOTSTRAP_N", "50")
+    tuned = build_recipe(_recipe_resp(), domain="impressed", reference_provenance=rp)
+    unc_tuned = next(s for s in tuned["steps"] if s["step"] == "uncertainty")
+    assert unc_tuned["params"]["n_boot"] == 50
+    # n_boot is part of the content-addressed recipe: fewer replicates is a
+    # different computation, so the handle (correctly) changes with the knob.
+    assert tuned["handle"] != base["handle"]
+
+
 def test_v1_scorer_config_endpoint():
     r = client.get("/v1/scorer-config")
     assert r.status_code == 200

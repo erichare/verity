@@ -15,6 +15,7 @@ from .uncertainty import (
     BootstrapCalibration,
     LRInterval,
     cached_bootstrap_calibration,
+    default_n_boot,
     lr_credible_interval,
 )
 
@@ -35,6 +36,7 @@ __all__ = [
     "check_scorer_drift",
     "cllr",
     "cllr_min",
+    "default_n_boot",
     "ece",
     "eer",
     "lr_credible_interval",

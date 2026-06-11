@@ -44,6 +44,7 @@ from verity.decision import (
     ScorerConfig,
     cached_bootstrap_calibration,
     check_applicability,
+    default_n_boot,
 )
 from verity.detect import detect_domain
 from verity.surface import Surface
@@ -117,13 +118,17 @@ _TAGS = [
 
 def _warm_caches() -> None:
     """Pre-build each bundled reference's bootstrap calibration ensemble so the
-    first comparison doesn't pay the credible-interval cost on the request path."""
+    first comparison doesn't pay the credible-interval cost on the request path.
+    ``n_boot`` resolves ``VERITY_LR_BOOTSTRAP_N`` — the same knob the request path
+    uses, so the warmed key is the key requests hit. With ``VERITY_ENSEMBLE_CACHE_DIR``
+    set, the warmed ensembles also persist, so the *next* process restores instead
+    of refitting."""
     try:
         bundles = [load_reference_bundle(d) for d in available_domains()]
         bundles.append(load_striated_single_bundle())
         for b in bundles:
             cached_bootstrap_calibration(
-                b.scores, b.labels, n_boot=1000, seed=0, cluster_ids=b.cluster_ids
+                b.scores, b.labels, n_boot=default_n_boot(), seed=0, cluster_ids=b.cluster_ids
             )
     except Exception:  # noqa: BLE001 - warmup is best-effort; never block startup
         pass
