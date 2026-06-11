@@ -11,6 +11,16 @@ serves the calibrated, bounded **`ComparisonReport`** that the Next.js UI render
   1-D striation CCF; impressed: areal CCF over rotation), calibrates against the
   bundled reference, and returns the report JSON (likelihood ratio + verbal weight
   of evidence + reference diagnostics + provenance + scope statement).
+- `POST /mcp` — the **remote MCP endpoint** (streamable HTTP, stateless). Exposes the
+  same calibrated tools as the stdio server in `services/mcp` —
+  `compare_marks`, `detect_mark_type`, `calibrate_score`, `list_references`,
+  `scorer_config`, `service_health` — backed by this engine in-process, so the
+  calibration firewall, scope guard, and recipe handles carry over. Because it is
+  hosted (not on the agent's machine), scans are passed **inline as base64** rather
+  than as local file paths. Point an MCP client at `https://api.verity.codes/mcp`.
+  DNS-rebinding host validation is off by default; set `VERITY_MCP_ALLOWED_HOSTS`
+  (and optionally `VERITY_MCP_ALLOWED_ORIGINS`) to lock it down. See
+  [`services/mcp/README.md`](../mcp/README.md#remote-hosted-endpoint).
 
 ## Run
 
