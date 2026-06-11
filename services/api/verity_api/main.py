@@ -56,6 +56,7 @@ from .intermediates import (
     striated_bullet_intermediates,
     trace_dict,
 )
+from .mcp_server import mcp as mcp_server
 from .recipe import build_recipe
 from .references import (
     all_reference_metadata,
@@ -106,6 +107,11 @@ intermediate fetchable at `/v1/artifacts/{handle}` — and `/v1/steps/calibrate`
 score to a bounded LR behind the calibration firewall (it refuses to calibrate a score
 whose scorer-config hash doesn't match the reference's).
 
+For AI agents, the same calibrated tools are served over **MCP** (Model Context Protocol)
+at **`/mcp`** — streamable HTTP, stateless — exposing `compare_marks`, `detect_mark_type`,
+`calibrate_score`, `list_references`, `scorer_config`, and `service_health`. Scans are
+passed inline as base64-encoded X3P (a hosted server can't read the agent's local files).
+
 Web app: <https://verity.codes> · Method & references: <https://verity.codes/#science>
 """
 
@@ -142,7 +148,10 @@ async def _lifespan(_app: FastAPI):
     import threading
 
     threading.Thread(target=_warm_caches, daemon=True).start()
-    yield
+    # The mounted /mcp app does not get its lifespan run by Starlette, so drive the
+    # MCP session manager from here — required even when stateless.
+    async with mcp_server.session_manager.run():
+        yield
 
 
 app = FastAPI(
@@ -403,6 +412,28 @@ def _refusal_envelope(
 _SCORER_CONFIG_KEYS = frozenset(DEFAULT_SCORER_CONFIG.to_dict())
 
 
+def _coerce_scorer_config(overrides: dict | None) -> ScorerConfig | None:
+    """Validate a ``scorer_config`` override dict into a frozen :class:`ScorerConfig` (None
+    when absent). Unknown keys and an inverted band raise :class:`ValueError`, so both the
+    HTTP path (wrapped to a 400 below) and the in-process MCP tool share one validator."""
+    if not overrides:
+        return None
+    if not isinstance(overrides, dict):
+        raise ValueError("scorer_config must be a JSON object")
+    unknown = set(overrides) - _SCORER_CONFIG_KEYS
+    if unknown:
+        raise ValueError(f"unknown scorer_config keys: {sorted(unknown)}")
+    merged = {**DEFAULT_SCORER_CONFIG.to_dict(), **overrides}
+    merged["cmr_tol"] = tuple(merged["cmr_tol"])
+    try:
+        cfg = ScorerConfig(**merged)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"invalid scorer_config: {exc}") from exc
+    if not cfg.lambda_s < cfg.lambda_c:
+        raise ValueError("scorer_config requires lambda_s < lambda_c")
+    return cfg
+
+
 def _parse_scorer_config(raw: str | None) -> ScorerConfig | None:
     """Parse a JSON ``scorer_config`` override into a frozen :class:`ScorerConfig` (None
     when absent). Unknown keys and an inverted band fail fast as 400s, never silently."""
@@ -412,22 +443,10 @@ def _parse_scorer_config(raw: str | None) -> ScorerConfig | None:
         overrides = json.loads(raw)
     except json.JSONDecodeError as exc:
         raise HTTPException(status_code=400, detail=f"scorer_config must be JSON: {exc}") from exc
-    if not isinstance(overrides, dict):
-        raise HTTPException(status_code=400, detail="scorer_config must be a JSON object")
-    unknown = set(overrides) - _SCORER_CONFIG_KEYS
-    if unknown:
-        raise HTTPException(
-            status_code=400, detail=f"unknown scorer_config keys: {sorted(unknown)}"
-        )
-    merged = {**DEFAULT_SCORER_CONFIG.to_dict(), **overrides}
-    merged["cmr_tol"] = tuple(merged["cmr_tol"])
     try:
-        cfg = ScorerConfig(**merged)
-    except (TypeError, ValueError) as exc:
-        raise HTTPException(status_code=400, detail=f"invalid scorer_config: {exc}") from exc
-    if not cfg.lambda_s < cfg.lambda_c:
-        raise HTTPException(status_code=400, detail="scorer_config requires lambda_s < lambda_c")
-    return cfg
+        return _coerce_scorer_config(overrides)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 _UNCALIBRATED_NOTE = (
@@ -821,6 +840,13 @@ def reference_v1(reference_id: str) -> dict:
 
 app.include_router(v1)
 app.include_router(steps_router)
+
+# Remote MCP endpoint: the same calibrated tools as the stdio server, hosted. The
+# FastMCP sub-app serves at its root, so mounting it at /mcp puts the JSON-RPC
+# endpoint at exactly https://<host>/mcp. Its session manager is driven by the app
+# lifespan above (a mounted ASGI app doesn't get its own lifespan run).
+mcp_server.settings.streamable_http_path = "/"
+app.mount("/mcp", mcp_server.streamable_http_app())
 
 
 _SCALAR_HTML = """<!doctype html>

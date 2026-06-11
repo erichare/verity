@@ -61,6 +61,20 @@ railway variables --set "PORT=8000"   # triggers a redeploy
 it down, set a Railway service variable, e.g.
 `VERITY_CORS_ORIGINS=https://verity.codes`.
 
+**Remote MCP endpoint:** the API also serves a hosted MCP server (streamable HTTP) at
+`https://api.verity.codes/mcp` — the same calibrated tools as the stdio server in
+`services/mcp`, for AI agents, with no local install. It needs no extra deploy step (it's
+mounted in the same app). DNS-rebinding host validation is **off by default** (the endpoint
+is reached over the custom domain, the `*.up.railway.app` domain, and health checks); to
+lock it down, set `VERITY_MCP_ALLOWED_HOSTS=api.verity.codes` (comma-separated, plus
+`VERITY_MCP_ALLOWED_ORIGINS` for browser clients). Verify:
+```bash
+curl -sS -X POST https://api.verity.codes/mcp \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: application/json, text/event-stream' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"curl","version":"0"}}}'
+```
+
 **Bootstrap-ensemble cost (optional):** every fresh process rebuilds each
 reference's 1000-replicate bootstrap calibration ensemble (the toolmark reference
 is 167k clustered pairs — minutes on small machines). Two knobs:

@@ -63,6 +63,32 @@ Build the `.mcpb` bundle and double-click it (Claude Desktop prompts for the API
 bash services/mcp/build_mcpb.sh   # → verity-forensics.mcpb
 ```
 
+## Remote (hosted) endpoint
+
+The same tools are also served **directly by the API** at
+**`https://api.verity.codes/mcp`** (streamable HTTP, stateless) — no local install, nothing
+to run. Add it as a remote MCP server:
+
+```json
+{
+  "mcpServers": {
+    "verity": { "type": "http", "url": "https://api.verity.codes/mcp" }
+  }
+}
+```
+
+The one difference from the stdio server above: a hosted server **cannot read your local
+files**, so the scan-taking tools accept the `.x3p` bytes **inline, base64-encoded**
+(`detect_mark_type(scan_base64)`, `compare_marks(domain, mark_a_base64, mark_b_base64)`)
+rather than file paths. Everything else — the calibration firewall, the scope guard, the
+reproducible recipe handles — is identical, because the endpoint runs the same engine as
+the REST API. Use the **stdio** server when the agent already has the scans on disk (no
+base64, no upload size to worry about); use the **remote** endpoint for zero-install access.
+
+> Implementation note: the remote endpoint lives in the API service
+> (`services/api/verity_api/mcp_server.py`, mounted at `/mcp`), not in this package — it
+> shares the engine in-process. This package remains the stdio server for local file paths.
+
 ## Example
 
 > **You:** Are these two cartridge cases from the same firearm? `case_A.x3p`, `case_B.x3p`

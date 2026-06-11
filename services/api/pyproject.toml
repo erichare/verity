@@ -9,6 +9,7 @@ dependencies = [
     "python-multipart>=0.0.9",
     "numpy>=1.26",
     "matplotlib>=3.7",
+    "mcp>=1.8",
     "verity",
     "verity-x3p",
 ]
