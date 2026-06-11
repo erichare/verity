@@ -224,9 +224,11 @@ export default function CatalogPage() {
         </div>
 
         <p className="mt-10 max-w-3xl text-xs leading-relaxed text-muted">
-          Public-domain NIST NBTRD scans, mirrored read-only. Content hashes pin each scan
-          byte-for-byte; the same catalog powers Verity&rsquo;s reproducible validation. X3P blob
-          downloads are served separately and are not enabled on this public view.
+          Mirrored read-only from three open sources: NIST NBTRD scans (U.S. public domain),
+          CSAFE-ISU cartridge-case scans (CC BY 4.0), and tmaRks screwdriver toolmarks (MIT).
+          Content hashes pin each scan byte-for-byte; the same catalog powers Verity&rsquo;s
+          reproducible validation. X3P blob downloads are served separately and are not enabled
+          on this public view.
         </p>
       </main>
     </>

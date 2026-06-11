@@ -126,7 +126,7 @@ const COMPARE_RESPONSE = `{
   "score_kind": "bullet-contrast",
   "reference": {
     "name": "pooled bullet-land reference (Hamby-252 & 173, …)",
-    "n_km": 146, "n_knm": 1755, "auc": 0.984, "cllr": 0.09, "cllr_min": 0.06
+    "n_km": 146, "n_knm": 1755, "auc": 0.984, "cllr": 0.193, "cllr_min": 0.168
   },
   "attribution":   [{ "x_frac": 0.0,  "w_frac": 0.167, "corr": 0.91, "…": "…" }],
   "attribution_b": [{ "x_frac": 0.008,"w_frac": 0.167, "corr": 0.91, "…": "…" }],
@@ -361,7 +361,7 @@ export default function DocsPage() {
                 </Endpoint>
                 <CodeBlock
                   label="200 OK"
-                  code={`{ "status": "ok", "engine_version": "0.1.0", "domains": ["impressed", "striated"] }`}
+                  code={`{ "status": "ok", "engine_version": "0.1.0", "domains": ["impressed", "striated", "toolmark"] }`}
                 />
 
                 <Endpoint method="POST" path="/detect">
@@ -376,11 +376,13 @@ export default function DocsPage() {
 
                 <Endpoint method="POST" path="/compare">
                   The core call. Multipart form: <code className="font-mono text-xs">domain</code>{" "}
-                  (<code className="font-mono text-xs">striated</code> or{" "}
-                  <code className="font-mono text-xs">impressed</code>), plus repeated{" "}
+                  (<code className="font-mono text-xs">striated</code>,{" "}
+                  <code className="font-mono text-xs">impressed</code>, or{" "}
+                  <code className="font-mono text-xs">toolmark</code>), plus repeated{" "}
                   <code className="font-mono text-xs">mark_a</code> /{" "}
                   <code className="font-mono text-xs">mark_b</code> file fields. For striated bullets,
-                  send every land scan of each bullet; for impressed, one breech-face scan per mark.
+                  send every land scan of each bullet; for impressed, one breech-face scan per mark;
+                  for toolmark, one striated profile scan per mark.
                 </Endpoint>
               </div>
 
@@ -519,7 +521,8 @@ export default function DocsPage() {
               <p>
                 <code className="font-mono text-xs">verity-catalog</code> is a normalized catalog +
                 content-addressed (SHA-256) store + manifest-driven ingestion for forensic X3P scans
-                harvested from NBTRD and Figshare. It is{" "}
+                harvested from NIST NBTRD (U.S. public domain), CSAFE-ISU&rsquo;s cartridge-case
+                scans on Figshare (CC BY 4.0), and the tmaRks toolmark set (MIT). It is{" "}
                 <strong className="text-foreground">local-first</strong> (SQLite + a blob directory, no
                 external services) and scales to Postgres + object storage by setting{" "}
                 <code className="font-mono text-xs">VERITY_CATALOG_*</code> env vars — no code change.
