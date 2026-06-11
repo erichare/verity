@@ -842,11 +842,11 @@ app.include_router(v1)
 app.include_router(steps_router)
 
 # Remote MCP endpoint: the same calibrated tools as the stdio server, hosted. The
-# FastMCP sub-app serves at its root, so mounting it at /mcp puts the JSON-RPC
-# endpoint at exactly https://<host>/mcp. Its session manager is driven by the app
-# lifespan above (a mounted ASGI app doesn't get its own lifespan run).
-mcp_server.settings.streamable_http_path = "/"
-app.mount("/mcp", mcp_server.streamable_http_app())
+# FastMCP app exposes a single route at /mcp; add it to the API router directly (rather
+# than mounting under a prefix) so the JSON-RPC endpoint answers at exactly
+# https://<host>/mcp with no trailing-slash redirect for clients to follow. Its session
+# manager is driven by the app lifespan above (the route's handler closes over it).
+app.router.routes.extend(mcp_server.streamable_http_app().routes)
 
 
 _SCALAR_HTML = """<!doctype html>
