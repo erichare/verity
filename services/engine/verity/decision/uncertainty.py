@@ -27,12 +27,31 @@ Building the bootstrap ensemble is the expensive step; :class:`BootstrapCalibrat
 holds the refit models so one ensemble answers intervals for any query score, and
 :func:`cached_bootstrap_calibration` memoizes the ensemble per reference + params
 so a server pays the cost once.
+
+Two environment knobs tune that cost without touching the audit properties:
+
+* ``VERITY_LR_BOOTSTRAP_N`` — the replicate count used wherever ``n_boot`` is not
+  passed explicitly (default 1000; see :func:`default_n_boot`). CI and small
+  machines can lower it. ``n_boot`` is recorded in the comparison recipe's
+  content-addressed params, so a changed count (correctly) yields different
+  recipe handles.
+* ``VERITY_ENSEMBLE_CACHE_DIR`` — when set, fitted *logistic* ensembles persist to
+  a content-keyed ``.npz`` under that directory, so a fresh process (deploy, CI
+  run, local pytest) skips the rebuild. The key covers the reference contents and
+  every fit parameter (method, bound, n_boot, seed, clusters), and an entry stores
+  each replicate's exact fitted parameters — a cache hit reproduces the same
+  intervals as a cold fit, replicate for replicate.
 """
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
+import logging
+import os
+import tempfile
 from dataclasses import dataclass
+from pathlib import Path
 
 import numpy as np
 
@@ -42,8 +61,30 @@ __all__ = [
     "LRInterval",
     "BootstrapCalibration",
     "cached_bootstrap_calibration",
+    "default_n_boot",
     "lr_credible_interval",
 ]
+
+logger = logging.getLogger(__name__)
+
+_DEFAULT_N_BOOT = 1000
+
+
+def default_n_boot() -> int:
+    """The bootstrap replicate count used when ``n_boot`` is not given explicitly:
+    ``VERITY_LR_BOOTSTRAP_N`` when set, else 1000. Read at call time so a process
+    honours the environment it actually runs under (and tests can monkeypatch it).
+    A malformed value raises rather than silently changing the statistics."""
+    raw = os.environ.get("VERITY_LR_BOOTSTRAP_N")
+    if raw is None or not raw.strip():
+        return _DEFAULT_N_BOOT
+    try:
+        value = int(raw)
+    except ValueError as exc:
+        raise ValueError(f"VERITY_LR_BOOTSTRAP_N must be an integer, got {raw!r}") from exc
+    if value <= 0:
+        raise ValueError(f"VERITY_LR_BOOTSTRAP_N must be positive, got {value}")
+    return value
 
 
 @dataclass(frozen=True)
@@ -113,10 +154,11 @@ class BootstrapCalibration:
         *,
         method: str = "logistic",
         lr_bound: str | float | None = "auto",
-        n_boot: int = 1000,
+        n_boot: int | None = None,
         seed: int = 0,
         cluster_ids: np.ndarray | None = None,
     ) -> BootstrapCalibration:
+        n_boot = default_n_boot() if n_boot is None else int(n_boot)
         scores = np.asarray(reference_scores, dtype=np.float64)
         labels = np.asarray(reference_labels, dtype=np.float64)
         if scores.shape != labels.shape:
@@ -188,6 +230,104 @@ class BootstrapCalibration:
 
 _ENSEMBLE_CACHE: dict[str, BootstrapCalibration] = {}
 
+# Bump when the on-disk ensemble layout changes; mismatched entries are refit.
+_CACHE_FORMAT_VERSION = 1
+
+
+class _FrozenLogistic:
+    """A rehydrated 1-D Platt fit — a ``predict_proba``-compatible stand-in for the
+    fitted sklearn ``LogisticRegression``. Computes ``expit(coef·s + intercept)``
+    with the same elementary float ops as sklearn's binary ``predict_proba``, so a
+    reloaded replicate reproduces the original's LRs bit for bit."""
+
+    def __init__(self, coef: float, intercept: float) -> None:
+        self.coef_ = np.array([[float(coef)]])
+        self.intercept_ = np.array([float(intercept)])
+
+    def predict_proba(self, scores: np.ndarray) -> np.ndarray:
+        from scipy.special import expit  # sklearn's own sigmoid — identical rounding
+
+        z = np.asarray(scores, dtype=np.float64).ravel() * self.coef_[0, 0] + self.intercept_[0]
+        p_same = expit(z)
+        return np.column_stack([1.0 - p_same, p_same])
+
+
+def _disk_cache_path(key: str) -> Path | None:
+    """Where the ensemble for ``key`` persists, or None when the disk cache is off
+    (``VERITY_ENSEMBLE_CACHE_DIR`` unset) or unusable. The cache is an optional
+    optimization, so an unusable directory degrades to refitting, loudly."""
+    raw = os.environ.get("VERITY_ENSEMBLE_CACHE_DIR")
+    if raw is None or not raw.strip():
+        return None
+    root = Path(raw)
+    try:
+        root.mkdir(parents=True, exist_ok=True)
+    except OSError as exc:
+        logger.warning("VERITY_ENSEMBLE_CACHE_DIR %r is unusable (%s); refitting", raw, exc)
+        return None
+    return root / f"{key}.npz"  # key is a hex digest — no path traversal possible
+
+
+def _save_ensemble(path: Path, cal: BootstrapCalibration) -> None:
+    """Persist a fitted logistic ensemble: each replicate's exact fitted parameters
+    (slope, intercept, resolved LR bound). Written atomically (temp file + rename)
+    so concurrent workers and killed processes never leave a torn entry."""
+    coef = np.array([float(m._model.coef_[0, 0]) for m in cal._models])
+    intercept = np.array([float(m._model.intercept_[0]) for m in cal._models])
+    log_bound = np.array(
+        [np.nan if m._log_bound is None else float(m._log_bound) for m in cal._models]
+    )
+    fd, tmp = tempfile.mkstemp(dir=str(path.parent), suffix=".npz.tmp")
+    try:
+        with os.fdopen(fd, "wb") as fh:
+            np.savez(
+                fh,
+                format_version=np.array(_CACHE_FORMAT_VERSION),
+                resample=np.array(cal.resample),
+                n_sources=np.array(-1 if cal.n_sources is None else int(cal.n_sources)),
+                coef=coef,
+                intercept=intercept,
+                log_bound=log_bound,
+            )
+        os.replace(tmp, path)
+    except OSError as exc:
+        logger.warning("could not persist bootstrap ensemble to %s: %s", path, exc)
+        with contextlib.suppress(OSError):
+            os.unlink(tmp)
+
+
+def _load_ensemble(
+    path: Path, *, method: str, lr_bound: str | float | None
+) -> BootstrapCalibration | None:
+    """Rehydrate a persisted ensemble, or None when the entry is missing, malformed,
+    or from another format version — the caller then refits (and overwrites it)."""
+    try:
+        with np.load(path) as data:  # allow_pickle stays False: parameters only
+            if int(data["format_version"]) != _CACHE_FORMAT_VERSION:
+                return None
+            coef = np.asarray(data["coef"], dtype=np.float64)
+            intercept = np.asarray(data["intercept"], dtype=np.float64)
+            log_bound = np.asarray(data["log_bound"], dtype=np.float64)
+            resample = str(data["resample"].item())
+            n_sources = int(data["n_sources"])
+        if not (coef.shape == intercept.shape == log_bound.shape) or coef.ndim != 1:
+            raise ValueError("replicate arrays disagree in shape")
+        if coef.size == 0:
+            raise ValueError("entry holds no replicates")
+    except Exception as exc:  # noqa: BLE001 — a bad cache entry must never break compare
+        logger.warning("ignoring unreadable bootstrap-ensemble cache %s: %s", path, exc)
+        return None
+    models: list[ScoreLRModel] = []
+    for c, b, lb in zip(coef, intercept, log_bound, strict=True):
+        m = ScoreLRModel(method=method, lr_bound=lr_bound)
+        m._model = _FrozenLogistic(c, b)
+        m._prior_odds = 1.0  # the logistic fit is balanced; see ScoreLRModel.fit
+        m._log_bound = None if np.isnan(lb) else float(lb)
+        models.append(m)
+    return BootstrapCalibration(
+        models, method=method, resample=resample, n_sources=None if n_sources < 0 else n_sources
+    )
+
 
 def _ensemble_key(
     scores: np.ndarray,
@@ -214,16 +354,30 @@ def cached_bootstrap_calibration(
     *,
     method: str = "logistic",
     lr_bound: str | float | None = "auto",
-    n_boot: int = 1000,
+    n_boot: int | None = None,
     seed: int = 0,
     cluster_ids: np.ndarray | None = None,
 ) -> BootstrapCalibration:
     """A :class:`BootstrapCalibration` for this reference + params, memoized by the
-    reference's contents so a server fits each bundled reference's ensemble once."""
+    reference's contents so a server fits each bundled reference's ensemble once.
+    ``n_boot=None`` resolves :func:`default_n_boot` (``VERITY_LR_BOOTSTRAP_N``).
+
+    When ``VERITY_ENSEMBLE_CACHE_DIR`` is set, logistic ensembles also persist to a
+    content-keyed file there, so a *fresh process* (deploy, CI run) skips the
+    rebuild. The key covers the reference arrays and every fit parameter, and a hit
+    rehydrates the exact fitted replicates — same seed, method, and per-replicate
+    bound as a cold fit. Isotonic ensembles stay in-memory only (their fitted state
+    is variable-length; the deployed path is logistic)."""
     scores = np.asarray(reference_scores, dtype=np.float64)
     labels = np.asarray(reference_labels, dtype=np.float64)
+    n_boot = default_n_boot() if n_boot is None else int(n_boot)
     key = _ensemble_key(scores, labels, method, lr_bound, n_boot, seed, cluster_ids)
     cal = _ENSEMBLE_CACHE.get(key)
+    if cal is not None:
+        return cal
+    disk = _disk_cache_path(key) if method == "logistic" else None
+    if disk is not None and disk.exists():
+        cal = _load_ensemble(disk, method=method, lr_bound=lr_bound)
     if cal is None:
         cal = BootstrapCalibration.fit(
             scores,
@@ -234,7 +388,9 @@ def cached_bootstrap_calibration(
             seed=seed,
             cluster_ids=cluster_ids,
         )
-        _ENSEMBLE_CACHE[key] = cal
+        if disk is not None:
+            _save_ensemble(disk, cal)
+    _ENSEMBLE_CACHE[key] = cal
     return cal
 
 
@@ -245,7 +401,7 @@ def lr_credible_interval(
     *,
     method: str = "logistic",
     lr_bound: str | float | None = "auto",
-    n_boot: int = 1000,
+    n_boot: int | None = None,
     alpha: float = 0.05,
     seed: int = 0,
     cluster_ids: np.ndarray | None = None,
@@ -254,6 +410,7 @@ def lr_credible_interval(
     """Credible interval on ``log10 LR`` for ``query_score`` calibrated against a
     reference population. Bootstraps the reference (row-stratified, or clustered if
     ``cluster_ids`` is given), refitting the bounded calibration each replicate.
+    ``n_boot=None`` resolves :func:`default_n_boot` (``VERITY_LR_BOOTSTRAP_N``).
 
     ``point_log10_lr`` is the reported point (the full-reference LR); when omitted
     it is computed with one extra full fit so the result is self-contained.

@@ -332,12 +332,13 @@ def step_calibrate(
         "calibration": calibration_diagnostics(scores, labels, score, bundle.name),
     }
     if ci:
+        # n_boot resolves VERITY_LR_BOOTSTRAP_N (default 1000) inside the engine —
+        # the same knob as the compare path, so both hit the same warmed ensemble.
         interval = lr_credible_interval(
             scores,
             labels,
             float(score),
             lr_bound="auto",
-            n_boot=1000,
             seed=0,
             cluster_ids=bundle.cluster_ids,
             point_log10_lr=log10_lr,

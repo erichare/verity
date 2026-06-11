@@ -15,7 +15,7 @@ from __future__ import annotations
 import hashlib
 import json
 
-from verity.decision import DEFAULT_SCORER_CONFIG, ScorerConfig
+from verity.decision import DEFAULT_SCORER_CONFIG, ScorerConfig, default_n_boot
 
 
 def _canonical(obj: object) -> str:
@@ -107,7 +107,14 @@ def _steps(domain: str, cfg: ScorerConfig, provenance: dict, reference: dict) ->
         {
             "step": "uncertainty",
             "code": "verity.decision.uncertainty.lr_credible_interval",
-            "params": {"n_boot": 1000, "seed": 0, "resample": "clustered when source IDs present"},
+            # n_boot is the deployment's resolved VERITY_LR_BOOTSTRAP_N and is part
+            # of the content-addressed recipe: a deployment running fewer replicates
+            # is a different computation, so it (correctly) gets different handles.
+            "params": {
+                "n_boot": default_n_boot(),
+                "seed": 0,
+                "resample": "clustered when source IDs present",
+            },
             "produces": "percentile credible interval on log10 LR",
         },
     ]
