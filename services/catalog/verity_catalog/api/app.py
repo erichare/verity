@@ -17,6 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 
 from .. import __version__
+from .body_limit import BodySizeLimitMiddleware
 from .envelope import Envelope
 from .routers import benchmark, bullets, datasets, firearms, meta, scans, studies
 
@@ -66,6 +67,11 @@ app = FastAPI(
     license_info={"name": "MIT / Apache-2.0"},
     openapi_tags=_TAGS,
 )
+
+# Refuse oversized request bodies (benchmark submissions) with 413 before
+# parsing; cap configurable via VERITY_CATALOG_MAX_BODY_BYTES. Registered before
+# CORS so CORS stays outermost and 413 responses still carry CORS headers.
+app.add_middleware(BodySizeLimitMiddleware)
 
 # The catalog is consumed cross-origin (the verity.codes UI and the validation
 # harness), so CORS is required. Default to the production origin; override with

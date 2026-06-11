@@ -271,6 +271,10 @@ class BenchmarkSplit(SQLModel, table=True):
     n_sources: int
     n_folds: int
     provenance: str  # builder provenance.json, verbatim
+    # The builder's marks.csv.gz, verbatim (gzipped CSV bytes): the mark_hash →
+    # scan-hash mapping that lets a third party resolve composite pair hashes.
+    # Shipped inside the replication kit; None for splits loaded without one.
+    marks_csv_gz: bytes | None = None
     created_at: datetime = Field(default_factory=_utcnow)
 
     folds: list["BenchmarkFold"] = Relationship(back_populates="split")

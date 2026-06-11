@@ -1,9 +1,10 @@
 """Reading a ``verity-build-benchmark`` output directory.
 
-A split directory contains ``pairs.csv.gz``, ``folds.json``, ``provenance.json``
-and (for Verity's own baseline row) ``verity_submission.csv.gz`` +
-``verity_metrics.json``. This module parses them into plain Python structures;
-:mod:`.loader` turns those into catalog rows.
+A split directory contains ``pairs.csv.gz``, ``folds.json``, ``provenance.json``,
+optionally ``marks.csv.gz`` (the mark-hash → scan-hash mapping, kept verbatim
+for the replication kit), and (for Verity's own baseline row)
+``verity_submission.csv.gz`` + ``verity_metrics.json``. This module parses them
+into plain Python structures; :mod:`.loader` turns those into catalog rows.
 """
 
 from __future__ import annotations
@@ -27,6 +28,7 @@ class SplitArtifacts:
     folds: list[dict]  # {"index", "n_test_pairs", "test_sources"}
     verity_lrs: dict[str, float] = field(default_factory=dict)  # pair_id -> LR
     verity_metrics: dict | None = None
+    marks_csv_gz: bytes | None = None  # marks.csv.gz verbatim, if shipped
 
 
 def read_pairs_csv(path: Path) -> list[dict]:
@@ -68,6 +70,9 @@ def read_split_dir(split_dir: Path) -> SplitArtifacts:
         verity_lrs = read_submission_csv(sub)
         verity_metrics = json.loads(met.read_text())
 
+    marks = split_dir / "marks.csv.gz"
+    marks_csv_gz = marks.read_bytes() if marks.exists() else None
+
     return SplitArtifacts(
         name=provenance["name"],
         provenance=provenance,
@@ -75,4 +80,5 @@ def read_split_dir(split_dir: Path) -> SplitArtifacts:
         folds=folds,
         verity_lrs=verity_lrs,
         verity_metrics=verity_metrics,
+        marks_csv_gz=marks_csv_gz,
     )

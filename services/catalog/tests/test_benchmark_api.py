@@ -75,6 +75,11 @@ def _make_split_dir(root: Path) -> Path:
 
     split_dir = root / "synthetic-v1"
     split_dir.mkdir(parents=True)
+    with gzip.open(split_dir / "marks.csv.gz", "wt", newline="") as fh:
+        writer = csv.writer(fh)
+        writer.writerow(["mark_hash", "source", "label", "n_scans", "scan_hashes"])
+        for source, mark_hash in marks:
+            writer.writerow([mark_hash, source, f"{source}-mark", 1, mark_hash])
     with gzip.open(split_dir / "pairs.csv.gz", "wt", newline="") as fh:
         writer = csv.writer(fh)
         writer.writerow(["pair_id", "hash_a", "hash_b", "label", "source_a", "source_b", "folds"])
@@ -200,7 +205,7 @@ def test_leaderboard_has_reference_row(split_env):
 # The kit — offline evaluate.py == server scoring
 # --------------------------------------------------------------------------- #
 def test_kit_roundtrip_and_offline_evaluation(split_env, tmp_path):
-    client, artifacts, _ = split_env
+    client, artifacts, split_dir = split_env
     resp = client.get("/benchmark/splits/synthetic-v1/kit")
     assert resp.status_code == 200
     assert resp.headers["content-type"] == "application/zip"
@@ -210,6 +215,7 @@ def test_kit_roundtrip_and_offline_evaluation(split_env, tmp_path):
     assert names == {
         "README.md",
         "pairs.csv.gz",
+        "marks.csv.gz",
         "folds.json",
         "provenance.json",
         "scoring.py",
@@ -223,6 +229,13 @@ def test_kit_roundtrip_and_offline_evaluation(split_env, tmp_path):
         kit_pairs = list(csv.DictReader(fh))
     assert len(kit_pairs) == len(artifacts.pairs)
     assert {p["pair_id"] for p in kit_pairs} == {p["pair_id"] for p in artifacts.pairs}
+
+    # The mark-hash → scan-hash mapping ships verbatim, and the README both
+    # documents it and points submissions at the default public base URL.
+    assert (root / "marks.csv.gz").read_bytes() == (split_dir / "marks.csv.gz").read_bytes()
+    readme = (root / "README.md").read_text()
+    assert "marks.csv.gz" in readme
+    assert "POST https://data.verity.codes/benchmark/splits/synthetic-v1/submissions" in readme
 
     submission = root / "sub.csv"
     with submission.open("w", newline="") as fh:
@@ -369,3 +382,139 @@ def test_kit_and_submit_refuse_partially_published_split(split_env):
     # Restore for any later test: reload the split from the artifacts.
     load_split(session, artifacts)
     assert client.get("/benchmark/splits/synthetic-v1/kit").status_code == 200
+
+
+# --------------------------------------------------------------------------- #
+# Kit URLs + marks mapping
+# --------------------------------------------------------------------------- #
+def test_kit_readme_uses_public_url_env(split_env, monkeypatch):
+    """VERITY_CATALOG_PUBLIC_URL re-points the kit's submission instructions
+    (trailing slash tolerated); the dead default host must not leak through."""
+    client, _, _ = split_env
+    monkeypatch.setenv("VERITY_CATALOG_PUBLIC_URL", "https://staging.example.org/")
+    resp = client.get("/benchmark/splits/synthetic-v1/kit")
+    assert resp.status_code == 200
+    zf = zipfile.ZipFile(io.BytesIO(resp.content))
+    readme = zf.read("verity-benchmark-synthetic-v1/README.md").decode()
+    assert "POST https://staging.example.org/benchmark/splits/synthetic-v1/submissions" in readme
+    assert "data.verity.codes" not in readme
+
+
+def test_kit_without_marks_mapping_omits_file():
+    """A split loaded without marks.csv.gz still builds a kit — just without
+    the mapping file or its README entry."""
+    from verity_catalog import models
+    from verity_catalog.benchmark.kit import build_kit
+
+    split = models.BenchmarkSplit(
+        id=987_654,
+        name="bare-v1",
+        title="No marks mapping",
+        modality="test",
+        split_hash="ab" * 32,
+        n_pairs=1,
+        n_km=1,
+        n_sources=1,
+        n_folds=0,
+        provenance=json.dumps({"protocol": {"contract": "c"}}),
+    )
+    pair = models.BenchmarkPair(
+        split_id=987_654,
+        pair_id="p1",
+        hash_a="a" * 64,
+        hash_b="b" * 64,
+        label=1,
+        source_a="s",
+        source_b="s",
+        folds="",
+    )
+    zf = zipfile.ZipFile(io.BytesIO(build_kit(split, [pair])))
+    assert "marks.csv.gz" not in {Path(n).name for n in zf.namelist()}
+    assert "marks.csv.gz" not in zf.read("verity-benchmark-bare-v1/README.md").decode()
+
+
+# --------------------------------------------------------------------------- #
+# Hardening: client IP, submission url, body size
+# --------------------------------------------------------------------------- #
+def _request_with(headers: dict[str, str], client=("10.0.0.1", 1234)):
+    from fastapi import Request
+
+    return Request(
+        {
+            "type": "http",
+            "method": "POST",
+            "path": "/",
+            "query_string": b"",
+            "headers": [(k.lower().encode(), v.encode()) for k, v in headers.items()],
+            "client": client,
+        }
+    )
+
+
+def test_client_ip_ignores_forged_forwarded_entries(monkeypatch):
+    """With trusted proxy headers on, only the RIGHTMOST X-Forwarded-For entry
+    counts — it is the hop appended by the edge proxy. The leftmost entries are
+    client-supplied, so honoring them would let one client forge fresh
+    rate-limit identities per request."""
+    from verity_catalog.api.routers import benchmark as bench_router
+
+    monkeypatch.setattr(bench_router, "_TRUST_PROXY", True)
+    forged = _request_with({"x-forwarded-for": "6.6.6.6, 7.7.7.7, 203.0.113.9"})
+    assert bench_router._client_ip(forged) == "203.0.113.9"
+
+    single = _request_with({"x-forwarded-for": "203.0.113.9"})
+    assert bench_router._client_ip(single) == "203.0.113.9"
+
+    # A degenerate all-empty header falls back to the socket peer.
+    empty = _request_with({"x-forwarded-for": " , "})
+    assert bench_router._client_ip(empty) == "10.0.0.1"
+
+    monkeypatch.setattr(bench_router, "_TRUST_PROXY", False)
+    untrusted = _request_with({"x-forwarded-for": "6.6.6.6"})
+    assert bench_router._client_ip(untrusted) == "10.0.0.1"
+
+
+def test_submission_url_must_be_http(split_env, monkeypatch):
+    from verity_catalog.api.routers import benchmark as bench_router
+
+    client, artifacts, _ = split_env
+    monkeypatch.setattr(bench_router, "_RATE_LIMIT", 100)
+    url = "/benchmark/splits/synthetic-v1/submissions"
+    base = {"submitter": "x", "method": "m", "lrs": artifacts.verity_lrs}
+
+    for bad in (
+        "javascript:alert(1)",
+        "data:text/html,<script>1</script>",
+        "ftp://example.org/file",
+        "example.org/paper",  # scheme-less
+        "//example.org/paper",  # protocol-relative
+        "https://",  # no host
+    ):
+        r = client.post(url, json={**base, "url": bad})
+        assert r.status_code == 422, f"{bad!r} -> {r.status_code}"
+        assert "http" in r.json()["error"]
+
+    for good in ("https://example.org/paper", "http://example.org/paper", ""):
+        r = client.post(url, json={**base, "url": good})
+        assert r.status_code == 201, f"{good!r} -> {r.status_code}: {r.text}"
+
+
+def test_submission_body_size_cap(split_env, monkeypatch):
+    client, _, _ = split_env
+    monkeypatch.setenv("VERITY_CATALOG_MAX_BODY_BYTES", "1024")
+    url = "/benchmark/splits/synthetic-v1/submissions"
+
+    # Honest Content-Length over the cap: refused before any parsing.
+    big = {"submitter": "x", "method": "m", "csv": "pair_id,lr\n" + "a,1\n" * 2000}
+    r = client.post(url, json=big)
+    assert r.status_code == 413
+    assert "too large" in r.json()["error"]
+
+    # A chunked upload (no Content-Length) is cut off as it streams past the cap.
+    def chunks():
+        for _ in range(64):
+            yield b"x" * 64
+
+    r = client.post(url, content=chunks(), headers={"content-type": "application/json"})
+    assert r.status_code == 413
+    assert "too large" in r.json()["error"]

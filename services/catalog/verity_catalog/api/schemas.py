@@ -8,8 +8,9 @@ lets them be built straight from ORM rows.
 from __future__ import annotations
 
 from datetime import datetime
+from urllib.parse import urlsplit
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class _Read(BaseModel):
@@ -173,6 +174,24 @@ class BenchmarkSubmissionRequest(BaseModel):
     url: str | None = Field(default=None, max_length=300)
     lrs: dict[str, float] | None = None
     csv: str | None = None
+
+    @field_validator("url")
+    @classmethod
+    def _url_is_http(cls, value: str | None) -> str | None:
+        """The leaderboard renders ``url`` as a link, so only absolute http(s)
+        URLs are stored — never ``javascript:``/``data:``/scheme-less strings."""
+        if value is None or not value.strip():
+            return None  # absent/empty stays allowed (rendered as no link)
+        try:
+            parts = urlsplit(value)
+        except ValueError as exc:
+            raise ValueError(f"url is not a valid URL: {exc}") from exc
+        if parts.scheme not in ("http", "https") or not parts.netloc:
+            raise ValueError(
+                "url must be an absolute http:// or https:// URL "
+                "(e.g. https://example.org/my-method)"
+            )
+        return value
 
 
 class BenchmarkSubmissionResult(BaseModel):
