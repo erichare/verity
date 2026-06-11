@@ -2549,6 +2549,8 @@ version = "0.1.0"
 source = { editable = "../catalog" }
 dependencies = [
     { name = "alembic" },
+    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "pydantic-settings" },
     { name = "sqlmodel" },
     { name = "typer" },
@@ -2562,6 +2564,7 @@ requires-dist = [
     { name = "httpx", marker = "extra == 'dev'", specifier = ">=0.27" },
     { name = "httpx", marker = "extra == 'ingest'", specifier = ">=0.27" },
     { name = "moto", marker = "extra == 'dev'", specifier = ">=5" },
+    { name = "numpy", specifier = ">=1.26" },
     { name = "psycopg", extras = ["binary"], marker = "extra == 'postgres'", specifier = ">=3.1" },
     { name = "pydantic-settings", specifier = ">=2.4" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8" },

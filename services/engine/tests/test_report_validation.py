@@ -91,7 +91,7 @@ def test_report_from_reference_recovers_sources(tmp_path):
     validation PDF + source-disjoint summary with no catalog — the impressed/toolmark
     path. Sources are recovered from the 'A|B' cluster IDs."""
     scores, labels, ba, bb = _synthetic_pairs()
-    clusters = [f"{min(a, b)}|{max(a, b)}" for a, b in zip(ba, bb)]
+    clusters = [f"{min(a, b)}|{max(a, b)}" for a, b in zip(ba, bb, strict=True)]
     ref = tmp_path / "synthetic_impressed.npz"
     write_reference(
         ref, scores=scores, labels=labels, cluster_ids=clusters,
