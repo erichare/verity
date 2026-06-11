@@ -30,8 +30,10 @@ jobs:
   python:
     name: python (${{ matrix.service }})
     runs-on: ubuntu-latest
-    # The api suite's toolmark compare pays a cold 1000-replicate bootstrap
-    # ensemble build (memoized only in-memory) — minutes on a 2-core runner.
+    # The api suite's compares build bootstrap calibration ensembles; CI runs
+    # 150 replicates (VERITY_LR_BOOTSTRAP_N) and persists them across runs
+    # (VERITY_ENSEMBLE_CACHE_DIR + actions/cache), so the cold toolmark build
+    # that used to take minutes on a 2-core runner is paid rarely and small.
     timeout-minutes: 25
     strategy:
       fail-fast: false
@@ -62,11 +64,29 @@ jobs:
           python-version: "3.12"
       - name: ruff
         run: uv run ${{ matrix.extras }} ruff check .
+      # Fitted bootstrap ensembles are content-keyed on disk (reference contents +
+      # method/bound/n_boot/seed/clusters), so restoring a stale cache is safe:
+      # outdated entries just miss and get refit. restore-keys keeps partial reuse
+      # when the bundled references change.
+      - name: restore bootstrap-ensemble cache
+        if: matrix.service == 'api'
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/.verity-ensemble-cache
+          key: verity-ensembles-${{ hashFiles('services/api/verity_api/references/**') }}-n150
+          restore-keys: |
+            verity-ensembles-
       - name: pytest
         # CI runners are slower than dev machines; give CPU-bound comparisons
-        # more wall-clock than the 60s production default.
+        # more wall-clock than the 60s production default. 150 bootstrap
+        # replicates (vs the 1000 production default) keeps a cold clustered
+        # ensemble build under ~a minute; n_boot rides in the recipe params, so
+        # CI recipe handles (correctly) differ from production's. Tests that pin
+        # knob behavior delenv these first, so the job-level env doesn't leak in.
         env:
-          VERITY_COMPARE_TIMEOUT_S: "900"
+          VERITY_COMPARE_TIMEOUT_S: "300"
+          VERITY_LR_BOOTSTRAP_N: "150"
+          VERITY_ENSEMBLE_CACHE_DIR: ${{ github.workspace }}/.verity-ensemble-cache
         run: uv run ${{ matrix.extras }} pytest
 
   bindings-python:
