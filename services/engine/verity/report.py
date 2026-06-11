@@ -59,6 +59,7 @@ class ComparisonReport:
     direction: str  # "same source" | "different sources"
     verbal: str
     lr_bound_log10: float | None  # the ELUB cap applied, if any
+    lr_bound_hit: bool  # True when the pre-cap LR exceeded the cap and was clipped to it
     reference: dict  # {name, n_km, n_knm, cllr, cllr_min, auc}
     attribution: list[dict] = field(default_factory=list)  # matched regions on Mark A
     attribution_b: list[dict] = field(default_factory=list)  # the same matches on Mark B
@@ -106,7 +107,8 @@ def build_comparison_report(
     reference_labels = np.asarray(reference_labels, dtype=np.float64)
 
     model = ScoreLRModel(lr_bound=lr_bound).fit(reference_scores, reference_labels)
-    lr = float(model.predict_lr(np.asarray([score], dtype=np.float64))[0])
+    lr_arr, hit_arr = model.predict_lr(np.asarray([score], dtype=np.float64), return_bound_hit=True)
+    lr, lr_bound_hit = float(lr_arr[0]), bool(hit_arr[0])
     log10_lr = float(np.log10(lr))
 
     ci_lo: float | None = None
@@ -145,6 +147,11 @@ def build_comparison_report(
         f"population; it is not a claim about the error rate of {domain} examination, "
         "which remains unknown."
     )
+    if lr_bound_hit:
+        scope_note += (
+            " The reported LR is bound-limited: the calibrated value exceeded the "
+            "empirical bound this reference can support and was capped at it."
+        )
     return ComparisonReport(
         domain=domain,
         score=float(score),
@@ -154,6 +161,7 @@ def build_comparison_report(
         direction="same source" if log10_lr > 0 else "different sources",
         verbal=verbal,
         lr_bound_log10=model._log_bound,
+        lr_bound_hit=lr_bound_hit,
         reference=reference,
         attribution=list(attribution or []),
         attribution_b=list(attribution_b or []),

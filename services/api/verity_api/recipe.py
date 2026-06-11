@@ -137,6 +137,7 @@ def build_recipe(
             "log10_lr_ci": [resp.get("log10_lr_ci_lo"), resp.get("log10_lr_ci_hi")],
             "lr_ci_method": resp.get("lr_ci_method"),
             "lr_bound_log10": resp.get("lr_bound_log10"),
+            "lr_bound_hit": resp.get("lr_bound_hit"),
             "direction": resp.get("direction"),
             "verbal": resp.get("verbal"),
         }

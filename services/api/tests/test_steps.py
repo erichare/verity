@@ -144,6 +144,7 @@ def test_calibrate_emits_lr_against_reference():
     body = r.json()
     assert body["calibrated"] is True
     assert body["likelihood_ratio"] > 0 and "log10_lr" in body
+    assert body["lr_bound_log10"] is not None and isinstance(body["lr_bound_hit"], bool)
     assert body["reference"]["scorer_config_hash"]
     assert "calibration" in body and "tippett" in body["calibration"]
     # matching hash → config_verified true
@@ -157,6 +158,31 @@ def test_calibrate_emits_lr_against_reference():
         },
     ).json()
     assert matched["config_verified"] is True
+
+
+def test_calibrate_reports_when_the_lr_is_bound_limited():
+    from verity.decision import ScoreLRModel
+    from verity_api.references import load_reference_by_id
+
+    # An absurdly high score saturates the calibration: the pre-cap LR exceeds the
+    # ELUB bound, the emitted LR is clipped to it, and the payload must say so.
+    hi = client.post(
+        "/v1/steps/calibrate", data={"score": 1e9, "reference": "impressed", "ci": "false"}
+    ).json()
+    assert hi["lr_bound_hit"] is True
+    assert abs(abs(hi["log10_lr"]) - hi["lr_bound_log10"]) < 1e-9  # sits exactly AT the cap
+
+    # A score where the calibration crosses LR = 1 is measured, not bound-limited.
+    bundle = load_reference_by_id("impressed")
+    scores = np.asarray(bundle.scores, dtype=np.float64)
+    model = ScoreLRModel(lr_bound="auto").fit(scores, np.asarray(bundle.labels))
+    grid = np.linspace(float(scores.min()), float(scores.max()), 201)
+    mid_score = float(grid[np.argmin(np.abs(np.log10(model.predict_lr(grid))))])
+    mid = client.post(
+        "/v1/steps/calibrate", data={"score": mid_score, "reference": "impressed", "ci": "false"}
+    ).json()
+    assert mid["lr_bound_hit"] is False
+    assert abs(mid["log10_lr"]) < mid["lr_bound_log10"]
 
 
 def test_calibrate_firewall_refuses_off_config():

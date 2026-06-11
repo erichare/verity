@@ -312,7 +312,8 @@ def step_calibrate(
     scores = np.asarray(bundle.scores, dtype=np.float64)
     labels = np.asarray(bundle.labels, dtype=np.float64)
     model = ScoreLRModel(lr_bound="auto").fit(scores, labels)
-    lr = float(model.predict_lr(np.asarray([score], dtype=np.float64))[0])
+    lr_arr, hit_arr = model.predict_lr(np.asarray([score], dtype=np.float64), return_bound_hit=True)
+    lr = float(lr_arr[0])
     log10_lr = float(np.log10(lr))
     out: dict = {
         "calibrated": True,
@@ -321,6 +322,7 @@ def step_calibrate(
         "likelihood_ratio": lr,
         "log10_lr": log10_lr,
         "lr_bound_log10": model._log_bound,
+        "lr_bound_hit": bool(hit_arr[0]),
         "direction": "same source" if log10_lr > 0 else "different sources",
         "verbal": verbal_weight(log10_lr),
         "reference": {

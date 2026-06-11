@@ -629,6 +629,7 @@ _COMPARE_EXAMPLE = {
     "direction": "same source",
     "verbal": "moderately strong support for same source",
     "lr_bound_log10": 2.16,
+    "lr_bound_hit": True,
     "reference": {
         "name": "pooled bullet-land reference (Hamby-252 & 173, Beretta, Phoenix)",
         "n_km": 146,

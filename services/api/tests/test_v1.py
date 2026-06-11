@@ -114,6 +114,7 @@ def _recipe_resp(lr: float = 146.0) -> dict:
         "log10_lr_ci_hi": 2.0,
         "lr_ci_method": "bootstrap-clustered",
         "lr_bound_log10": 2.0,
+        "lr_bound_hit": True,
         "direction": "same source",
         "verbal": "moderately strong support for same source",
         "reference": {"name": "synthetic ref"},
@@ -131,6 +132,7 @@ def test_build_recipe_structure_and_deterministic_handle():
     assert r["handle"].startswith("sha256:")
     assert r["scorer_config_hash"] == DEFAULT_SCORER_CONFIG.config_hash
     assert r["reference"]["scorer_config_hash"] == "refhash"
+    assert r["result"]["lr_bound_hit"] is True  # bound-limited flag rides into the recipe
     steps = [s["step"] for s in r["steps"]]
     assert steps[:2] == ["decode", "preprocess"]
     assert {"calibrate", "uncertainty"} <= set(steps)

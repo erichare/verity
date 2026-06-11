@@ -22,9 +22,12 @@ The checks are glass-box and physically motivated:
 
 Thresholds here are physically-motivated defaults; :func:`applicability_thresholds`
 derives data-driven ones from a low percentile of the in-domain reference (the
-defensible story), to be bundled per reference. Until those sidecars exist the
-guard ships in ``"warn"`` mode (annotate, don't block); flip to ``"refuse"`` once
-each reference carries its calibrated band.
+defensible story), to be bundled per reference. Two modes: ``"warn"`` annotates
+only (every scan stays admissible — useful while a reference still lacks its
+calibrated thresholds), while ``"refuse"`` returns a structured refusal when a
+blocking check fails. The hosted API runs ``"refuse"`` mode on its comparison
+path, blocking on the hard, unrecoverable failures (resolution, modality) and
+keeping coverage/signal shortfalls as non-blocking warnings.
 """
 
 from __future__ import annotations

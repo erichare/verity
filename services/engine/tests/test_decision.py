@@ -60,6 +60,27 @@ def test_lr_bound_caps_overconfident_lrs():
     assert np.all(np.diff(lr_sorted) >= -1e-9)
 
 
+def test_predict_lr_flags_exactly_the_bound_hits():
+    rng = np.random.default_rng(7)
+    scores, labels = _labelled(rng.normal(8, 1, 50), rng.normal(-8, 1, 50))  # n_min = 50
+    cap = 10.0 ** np.log10(50)
+
+    bounded = ScoreLRModel(lr_bound="auto").fit(scores, labels)
+    lr, hit = bounded.predict_lr(scores, return_bound_hit=True)
+    assert hit.dtype == bool and hit.any()  # extreme scores really are clipped
+
+    # exactly the scores whose pre-cap LR exceeded the bound are flagged, in
+    # either direction (an identically-fitted unbounded model gives the pre-cap LR)
+    pre_cap = ScoreLRModel(lr_bound=None).fit(scores, labels).predict_lr(scores)
+    np.testing.assert_array_equal(hit, (pre_cap > cap) | (pre_cap < 1.0 / cap))
+
+    # no bound -> nothing can be flagged
+    _, no_hit = (
+        ScoreLRModel(lr_bound=None).fit(scores, labels).predict_lr(scores, return_bound_hit=True)
+    )
+    assert not no_hit.any()
+
+
 def test_cllr_of_uninformative_system_is_one():
     assert abs(cllr(np.ones(100), np.ones(100)) - 1.0) < 1e-9
 
