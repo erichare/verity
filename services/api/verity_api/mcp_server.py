@@ -59,6 +59,10 @@ mcp = FastMCP(
     "verity",
     stateless_http=True,
     json_response=True,
+    # Serve the JSON-RPC endpoint at exactly /mcp (no trailing-slash redirect): the route
+    # is registered directly on the API app in ``main``, not mounted under a prefix, so a
+    # client POSTing to https://<host>/mcp gets a 200, not a 307 some connectors won't follow.
+    streamable_http_path="/mcp",
     transport_security=_transport_security(),
 )
 
