@@ -284,8 +284,8 @@ export default function DocsPage() {
                 evidence until it is calibrated against a <em>named</em> reference of known
                 same-source (KM) and different-source (KNM) pairs. Cllr is the cost of the calibrated
                 LRs (lower is better; &lt;1 is informative); the Cllr&minus;Cllr<sub>min</sub> gap is
-                the calibration loss. Verity also reports an <strong className="text-foreground">ELUB
-                bound</strong> — the strongest claim the reference data can support.
+                the calibration loss. Verity also reports an <strong className="text-foreground">empirical
+                cap</strong> (ELUB-inspired) — the strongest claim the reference data can support.
               </p>
               <p>
                 <strong className="text-foreground">Congruent Matching Regions (CMR).</strong> Verity&rsquo;s
@@ -396,7 +396,7 @@ export default function DocsPage() {
                       different sources).
                     </Field>
                     <Field name="log10_lr · lr_bound_log10">
-                      log₁₀ of the LR, and the ELUB bound — the strongest claim the reference supports.
+                      log₁₀ of the LR, and the empirical cap — the strongest claim the reference supports.
                     </Field>
                     <Field name="verbal · direction">
                       Verbal equivalent of the LR, and which source hypothesis it favors.
@@ -588,7 +588,7 @@ uv run verity-catalog info`}
               </div>
               <p>
                 <strong className="text-foreground">The firewall.</strong> A learned or hand-engineered
-                representation produces a <em>score</em>; a transparent, ELUB-bounded calibration turns
+                representation produces a <em>score</em>; a transparent, empirically-capped calibration turns
                 that score into the reportable LR. The report is interpretable regardless of how the
                 score was computed — the defense against the black box.
               </p>

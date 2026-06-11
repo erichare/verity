@@ -3,6 +3,31 @@
   "git_commit": "76cc93c",
   "requires": "~/.cache/verity/{cartridgeCaseScans,tmaRks,ameslab} + R (cmcR, toolmaRk)",
   "note": "Measured comparison baselines for the CMR validation figures/tables, re-lockable via `verity-relock-baselines`. The deployed CMR numbers live with each reference; these are the naive and specialist baselines those reductions are compared against.",
+  "bullet_bulletxtrctr": {
+    "split": "barrel-disjoint",
+    "Hamby-252": {
+      "scorer": "bulletxtrctr random-forest matchscore (rtrees), best-diagonal mean",
+      "harness": "verity/baselines/bulletxtrctr.py (cached scores.csv)",
+      "pooled_auc": 1.0,
+      "n_pairs": 595,
+      "n_km": 46,
+      "sd_cllr": 0.0645,
+      "sd_cllr_sd": 0.0153,
+      "sd_auc": 0.9999,
+      "n_folds": 10
+    },
+    "PGPD Beretta": {
+      "scorer": "bulletxtrctr random-forest matchscore (rtrees), best-diagonal mean",
+      "harness": "verity/baselines/bulletxtrctr.py (cached scores.csv)",
+      "pooled_auc": 0.9999,
+      "n_pairs": 435,
+      "n_km": 30,
+      "sd_cllr": 0.1714,
+      "sd_cllr_sd": 0.0883,
+      "sd_auc": 1.0,
+      "n_folds": 10
+    }
+  },
   "cartridge": {
     "split": "slide-disjoint",
     "global_areal_ccf": {

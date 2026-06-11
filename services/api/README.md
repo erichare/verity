@@ -22,7 +22,9 @@ uv run --extra dev verity-api          # serves on 127.0.0.1:8000
 ## Calibration references
 
 Each domain calibrates against a small bundled reference population
-(`verity_api/references/`); the LR is always scoped to a named dataset. v1 ships
-the **impressed** domain (Fadul cartridge cases, CC-BY — see `references/NOTICE.md`).
-The decision stays in the engine's monotone, ELUB-bounded LR firewall; this layer
-only decodes, dispatches, and serializes.
+(`verity_api/references/`); the LR is always scoped to a named dataset. The deployed
+service ships three domains: **striated** (pooled bullet-land), **impressed** (Fadul
+cartridge cases, CC-BY), and **toolmark** (tmaRks screwdrivers, MIT) — see
+`references/NOTICE.md`.
+The decision stays in the engine's monotone, empirically-capped LR firewall; this
+layer only decodes, dispatches, and serializes.

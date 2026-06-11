@@ -78,7 +78,8 @@ to state how strong firearm/toolmark evidence is --- one that survives scrutiny.
         prior-independent, the form courts and statisticians ask for.
   \item \textbf{Characterize it honestly.} Quote the calibration cost $\Cllr$
         (Br\"ummer \& du Preez 2006) measured \emph{source-disjoint} (no firearm in
-        both training and test), reported \emph{per study}, never pooled across makes.
+        both training and test), reported \emph{per study} --- never pooled across
+        makes for error-rate claims.
   \item \textbf{Know your limits.} An applicability-domain gate declines to score a
         scan outside the validated domain instead of extrapolating.
 \end{itemize}
@@ -113,11 +114,11 @@ $\lambda_c=\SI{250}{\micro\meter}$) $\rightarrow$ FFT-based striae orientation a
 signature extraction $\rightarrow$ comparison $\rightarrow$ a calibrated likelihood
 ratio. \textbf{Congruent Matching Regions} generalizes Song's cell-counting:
 partition one surface into regions, register each against the other, count the
-regions whose best-fit transforms agree. A 1-D window under lag recovers the
-Chumbley striae statistic; a 2-D cell under translation+rotation \emph{is} CMC; a
+regions whose best-fit transforms agree. A 1-D window under lag parallels the
+Chumbley striae statistic; a 2-D cell under translation+rotation instantiates CMC; a
 3-D patch handles fractures. \textbf{The audit firewall} turns any score into an LR
 through a \emph{monotone, bounded} calibration (Platt scaling, capped at what the
-reference supports, with a bootstrap credible interval) --- so the evidence is
+reference supports, with a bootstrap interval) --- so the evidence is
 interpretable no matter how the score was produced, and the system reports
 \emph{which regions} drove the match.
 
@@ -130,8 +131,9 @@ that directly answers Cuellar et al.:
 \centering
 \textbf{Barrel-disjoint test $\Cllr = \num{0.113}\pm\num{0.066}$ \quad\textbar\quad
 test AUC $= \num{1.000}\pm\num{0.001}$}\\[1pt]
-{\small (46 same-source / 549 different-source comparisons over 10 held-out barrels;
-in-sample $\Cllr = \num{0.077}$, $\Cllr^{\min}=\num{0.032}$, ECE $=\num{0.031}$,
+{\small (full-study totals: 46 same-source / 549 different-source pairs across 10
+barrels; each fold tests only the pairs among its four held-out barrels; in-sample
+$\Cllr = \num{0.077}$, $\Cllr^{\min}=\num{0.032}$, ECE $=\num{0.031}$,
 EER $=\SI{2.1}{\percent}$.)}
 \end{claimbox}
 
@@ -179,6 +181,8 @@ EER $=\SI{2.1}{\percent}$.)}
 
 \section{Honest scope}
 \begin{itemize}
+  \item The scorer and front-end were selected on the same four studies reported
+        here; a one-shot confirmation on untouched data is the next milestone.
   \item Consecutively-manufactured benchmarks are small in \emph{sources}
         (8--10 barrels; Fadul $\approx\!10$ slides), so fold-to-fold $\Cllr$ varies.
   \item A score-based LR is a property of the score and the named reference, not an

@@ -29,7 +29,7 @@ const VERITY_BRINGS: Item[] = [
   },
   {
     title: "Calibration as a service",
-    body: "Calibrating any score onto a named reference population, with a characterized cost (Cllr) and an ELUB bound on what the data can support.",
+    body: "Calibrating any score onto a named reference population, with a characterized cost (Cllr) and an empirical cap (ELUB-inspired) on what the data can support.",
   },
   {
     title: "Automated validation reports",
@@ -75,7 +75,7 @@ const MILESTONES: Milestone[] = [
   {
     n: "02",
     title: "Calibrate on a named reference together",
-    body: "Jointly select a reference population, fit and publish its calibration (Cllr, ELUB bound), and document exactly what claims that reference can and cannot support.",
+    body: "Jointly select a reference population, fit and publish its calibration (Cllr, empirical LR cap), and document exactly what claims that reference can and cannot support.",
   },
   {
     n: "03",
