@@ -219,6 +219,22 @@ def test_disk_cache_corrupt_entry_falls_back_to_refit(monkeypatch, tmp_path, cap
     assert lr_credible_interval(scores, labels, 1.0, n_boot=40, seed=17) == fresh
 
 
+def test_ensemble_key_canonicalizes_cluster_labels():
+    # the key hashes canonical inverse codes, so labellings the fit cannot tell
+    # apart key identically — a dtype or naming change must not silently miss the
+    # (now persistent) cache
+    scores, labels, clusters = _clustered_reference()
+    key = uncertainty._ensemble_key
+    base = key(scores, labels, "logistic", "auto", 100, 0, clusters.astype(np.int64))
+    assert key(scores, labels, "logistic", "auto", 100, 0, clusters.astype(np.int32)) == base
+    # zero-padded strings sort like the ints → same resampling → same key
+    padded = np.array([f"src-{c:02d}" for c in clusters])
+    assert key(scores, labels, "logistic", "auto", 100, 0, padded) == base
+    # but a labelling the resampler would draw differently keys differently
+    other = np.roll(clusters, len(clusters) // 2)
+    assert key(scores, labels, "logistic", "auto", 100, 0, other) != base
+
+
 def test_disk_cache_skips_isotonic(monkeypatch, tmp_path):
     # isotonic state is variable-length and only used diagnostically — it stays
     # in-memory only, and nothing lands on disk

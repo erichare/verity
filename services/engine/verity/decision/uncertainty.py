@@ -231,6 +231,10 @@ class BootstrapCalibration:
 _ENSEMBLE_CACHE: dict[str, BootstrapCalibration] = {}
 
 # Bump when the on-disk ensemble layout changes; mismatched entries are refit.
+# Entries store *fit output* (each replicate's parameters), so they survive sklearn
+# upgrades that only change fitting internals — but then a hit reproduces the fit
+# the entry was built under, not what a refit would now produce. Clear the cache
+# dir on upgrades where that distinction matters.
 _CACHE_FORMAT_VERSION = 1
 
 
@@ -238,7 +242,9 @@ class _FrozenLogistic:
     """A rehydrated 1-D Platt fit — a ``predict_proba``-compatible stand-in for the
     fitted sklearn ``LogisticRegression``. Computes ``expit(coef·s + intercept)``
     with the same elementary float ops as sklearn's binary ``predict_proba``, so a
-    reloaded replicate reproduces the original's LRs bit for bit."""
+    reloaded replicate reproduces the original's LRs bit for bit. (That claim is
+    exact for the single-score queries :meth:`BootstrapCalibration.interval`
+    issues; batched queries would put it at the mercy of BLAS rounding.)"""
 
     def __init__(self, coef: float, intercept: float) -> None:
         self.coef_ = np.array([[float(coef)]])
@@ -290,7 +296,7 @@ def _save_ensemble(path: Path, cal: BootstrapCalibration) -> None:
                 log_bound=log_bound,
             )
         os.replace(tmp, path)
-    except OSError as exc:
+    except Exception as exc:  # noqa: BLE001 — persisting is best-effort; never break compare
         logger.warning("could not persist bootstrap ensemble to %s: %s", path, exc)
         with contextlib.suppress(OSError):
             os.unlink(tmp)
@@ -343,7 +349,13 @@ def _ensemble_key(
     h.update(np.ascontiguousarray(labels, dtype=np.float64).tobytes())
     if cluster_ids is not None:
         h.update(b"clusters")
-        h.update(np.ascontiguousarray(cluster_ids).tobytes())
+        # The fit uses cluster identity plus the sorted-unique order (the RNG draws
+        # whole clusters from np.unique(clusters)), so hash the canonical int64
+        # inverse codes: labellings the fit cannot tell apart (int32 vs int64, any
+        # relabelling that preserves the sort order) key identically, while one the
+        # resampler would draw differently keys differently.
+        codes = np.unique(np.asarray(cluster_ids), return_inverse=True)[1]
+        h.update(np.ascontiguousarray(codes, dtype=np.int64).tobytes())
     h.update(repr((method, lr_bound, n_boot, seed)).encode())
     return h.hexdigest()
 
