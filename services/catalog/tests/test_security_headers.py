@@ -1,7 +1,7 @@
 """The catalog API attaches baseline security headers to every response.
 
-Hits the DB-free ``/healthz`` so it runs even on a fresh clone / CI (no populated
-catalog required)."""
+Hits the DB-free ``/version`` so it runs even on a fresh clone / CI (``/healthz``
+queries the scan table, which a fresh clone has not created)."""
 
 from __future__ import annotations
 
@@ -23,8 +23,8 @@ _SECURITY_HEADERS = (
 )
 
 
-def test_security_headers_present_on_healthz():
-    r = client.get("/healthz")
+def test_security_headers_present_on_version():
+    r = client.get("/version")
     assert r.status_code == 200
     for h in _SECURITY_HEADERS:
         assert h in r.headers, f"missing security header: {h}"
