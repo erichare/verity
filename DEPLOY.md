@@ -208,21 +208,25 @@ uv run --extra postgres verity-catalog load-benchmark benchmarks --to "$POOLER"
 uv run --extra s3 verity-catalog sync-blobs --to s3
 ```
 
-> **Status note:** the blob store is **not yet synced in prod** — step 4 is
-> outstanding, so `/scans/{id}/x3p` cannot serve bytes there yet.
+> **Status note (verified 2026-06-13):** the blob store is **not yet synced in prod** —
+> step 4 is outstanding, so `/scans/{id}/x3p` still returns 404 there (metadata serves;
+> bytes do not). This is the one remaining benchmark-deploy gap.
 
 Note `migrate-db` is the *row copy* (data), distinct from the Alembic *schema*
 migrations in step 1 — run Alembic first and pass `--no-create-schema` so the
 schema is exactly what the migrations (and their RLS policies) define.
 
-### Custom domain (`data.verity.codes` — not wired yet)
+### Custom domain (`data.verity.codes` — live, verified 2026-06-13)
+
+`https://data.verity.codes/healthz` answers 200 and the benchmark splits/leaderboard
+serve. Steps below are the record of how it was wired (and the recipe if it ever needs redoing):
 
 1. Railway → `verity-data` → **Settings → Networking → Custom Domain** →
    `data.verity.codes` (target port **8001**). This must be done in the
    dashboard — the CLI `railway domain` is permission-blocked for this service.
    Railway returns a CNAME target.
-2. Point DNS at it (the apex is Vercel-managed; today the `data` record points
-   at Vercel, which is why the domain is dead):
+2. Point DNS at it (the apex is Vercel-managed; the `data` record was repointed
+   from Vercel to the Railway target):
    ```bash
    vercel dns add verity.codes data CNAME <target>.up.railway.app
    ```

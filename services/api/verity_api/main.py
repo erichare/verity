@@ -211,6 +211,9 @@ _RATE_LIMITED_PATHS = frozenset(
         "/v1/steps/align",
         "/v1/steps/features",
         "/v1/steps/calibrate",
+        # The hosted MCP endpoint orchestrates the same CPU-bound compare; meter it too
+        # so an agent client can't bypass the per-IP cap that the HTTP routes carry.
+        "/mcp",
     }
 )
 _MAX_TRACKED_IPS = 10_000
@@ -271,6 +274,28 @@ async def _enforce_limits(request: Request, call_next):
     if request.url.path in _RATE_LIMITED_PATHS and not _rate_ok(request):
         return JSONResponse(status_code=429, content={"detail": "rate limit exceeded; slow down"})
     return await call_next(request)
+
+
+# Security headers on every response (including the early 413/429 returns above, since this
+# middleware is registered later and so wraps the limiter). We deliberately do NOT set a
+# restrictive `default-src` Content-Security-Policy: this app also serves the Scalar API-reference
+# UI at /scalar, which loads its bundle from a CDN — a strict default-src would break it. We set
+# `frame-ancestors 'none'` (the clickjacking-relevant directive) plus the safe transport headers.
+_SECURITY_HEADERS = {
+    "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "Referrer-Policy": "no-referrer",
+    "Content-Security-Policy": "frame-ancestors 'none'",
+}
+
+
+@app.middleware("http")
+async def _security_headers(request: Request, call_next):
+    response = await call_next(request)
+    for header, value in _SECURITY_HEADERS.items():
+        response.headers.setdefault(header, value)
+    return response
 
 
 @app.exception_handler(limits.UploadRejected)

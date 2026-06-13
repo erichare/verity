@@ -122,10 +122,12 @@ const COMPARE_RESPONSE = `{
   "direction": "same source",
   "verbal": "moderately strong support for same source",
   "lr_bound_log10": 2.16,
+  "log10_lr_ci_lo": 1.74, "log10_lr_ci_hi": 2.16,  // 95% credible interval (clustered bootstrap)
+  "lr_ci_method": "bootstrap-clustered",
   "score": 0.153,
   "score_kind": "bullet-contrast",
-  "reference": {
-    "name": "pooled bullet-land reference (Hamby-252 & 173, …)",
+  "reference": {                                  // diagnostics are the in-sample fit;
+    "name": "pooled bullet-land reference (Hamby-252 & 173, …)",  // source-disjoint Cllr ≈ 0.19
     "n_km": 146, "n_knm": 1755, "auc": 0.984, "cllr": 0.193, "cllr_min": 0.168
   },
   "attribution":   [{ "x_frac": 0.0,  "w_frac": 0.167, "corr": 0.91, "…": "…" }],
