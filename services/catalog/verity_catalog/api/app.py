@@ -91,6 +91,26 @@ app.add_middleware(
 )
 
 
+# Security headers on every response. No restrictive `default-src` CSP: FastAPI's /docs
+# (Swagger UI) loads its bundle from a CDN, so we set `frame-ancestors 'none'` (anti-clickjacking)
+# plus the safe transport headers. Decorator-registered, so it stays outermost and wraps CORS.
+_SECURITY_HEADERS = {
+    "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "Referrer-Policy": "no-referrer",
+    "Content-Security-Policy": "frame-ancestors 'none'",
+}
+
+
+@app.middleware("http")
+async def _security_headers(request: Request, call_next):
+    response = await call_next(request)
+    for header, value in _SECURITY_HEADERS.items():
+        response.headers.setdefault(header, value)
+    return response
+
+
 # --- Envelope exception handlers: every error is {success:false, error} ----- #
 def _error(status_code: int, message: str) -> JSONResponse:
     body = Envelope[None](success=False, data=None, error=message, meta=None)

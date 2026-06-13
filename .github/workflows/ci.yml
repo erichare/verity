@@ -134,3 +134,36 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: typecheck
         run: pnpm typecheck
+
+  security:
+    name: security (audit, sast) — report-only
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Report-only for now: surfaces dependency CVEs and SAST findings without failing the
+    # board. Triage the first run, then drop continue-on-error to make these blocking.
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-audit
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+      - name: cargo audit (Rust dependency CVEs)
+        continue-on-error: true
+        run: cargo audit
+      - name: pip-audit (Python dependency CVEs — deployed services)
+        continue-on-error: true
+        # api transitively pulls in engine + the PyO3 binding, so the two internet-facing
+        # services cover the dependency surface that actually ships.
+        run: |
+          for svc in api catalog; do
+            echo "::group::pip-audit ($svc)"
+            (cd "services/$svc" && uv run --extra dev --with pip-audit pip-audit) || true
+            echo "::endgroup::"
+          done
+      - name: bandit (SAST — FastAPI request handlers)
+        continue-on-error: true
+        run: uvx bandit -ll -r services/api/verity_api services/catalog/verity_catalog

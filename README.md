@@ -57,16 +57,25 @@ strongest (firearms), then transferred across domains.
 ## What you get
 
 Not a verdict — a calibrated **`ComparisonReport`**: a likelihood ratio with its
-verbal equivalent, a characterized cost (**Cllr**) on a *named* reference
-population, an **empirical cap** (ELUB-inspired) on how strong a claim the data
-can support, and the **region-level attribution** that drove the score.
+verbal equivalent and a **credible interval** (a clustered bootstrap of the reference,
+so the LR carries its own calibration uncertainty), a characterized cost (**Cllr**) on a
+*named* reference population, an **empirical cap** (ELUB-inspired) on how strong a claim
+the data can support, and the **region-level attribution** that drove the score.
 
 ```jsonc
 {
   "likelihood_ratio": 146.0,
+  "log10_lr": 2.16,
   "verbal": "moderately strong support for same source",
   "lr_bound_log10": 2.16,
-  "reference": { "name": "pooled bullet-land", "n_km": 146, "n_knm": 1755, "auc": 0.984, "cllr": 0.193 },
+  // a percentile credible interval on log10 LR — the reference is bootstrapped (clustered
+  // by source/barrel) and refit, so the number carries its own calibration uncertainty
+  "log10_lr_ci_lo": 1.74, "log10_lr_ci_hi": 2.16, "lr_ci_method": "bootstrap-clustered",
+  // reference diagnostics are the *in-sample* fit of the named reference; the honest
+  // validation figure is the source-disjoint Cllr ≈ 0.19 pooled (≈ 0.11 on Hamby-252
+  // alone) — every number, with its protocol, lives in docs/headline-numbers.md
+  "reference": { "name": "pooled bullet-land", "n_km": 146, "n_knm": 1755,
+                 "auc": 0.984, "cllr": 0.193, "cllr_min": 0.168 },
   "attribution": [ /* the matched regions — the explanation */ ],
   "scope_note": "Not a claim about the error rate of examination, which remains unknown."
 }
@@ -91,10 +100,16 @@ Full write-up: [`docs/congruent-matching-regions.md`](docs/congruent-matching-re
 
 ## Validation (honest)
 
+> Every validation number we quote — in-sample vs. source-disjoint vs. the frozen
+> open-benchmark protocol — is tabulated with its exact scope in
+> [`docs/headline-numbers.md`](docs/headline-numbers.md). Quote that table, not loose figures.
+
 - **Source-disjoint, first-principles (no learned representation).** Under a
   barrel-disjoint protocol (no barrel in both train and test; reported per study,
   never pooled across makes), the production `diag_contrast` scorer yields on
-  held-out barrels **AUC ≈ 1.00 and test Cllr ≈ 0.11 on Hamby-252**, and across
+  held-out barrels **AUC ≈ 1.00 and test Cllr ≈ 0.11 on Hamby-252** (the single
+  strongest study; the pooled four-study source-disjoint Cllr is ≈ 0.19, and the
+  frozen `bullets-v1` benchmark reproduces ≈ 0.21), and across
   the four NBTRD bullet studies (Hamby-252/173, PGPD Beretta, Phoenix Ruger)
   **test Cllr ≈ 0.11–0.35 at AUC ≈ 0.97–1.00** — an informative, calibrated
   weight of evidence from metrology alone. (`Cllr < 1` = informative; the
