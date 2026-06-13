@@ -39,7 +39,14 @@ class BlobStore(ABC):
 
     @abstractmethod
     def count(self) -> int:
-        """Number of stored blobs."""
+        """Number of stored blobs. May be O(n) over the store — for the deploy path
+        (S3) this lists the whole bucket, so don't call it on a hot path."""
+
+    @abstractmethod
+    def probe(self) -> None:
+        """Cheap reachability check for liveness probes: raise if the store is
+        unreachable, return ``None`` otherwise. Unlike :meth:`count`, it must not walk
+        the whole store, so it is safe to call on every health check."""
 
 
 class LocalBlobStore(BlobStore):
@@ -82,6 +89,16 @@ class LocalBlobStore(BlobStore):
         if not self.root.exists():
             return 0
         return sum(1 for _ in self.root.rglob("*.bin"))
+
+    def probe(self) -> None:
+        # Filesystem store: reachable as long as the root or a parent is accessible.
+        # A not-yet-created root is fine (put() mkdirs on write), so walk up to the
+        # first existing ancestor — cheap (bounded by path depth, no blob listing).
+        p = self.root
+        while not p.exists() and p != p.parent:
+            p = p.parent
+        if not p.exists():
+            raise FileNotFoundError(f"blob store path unavailable: {self.root}")
 
 
 def _s3_store(settings: Settings, bucket: str | None) -> BlobStore:

@@ -66,3 +66,18 @@ def test_get_missing_raises_keyerror(s3_store: S3BlobStore):
 
 def test_exists_false_for_absent(s3_store: S3BlobStore):
     assert s3_store.exists("1" * 64) is False
+
+
+def test_probe_reachable_bucket_is_a_noop(s3_store: S3BlobStore):
+    # A reachable bucket: probe returns without walking objects (even when empty).
+    assert s3_store.probe() is None
+
+
+def test_probe_raises_on_unreachable_bucket(s3_store: S3BlobStore):
+    # A misconfigured/absent bucket must make the health probe fail (non-200), the
+    # same way an AccessDenied from a misscoped R2 token does in prod.
+    from botocore.exceptions import ClientError
+
+    bad = S3BlobStore("does-not-exist", client=s3_store.client)
+    with pytest.raises(ClientError):
+        bad.probe()

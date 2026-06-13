@@ -117,9 +117,17 @@ class S3BlobStore(BlobStore):
             raise
 
     def count(self) -> int:
-        """Number of stored blobs (paginated ``list_objects_v2`` over the bucket)."""
+        """Number of stored blobs (paginated ``list_objects_v2`` over the bucket).
+        O(n) — for diagnostics/CLI, not hot paths like the health check."""
         paginator = self.client.get_paginator("list_objects_v2")
         total = 0
         for page in paginator.paginate(Bucket=self.bucket):
             total += page.get("KeyCount", len(page.get("Contents", [])))
         return total
+
+    def probe(self) -> None:
+        """Cheap reachability check: a single-key ``list_objects_v2`` (``MaxKeys=1``).
+        Touches one object at most — unlike :meth:`count`, it never walks the bucket —
+        and lets auth/network errors (e.g. an AccessDenied from a misscoped R2 token)
+        propagate so a misconfigured store still fails the health check."""
+        self.client.list_objects_v2(Bucket=self.bucket, MaxKeys=1)

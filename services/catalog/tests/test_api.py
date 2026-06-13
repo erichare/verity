@@ -64,17 +64,22 @@ def a_scan() -> models.Scan:
 
 
 # --- meta ------------------------------------------------------------------- #
-def test_healthz_ok_with_store_count(client: TestClient):
+def test_healthz_ok_is_cheap_by_default(client: TestClient):
+    # Default health probe is reachability only — no O(n) blob count.
     resp = client.get("/healthz")
     assert resp.status_code == 200
-    body = resp.json()
-    assert body["success"] is True
-    data = body["data"]
+    data = resp.json()["data"]
     assert data["status"] == "ok"
-    assert data["store_count"] == get_store().count()
+    assert data["store_count"] is None
     assert data["scan_count"] == _catalog_scan_count()
     assert data["store_backend"] == "local"
     assert data["database"] == "sqlite"
+
+
+def test_healthz_count_opt_in(client: TestClient):
+    # ?count=true opts into the exact (O(n)) blob count for diagnostics.
+    data = client.get("/healthz", params={"count": "true"}).json()["data"]
+    assert data["store_count"] == get_store().count()
 
 
 def test_version(client: TestClient):
