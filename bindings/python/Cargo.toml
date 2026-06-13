@@ -16,8 +16,8 @@ crate-type = ["cdylib"]
 verity-core = { package = "verity-x3p", path = "../../crates/verity-x3p" }
 # Kept in lockstep with verity-x3p so Array2<f64> is the same type on both sides.
 ndarray = "0.16"
-pyo3 = { version = "0.24", features = ["extension-module", "abi3-py39"] }
-numpy = "0.24"
+pyo3 = { version = "0.29", features = ["extension-module", "abi3-py39"] }
+numpy = "0.29"
 
 # Standalone workspace: maturin builds this crate directly, and the core
 # `cargo test` (root workspace) never pulls in a Python toolchain.
