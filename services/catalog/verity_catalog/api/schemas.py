@@ -206,7 +206,10 @@ class HealthStatus(BaseModel):
     status: str
     database: str
     store_backend: str
-    store_count: int
+    # Exact blob count is an O(n) listing (a full bucket walk on S3), so it is only
+    # populated when the caller opts in with ``?count=true``; the default health probe
+    # leaves it null and just confirms the store is reachable.
+    store_count: int | None = None
     scan_count: int
 
 
