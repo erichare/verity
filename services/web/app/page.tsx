@@ -5,9 +5,6 @@ import { compareMarks, detectDomain, getDomains, type Detection } from "@/lib/ap
 import type { CompareResponse } from "@/lib/types";
 import { Reveal } from "@/components/Reveal";
 import { StatBand } from "@/components/home/StatBand";
-import { LiveProof } from "@/components/home/LiveProof";
-import { MarkBreadth } from "@/components/home/MarkBreadth";
-import { WhyTeaser } from "@/components/home/WhyTeaser";
 import { AppNav } from "@/components/app/AppNav";
 import { Workspace } from "@/components/workspace/Workspace";
 import { LabBench } from "@/components/workspace/LabBench";
@@ -116,7 +113,7 @@ export default function Home() {
             <span className="h-1.5 w-1.5 rounded-full bg-accent" />
             Open-science forensic surface comparison
           </span>
-          <h1 className="mt-6 font-display text-5xl font-semibold leading-[1.05] tracking-tight sm:text-7xl">
+          <h1 className="mt-6 font-display text-4xl font-semibold leading-[1.05] tracking-tight sm:text-7xl">
             Forensic marks, <span className="accent-text">weighed as evidence</span>.
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-foreground/80 sm:text-xl">
@@ -124,10 +121,12 @@ export default function Home() {
             <strong className="text-foreground">likelihood ratio with a characterized cost</strong>, and a
             map of <strong className="text-foreground">exactly which regions drove the match</strong>.
           </p>
+          <p className="mx-auto mt-4 max-w-xl text-xs leading-relaxed text-foreground/55">
+            It reports the weight of evidence — it never makes the decision, and makes no claim about
+            the error rate of examination.
+          </p>
 
-          <StatBand className="mt-9" />
-
-          <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <a
               href="#compare"
               className="rounded-full bg-primary px-6 py-3 text-sm font-semibold text-[#f4f1ea] shadow-lg shadow-[#0e2a47]/20 transition hover:opacity-90"
@@ -141,11 +140,6 @@ export default function Home() {
               How it works
             </a>
           </div>
-          <p className="mt-4 text-xs text-foreground/60">
-            <a href="#upload" className="underline decoration-border underline-offset-2 transition hover:text-accent hover:decoration-accent">
-              or upload your own scans →
-            </a>
-          </p>
         </div>
       </section>
 
@@ -162,27 +156,31 @@ export default function Home() {
               Compare <span className="accent-text">two marks</span>
             </h2>
             <p className="mt-2 max-w-2xl text-sm text-muted">
-              Pick two real specimens and watch the calibrated likelihood ratio resolve — no
-              file of your own needed. Every gallery result is a real, precomputed comparison;
-              to run your own scans, upload them below.
+              Pick two real specimens — bullets, cartridge cases, or toolmarks — and watch the
+              calibrated likelihood ratio resolve, no file of your own needed. One pipeline, zero
+              per-modality tuning; every result is a real, precomputed comparison. To run your own
+              scans, upload them below.
             </p>
           </div>
           <Workspace />
+          <StatBand compact className="mt-6" />
         </section>
 
-        {/* Live proof — the same method, opposite verdicts */}
+        {/* Why this exists — one line; the full scientific argument lives on docs.verity.codes */}
         <Reveal className="mt-20 sm:mt-28">
-          <LiveProof />
-        </Reveal>
-
-        {/* Breadth — one pipeline, three mark types */}
-        <Reveal className="mt-20 sm:mt-28">
-          <MarkBreadth />
-        </Reveal>
-
-        {/* Why it was necessary + the scientific contribution */}
-        <Reveal className="mt-20 sm:mt-28">
-          <WhyTeaser />
+          <div className="text-center">
+            <p className="mx-auto max-w-2xl text-sm leading-relaxed text-foreground/70">
+              Forensic mark comparison is used in criminal courts yet has no characterized error
+              rate. Verity returns a calibrated likelihood ratio with a quantified cost and
+              region-level attribution — one method across striated and impressed marks.
+            </p>
+            <a
+              href="/why"
+              className="glass mt-5 inline-block rounded-full px-6 py-3 text-sm font-medium text-foreground/80 transition hover:text-foreground"
+            >
+              Why this exists →
+            </a>
+          </div>
         </Reveal>
 
         {/* Upload-your-own path — the live API, for visitors with their own .x3p scans. */}

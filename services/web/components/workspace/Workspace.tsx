@@ -29,9 +29,14 @@ function toBenchResult(c: GalleryComparison): BenchResult {
  * shortcut) and the lab bench animates the calibrated likelihood ratio. Selection +
  * pairing live here; the picker and the bench are presentational.
  */
+// Open on a real same-source bullet comparison so the bench shows a resolved
+// likelihood ratio on first paint — arrival at the tool means seeing it work, not an
+// empty picker. Falls back to any known-match pair if the gallery has no striated one.
+const DEFAULT_PAIR = pickByRelation("KM", "striated") ?? pickByRelation("KM");
+
 export function Workspace() {
-  const [slotA, setSlotA] = useState<string | null>(null);
-  const [slotB, setSlotB] = useState<string | null>(null);
+  const [slotA, setSlotA] = useState<string | null>(DEFAULT_PAIR?.aId ?? null);
+  const [slotB, setSlotB] = useState<string | null>(DEFAULT_PAIR?.bId ?? null);
   const [result, setResult] = useState<BenchResult | null>(null);
   const [surprise, setSurprise] = useState(0);
 
