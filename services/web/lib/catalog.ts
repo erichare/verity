@@ -32,6 +32,9 @@ export interface Scan {
   land: { id: number } | null;
   mark: { mark_type: string } | null;
   toolmark: { edge: string | null } | null;
+  // The 3D system the scan was acquired on, when known (e.g. the multi-instrument
+  // virtual-kits set). Null for single-instrument sources.
+  instrument: { external_id: string | null; manufacturer: string | null } | null;
 }
 
 export type MarkClass = "all" | "bullet" | "cartridge" | "toolmark";
@@ -62,6 +65,24 @@ export function sourceLabel(scan: Scan): string {
   return SOURCE_LABELS[scan.source] ?? scan.source.toUpperCase();
 }
 
+/** The 3D system a scan was acquired on (e.g. EvoFinder), or "—" when unknown. */
+export function instrumentLabel(scan: Scan): string {
+  if (!scan.instrument) return "—";
+  return scan.instrument.external_id ?? scan.instrument.manufacturer ?? "—";
+}
+
+/** The distinct instrument names available in the catalog (for the filter). */
+export async function getInstruments(): Promise<string[]> {
+  if (!catalogConfigured) return [];
+  const res = await fetch(
+    `${SB_URL}/rest/v1/instrument?select=external_id&order=external_id`,
+    { headers: authHeaders(), cache: "no-store" },
+  );
+  if (!res.ok) return [];
+  const rows: { external_id: string | null }[] = await res.json();
+  return rows.map((r) => r.external_id).filter((x): x is string => Boolean(x));
+}
+
 export async function getStudies(): Promise<Study[]> {
   if (!catalogConfigured) return [];
   const res = await fetch(
@@ -75,14 +96,19 @@ export async function getStudies(): Promise<Study[]> {
 export async function getScans(opts: {
   search?: string;
   markClass?: MarkClass;
+  instrument?: string;
   limit?: number;
   offset?: number;
 }): Promise<{ scans: Scan[]; total: number }> {
   if (!catalogConfigured) return { scans: [], total: 0 };
-  const { search = "", markClass = "all", limit = 50, offset = 0 } = opts;
+  const { search = "", markClass = "all", instrument = "", limit = 50, offset = 0 } = opts;
+  // Filtering by instrument needs an inner join on the embedded resource; the
+  // unfiltered view left-joins it so non-instrument scans still appear.
+  const instrumentEmbed = instrument
+    ? "instrument!inner(external_id,manufacturer)"
+    : "instrument(external_id,manufacturer)";
   const params = new URLSearchParams({
-    select:
-      "id,filename,modality,content_hash,lateral_resolution_x,source,source_ref,land(id),mark(mark_type),toolmark(edge)",
+    select: `id,filename,modality,content_hash,lateral_resolution_x,source,source_ref,land(id),mark(mark_type),toolmark(edge),${instrumentEmbed}`,
     order: "id",
     limit: String(limit),
     offset: String(offset),
@@ -91,6 +117,7 @@ export async function getScans(opts: {
   if (markClass === "bullet") params.set("land_id", "not.is.null");
   if (markClass === "cartridge") params.set("mark_id", "not.is.null");
   if (markClass === "toolmark") params.set("toolmark_id", "not.is.null");
+  if (instrument) params.set("instrument.external_id", `eq.${instrument}`);
   const res = await fetch(`${SB_URL}/rest/v1/scan?${params.toString()}`, {
     headers: { ...authHeaders(), Prefer: "count=exact" },
     cache: "no-store",

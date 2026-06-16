@@ -3,8 +3,10 @@
 import { useEffect, useState } from "react";
 import {
   catalogConfigured,
+  getInstruments,
   getScans,
   getStudies,
+  instrumentLabel,
   scanMarkType,
   sourceLabel,
   type MarkClass,
@@ -34,17 +36,20 @@ export default function CatalogPage() {
   const [total, setTotal] = useState(0);
   const [search, setSearch] = useState("");
   const [markClass, setMarkClass] = useState<MarkClass>("all");
+  const [instrument, setInstrument] = useState("");
+  const [instruments, setInstruments] = useState<string[]>([]);
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     getStudies().then(setStudies);
+    getInstruments().then(setInstruments);
   }, []);
 
   useEffect(() => {
     let active = true;
     setLoading(true);
-    getScans({ search, markClass, limit: PAGE, offset: page * PAGE }).then((r) => {
+    getScans({ search, markClass, instrument, limit: PAGE, offset: page * PAGE }).then((r) => {
       if (!active) return;
       setScans(r.scans);
       setTotal(r.total);
@@ -53,7 +58,7 @@ export default function CatalogPage() {
     return () => {
       active = false;
     };
-  }, [search, markClass, page]);
+  }, [search, markClass, instrument, page]);
 
   const maxPage = Math.max(0, Math.ceil(total / PAGE) - 1);
 
@@ -114,16 +119,36 @@ export default function CatalogPage() {
                 {loading ? "Loading…" : `${total.toLocaleString()} scans`} · 3-D surface scans (X3P) + 1-D tool-mark profiles
               </p>
             </div>
-            <input
-              type="search"
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPage(0);
-              }}
-              placeholder="Filter by filename (e.g. Barrel1, Hamby252)…"
-              className="glass w-full max-w-xs rounded-full px-4 py-2 text-sm text-foreground outline-none placeholder:text-muted focus:ring-1 focus:ring-accent/40"
-            />
+            <div className="flex w-full max-w-md flex-wrap items-center gap-2">
+              <input
+                type="search"
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setPage(0);
+                }}
+                placeholder="Filter by filename (e.g. Barrel1, Hamby252)…"
+                className="glass min-w-0 flex-1 rounded-full px-4 py-2 text-sm text-foreground outline-none placeholder:text-muted focus:ring-1 focus:ring-accent/40"
+              />
+              {instruments.length > 0 && (
+                <select
+                  value={instrument}
+                  onChange={(e) => {
+                    setInstrument(e.target.value);
+                    setPage(0);
+                  }}
+                  aria-label="Filter by 3D imaging system"
+                  className="glass rounded-full px-4 py-2 text-sm text-foreground outline-none focus:ring-1 focus:ring-accent/40"
+                >
+                  <option value="">All instruments</option>
+                  {instruments.map((i) => (
+                    <option key={i} value={i}>
+                      {i}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
           </div>
 
           <div className="mt-5 flex flex-wrap gap-2">
@@ -155,6 +180,7 @@ export default function CatalogPage() {
                 <tr>
                   <th className="px-4 py-3 font-medium">Filename</th>
                   <th className="px-4 py-3 font-medium">Mark type</th>
+                  <th className="px-4 py-3 font-medium">Instrument</th>
                   <th className="px-4 py-3 font-medium">Pitch (µm)</th>
                   <th className="px-4 py-3 font-medium">SHA-256</th>
                   <th className="px-4 py-3 font-medium">Source</th>
@@ -165,6 +191,12 @@ export default function CatalogPage() {
                   <tr key={sc.id} className="border-b border-border/60 last:border-0">
                     <td className="px-4 py-2.5 text-foreground/90">{sc.filename ?? `scan ${sc.id}`}</td>
                     <td className="px-4 py-2.5 text-muted">{scanMarkType(sc)}</td>
+                    <td
+                      className="px-4 py-2.5 text-muted"
+                      title={sc.instrument?.manufacturer ?? undefined}
+                    >
+                      {instrumentLabel(sc)}
+                    </td>
                     <td className="px-4 py-2.5 font-mono text-foreground/70">
                       {sc.lateral_resolution_x != null ? sc.lateral_resolution_x.toFixed(3) : "—"}
                     </td>
@@ -187,7 +219,7 @@ export default function CatalogPage() {
                 ))}
                 {!loading && scans.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center text-sm text-muted">
+                    <td colSpan={6} className="px-4 py-8 text-center text-sm text-muted">
                       No scans match that filter.
                     </td>
                   </tr>
