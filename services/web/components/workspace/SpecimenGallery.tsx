@@ -1,0 +1,72 @@
+"use client";
+
+import { useState } from "react";
+import type { GallerySpecimen, MarkDomain } from "@/lib/types";
+import { SpecimenCard, type SlotState } from "./SpecimenCard";
+
+const TABS: { key: MarkDomain; label: string }[] = [
+  { key: "striated", label: "Bullets" },
+  { key: "impressed", label: "Cartridge cases" },
+  { key: "toolmark", label: "Toolmarks" },
+];
+
+const QUICK =
+  "rounded-full border border-brass/40 bg-brass/[0.06] px-3 py-1.5 text-xs font-medium text-foreground/85 transition hover:border-brass/70 hover:bg-brass/[0.12]";
+
+/** The specimen picker: domain tabs, a grid of real-mark cards, and the on-stage
+ *  shortcuts ("Show me a match / non-match / surprise me"). Tab state is local UI;
+ *  selection + pairing live in <Workspace>. */
+export function SpecimenGallery({
+  specimens,
+  cardState,
+  onPick,
+  onQuick,
+}: {
+  specimens: GallerySpecimen[];
+  cardState: (spec: GallerySpecimen) => SlotState;
+  onPick: (id: string) => void;
+  onQuick: (kind: "match" | "nonmatch" | "surprise", domain: MarkDomain) => void;
+}) {
+  const present = TABS.filter((t) => specimens.some((s) => s.domain === t.key));
+  const [tab, setTab] = useState<MarkDomain>(present[0]?.key ?? "striated");
+  const shown = specimens.filter((s) => s.domain === tab);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex gap-1 rounded-full border border-border p-1">
+          {present.map((t) => (
+            <button
+              key={t.key}
+              type="button"
+              onClick={() => setTab(t.key)}
+              aria-pressed={tab === t.key}
+              className={`rounded-full px-3 py-1 text-xs font-medium transition ${
+                tab === t.key ? "bg-primary text-[#f4f1ea]" : "text-foreground/70 hover:text-foreground"
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button type="button" className={QUICK} onClick={() => onQuick("match", tab)}>
+            Show me a match
+          </button>
+          <button type="button" className={QUICK} onClick={() => onQuick("nonmatch", tab)}>
+            Show me a non-match
+          </button>
+          <button type="button" className={QUICK} onClick={() => onQuick("surprise", tab)}>
+            Surprise me
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+        {shown.map((s) => (
+          <SpecimenCard key={s.id} spec={s} state={cardState(s)} onPick={onPick} />
+        ))}
+      </div>
+    </div>
+  );
+}
