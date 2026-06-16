@@ -1,6 +1,7 @@
 import type { ComparisonReport } from "@/lib/types";
 import AttributionView from "@/components/AttributionView";
 import ScopeNotes, { scopeWarnings } from "@/components/ScopeNotes";
+import { LRCounter } from "@/components/workspace/LRCounter";
 import { formatLR } from "@/lib/format";
 
 // Evidence semantics: navy authority for strong same-source support, brass for the
@@ -27,7 +28,15 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-export default function ReportView({ report }: { report: ComparisonReport }) {
+export default function ReportView({
+  report,
+  animateIn = false,
+  showAttribution = true,
+}: {
+  report: ComparisonReport;
+  animateIn?: boolean;
+  showAttribution?: boolean;
+}) {
   const supportsSame = report.log10_lr > 0;
   const bound = report.lr_bound_log10;
   const frac = bound ? Math.min(1, Math.abs(report.log10_lr) / bound) : 0;
@@ -47,8 +56,12 @@ export default function ReportView({ report }: { report: ComparisonReport }) {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="text-xs uppercase tracking-wider text-muted">Likelihood ratio</p>
-          <p className={`font-mono text-5xl font-semibold ${supportsSame ? "accent-text" : "text-oxblood"}`}>
-            {formatLR(report.likelihood_ratio)}
+          <p className="leading-none">
+            <LRCounter
+              value={report.likelihood_ratio}
+              animate={animateIn}
+              className={`font-mono text-5xl font-semibold ${supportsSame ? "accent-text" : "text-oxblood"}`}
+            />
           </p>
           <p className="mt-2 max-w-md text-sm leading-relaxed text-foreground/80">
             The observed similarity is{" "}
@@ -98,7 +111,7 @@ export default function ReportView({ report }: { report: ComparisonReport }) {
         <Stat label="Reference" value={report.reference.name} />
       </div>
 
-      {report.previews && report.attribution.length > 0 && (
+      {showAttribution && report.previews && report.attribution.length > 0 && (
         <AttributionView
           previews={report.previews}
           regions={report.attribution}

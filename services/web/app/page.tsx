@@ -3,16 +3,15 @@
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import { compareMarks, detectDomain, getDomains, type Detection } from "@/lib/api";
-import { isRefusal, type CompareResponse } from "@/lib/types";
-import { buildSampleReport } from "@/lib/sample-report";
-import ReportView from "@/components/ReportView";
-import RefusalView from "@/components/RefusalView";
+import type { CompareResponse } from "@/lib/types";
 import { Reveal } from "@/components/Reveal";
 import { StatBand } from "@/components/home/StatBand";
 import { LiveProof } from "@/components/home/LiveProof";
 import { MarkBreadth } from "@/components/home/MarkBreadth";
 import { WhyTeaser } from "@/components/home/WhyTeaser";
 import { SiteNav } from "@/components/SiteNav";
+import { Workspace } from "@/components/workspace/Workspace";
+import { LabBench } from "@/components/workspace/LabBench";
 
 const HeroSurface = dynamic(() => import("@/components/three/HeroSurface"), {
   ssr: false,
@@ -23,11 +22,6 @@ const DOMAIN_LABELS: Record<string, string> = {
   striated: "Striated — bullet land(s)",
   toolmark: "Toolmark — striated (screwdriver, pry…)",
 };
-
-interface Result {
-  data: CompareResponse;
-  sample: boolean;
-}
 
 function FilePick({
   label,
@@ -68,7 +62,8 @@ export default function Home() {
   const [domain, setDomain] = useState("striated");
   const [markA, setMarkA] = useState<File[]>([]);
   const [markB, setMarkB] = useState<File[]>([]);
-  const [result, setResult] = useState<Result | null>(null);
+  const [result, setResult] = useState<CompareResponse | null>(null);
+  const [uploadKey, setUploadKey] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [detected, setDetected] = useState<Detection | null>(null);
@@ -89,17 +84,13 @@ export default function Home() {
     setError(null);
     setResult(null);
     try {
-      setResult({ data: await compareMarks(domain, markA, markB), sample: false });
+      setResult(await compareMarks(domain, markA, markB));
+      setUploadKey((k) => k + 1);
     } catch (e) {
       setError(e instanceof Error ? e.message : "comparison failed");
     } finally {
       setLoading(false);
     }
-  }
-
-  function onLoadSample() {
-    setError(null);
-    setResult({ data: buildSampleReport(), sample: true });
   }
 
   // Auto-detect the mark type from the first scan of Mark A and pre-select it
@@ -155,10 +146,10 @@ export default function Home() {
 
           <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
             <a
-              href="#proof"
+              href="#compare"
               className="rounded-full bg-primary px-6 py-3 text-sm font-semibold text-[#f4f1ea] shadow-lg shadow-[#0e2a47]/20 transition hover:opacity-90"
             >
-              See it work ↓
+              Compare two marks ↓
             </a>
             <a
               href="/method"
@@ -168,7 +159,7 @@ export default function Home() {
             </a>
           </div>
           <p className="mt-4 text-xs text-foreground/60">
-            <a href="#compare" className="underline decoration-border underline-offset-2 transition hover:text-accent hover:decoration-accent">
+            <a href="#upload" className="underline decoration-border underline-offset-2 transition hover:text-accent hover:decoration-accent">
               or upload your own scans →
             </a>
           </p>
@@ -177,8 +168,27 @@ export default function Home() {
 
       {/* Content */}
       <main className="mx-auto mt-6 w-full max-w-4xl px-6 pb-24 sm:-mt-16">
+        {/* The compare workspace — the live app, front and center. */}
+        <section id="compare" className="scroll-mt-20">
+          <div className="mb-5">
+            <span className="inline-flex items-center gap-2 rounded-full border border-brass/30 bg-brass/[0.08] px-3 py-1 text-xs font-medium text-foreground/80">
+              <span className="h-1.5 w-1.5 rounded-full bg-brass" />
+              The live tool
+            </span>
+            <h2 className="mt-3 font-display text-2xl font-medium text-foreground sm:text-3xl">
+              Compare <span className="accent-text">two marks</span>
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm text-muted">
+              Pick two real specimens and watch the calibrated likelihood ratio resolve — no
+              file of your own needed. Every gallery result is a real, precomputed comparison;
+              to run your own scans, upload them below.
+            </p>
+          </div>
+          <Workspace />
+        </section>
+
         {/* Live proof — the same method, opposite verdicts */}
-        <Reveal>
+        <Reveal className="mt-20 sm:mt-28">
           <LiveProof />
         </Reveal>
 
@@ -192,30 +202,24 @@ export default function Home() {
           <WhyTeaser />
         </Reveal>
 
-        {/* Comparison tool — the live app, given a gradient "spotlight" frame so it
-            reads as the interactive thing, not just another section. */}
-        <Reveal className="mt-12 sm:mt-16">
+        {/* Upload-your-own path — the live API, for visitors with their own .x3p scans. */}
+        <Reveal className="mt-20 sm:mt-28">
           <div
-            id="compare"
+            id="upload"
             className="scroll-mt-20 rounded-[1.45rem] bg-gradient-to-br from-brass via-primary to-brass p-[1.5px] shadow-2xl shadow-[#0e2a47]/15"
           >
             <section className="space-y-5 rounded-[1.35rem] bg-background p-6 sm:p-8">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <span className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/[0.08] px-3 py-1 text-xs font-medium text-foreground/80">
-                  <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-                  The live tool
-                </span>
-                <h2 className="mt-3 font-display text-2xl font-medium text-foreground sm:text-3xl">
-                  Compare <span className="accent-text">two marks</span>
-                </h2>
-              </div>
-              <button
-                onClick={onLoadSample}
-                className="rounded-full border border-border px-4 py-1.5 text-xs font-medium text-foreground/80 transition hover:border-accent/60 hover:text-foreground"
-              >
-                No scans handy? Load a sample →
-              </button>
+            <div>
+              <span className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/[0.08] px-3 py-1 text-xs font-medium text-foreground/80">
+                <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+                Upload your own
+              </span>
+              <h2 className="mt-3 font-display text-2xl font-medium text-foreground sm:text-3xl">
+                Bring your <span className="accent-text">own scans</span>
+              </h2>
+              <p className="mt-2 max-w-2xl text-sm text-muted">
+                Have .x3p scans? Compare them live against the deployed engine.
+              </p>
             </div>
             <div className="flex flex-col gap-2">
               <label className="text-sm font-medium text-foreground/80">Mark type</label>
@@ -274,17 +278,10 @@ export default function Home() {
 
         {result && (
           <section className="rise mt-8">
-            {result.sample && (
-              <p className="mb-3 inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/[0.08] px-3 py-1 text-xs text-foreground/80">
-                <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-                Sample — a precomputed real screwdriver-toolmark (tmaRks) same-source comparison
-              </p>
-            )}
-            {isRefusal(result.data) ? (
-              <RefusalView result={result.data} />
-            ) : (
-              <ReportView report={result.data} />
-            )}
+            <LabBench
+              result={{ report: result, provenance: "upload" }}
+              revealKey={`upload-${uploadKey}`}
+            />
           </section>
         )}
 
