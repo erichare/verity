@@ -23,7 +23,7 @@ from sqlmodel import Field, Relationship, SQLModel, UniqueConstraint
 
 # Allowed string values (kept as plain strings for SQLite/Postgres portability).
 MODALITIES = ("x3p_3d", "png_2d", "profile_1d")
-MARK_TYPES = ("breech_face", "firing_pin", "ejector", "aperture_shear")
+MARK_TYPES = ("breech_face", "firing_pin", "ejector", "aperture_shear", "full_headstamp")
 TWIST = ("left", "right")
 
 

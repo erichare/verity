@@ -333,6 +333,7 @@ def ingest_scan(
     source_ref: str,
     land: models.Land | None = None,
     mark: models.Mark | None = None,
+    instrument: models.Instrument | None = None,
 ) -> models.Scan:
     """Validate, store, and catalog one scan (deduplicated by content hash)."""
     meta = validate_and_extract(data)
@@ -347,6 +348,7 @@ def ingest_scan(
     scan = models.Scan(
         land_id=land.id if land else None,
         mark_id=mark.id if mark else None,
+        instrument_id=instrument.id if instrument else None,
         modality="x3p_3d",
         content_hash=content_hash,
         size_bytes=len(data),
