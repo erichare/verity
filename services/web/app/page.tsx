@@ -1,6 +1,5 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import { compareMarks, detectDomain, getDomains, type Detection } from "@/lib/api";
 import type { CompareResponse } from "@/lib/types";
@@ -12,10 +11,6 @@ import { WhyTeaser } from "@/components/home/WhyTeaser";
 import { AppNav } from "@/components/app/AppNav";
 import { Workspace } from "@/components/workspace/Workspace";
 import { LabBench } from "@/components/workspace/LabBench";
-
-const HeroSurface = dynamic(() => import("@/components/three/HeroSurface"), {
-  ssr: false,
-});
 
 const DOMAIN_LABELS: Record<string, string> = {
   impressed: "Impressed — cartridge breech face",
@@ -108,26 +103,14 @@ export default function Home() {
 
   return (
     <>
-      {/* Top bar — the shared fixed nav (cinematic scrim variant on the home hero) */}
+      {/* Top bar — the shared fixed nav */}
       <AppNav />
 
-      {/* Cinematic hero */}
+      {/* Hero — clean paper canvas + the faint ledger grid from the body */}
       <section
         id="top"
-        className="relative isolate flex min-h-[92svh] items-center justify-center overflow-hidden px-6 pt-24 sm:pt-0"
+        className="relative flex min-h-[72svh] items-center justify-center px-6 pt-28 sm:pt-24"
       >
-        <div className="absolute inset-0 -z-20">
-          <HeroSurface />
-        </div>
-        {/* legibility scrim + fade into the content below */}
-        <div
-          className="pointer-events-none absolute inset-0 -z-10"
-          style={{
-            background:
-              "radial-gradient(58% 50% at 50% 42%, color-mix(in srgb, var(--background) 62%, transparent), transparent 76%), linear-gradient(to bottom, color-mix(in srgb, var(--background) 40%, transparent) 0%, transparent 22%, transparent 60%, var(--background) 100%)",
-          }}
-        />
-
         <div className="rise mx-auto max-w-3xl text-center">
           <span className="glass inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs text-foreground/70">
             <span className="h-1.5 w-1.5 rounded-full bg-accent" />
