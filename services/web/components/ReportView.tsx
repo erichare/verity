@@ -3,14 +3,19 @@ import AttributionView from "@/components/AttributionView";
 import ScopeNotes, { scopeWarnings } from "@/components/ScopeNotes";
 import { formatLR } from "@/lib/format";
 
-function strengthColor(verbal: string): string {
+// Evidence semantics: navy authority for strong same-source support, brass for the
+// softer same-source grades, oxblood for different-source (exclusion). `accent`
+// (navy in light, lifted steel in dark) keeps the strong badge legible in both modes.
+function strengthColor(verbal: string, supportsSame: boolean): string {
+  if (!supportsSame)
+    return "bg-oxblood/12 text-oxblood border-oxblood/30";
   if (verbal.includes("no meaningful"))
-    return "bg-slate-500/15 text-slate-600 dark:text-slate-300 border-slate-500/25";
+    return "bg-foreground/10 text-muted border-border";
   if (verbal.includes("weak"))
-    return "bg-amber-400/15 text-amber-700 dark:text-amber-200 border-amber-400/30";
+    return "bg-brass/12 text-brass border-brass/30";
   if (verbal.includes("moderate"))
-    return "bg-sky-400/15 text-sky-700 dark:text-sky-200 border-sky-400/30";
-  return "bg-emerald-400/15 text-emerald-700 dark:text-emerald-200 border-emerald-400/30";
+    return "bg-brass/15 text-brass border-brass/35";
+  return "bg-accent/12 text-accent border-accent/35";
 }
 
 function Stat({ label, value }: { label: string; value: string }) {
@@ -42,7 +47,7 @@ export default function ReportView({ report }: { report: ComparisonReport }) {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="text-xs uppercase tracking-wider text-muted">Likelihood ratio</p>
-          <p className="accent-text font-mono text-5xl font-semibold">
+          <p className={`font-mono text-5xl font-semibold ${supportsSame ? "accent-text" : "text-oxblood"}`}>
             {formatLR(report.likelihood_ratio)}
           </p>
           <p className="mt-2 max-w-md text-sm leading-relaxed text-foreground/80">
@@ -54,7 +59,7 @@ export default function ReportView({ report }: { report: ComparisonReport }) {
             {supportsSame ? "" : " — i.e. support for different sources"}.
           </p>
         </div>
-        <span className={`rounded-full border px-3 py-1 text-sm font-medium ${strengthColor(report.verbal)}`}>
+        <span className={`rounded-full border px-3 py-1 text-sm font-medium ${strengthColor(report.verbal, supportsSame)}`}>
           {report.verbal}
         </span>
       </div>
@@ -75,7 +80,7 @@ export default function ReportView({ report }: { report: ComparisonReport }) {
           </div>
           <div className="h-2 w-full overflow-hidden rounded-full bg-foreground/10">
             <div
-              className={`h-full rounded-full ${supportsSame ? "bg-gradient-to-r from-sky-500 to-emerald-400" : "bg-gradient-to-r from-rose-500 to-rose-400"}`}
+              className={`h-full rounded-full ${supportsSame ? "bg-gradient-to-r from-primary to-brass" : "bg-oxblood"}`}
               style={{ width: `${Math.max(2, frac * 100)}%` }}
             />
           </div>

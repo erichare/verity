@@ -880,9 +880,49 @@ _SCALAR_HTML = """<!doctype html>
     <title>Verity API reference</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+      /* Evidence palette — Scalar custom-theme variables (paper-first). theme:none
+         in the config below disables Scalar's built-in presets so these take effect. */
+      :root {
+        --scalar-color-1: #13243a;            /* ink */
+        --scalar-color-2: #5a6677;            /* muted */
+        --scalar-color-3: #8a93a3;
+        --scalar-color-accent: #0e2a47;       /* navy primary */
+        --scalar-background-1: #f4f1ea;       /* canvas / bone */
+        --scalar-background-2: #ece7db;       /* panel */
+        --scalar-background-3: #e3ddcf;
+        --scalar-border-color: rgba(19, 36, 58, 0.14);
+        --scalar-button-1: #0e2a47;
+        --scalar-button-1-color: #f4f1ea;
+        --scalar-color-green: #a9803e;        /* brass — GET */
+        --scalar-color-blue: #0e2a47;         /* navy — POST */
+        --scalar-color-red: #7a2e2e;          /* oxblood — errors / DELETE */
+        --scalar-color-orange: #a9803e;
+        --scalar-font: 'Inter', ui-sans-serif, system-ui, sans-serif;
+        --scalar-font-code: 'IBM Plex Mono', ui-monospace, monospace;
+      }
+      .dark-mode {
+        --scalar-color-1: #e8e2d4;
+        --scalar-color-2: #9aa6b6;
+        --scalar-color-accent: #6e97c4;       /* lifted steel — navy is invisible on dark */
+        --scalar-background-1: #0c1420;
+        --scalar-background-2: #11203b;
+        --scalar-background-3: #16263b;
+        --scalar-border-color: rgba(232, 226, 212, 0.12);
+        --scalar-button-1: #173b5e;
+        --scalar-button-1-color: #e8e2d4;
+        --scalar-color-green: #c9a063;
+        --scalar-color-blue: #6e97c4;
+        --scalar-color-red: #c76b6b;
+      }
+    </style>
   </head>
   <body>
-    <script id="api-reference" data-url="/openapi.json"></script>
+    <script
+      id="api-reference"
+      data-url="/openapi.json"
+      data-configuration='{"theme":"none","darkMode":false}'></script>
     <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
   </body>
 </html>"""

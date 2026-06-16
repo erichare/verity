@@ -69,7 +69,7 @@ export function LiveProof() {
                 aria-pressed={mode === k}
                 className={`rounded-full px-4 py-1.5 font-medium transition ${
                   mode === k
-                    ? "bg-gradient-to-r from-indigo-500 to-cyan-400 text-slate-950"
+                    ? "bg-primary text-[#f4f1ea]"
                     : "text-foreground/70 hover:text-foreground"
                 }`}
               >
@@ -84,7 +84,7 @@ export function LiveProof() {
             <p className="text-xs uppercase tracking-wider text-muted">{ex.sublabel}</p>
             <p
               className={`mt-1 font-mono text-5xl font-semibold sm:text-6xl ${
-                positive ? "accent-text" : "text-rose-500 dark:text-rose-300"
+                positive ? "accent-text" : "text-oxblood"
               }`}
             >
               {formatLRx(ex.lr)}

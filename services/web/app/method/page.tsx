@@ -277,7 +277,7 @@ function ModalitySwap({ others }: { others?: Others }) {
               aria-pressed={modality === key}
               className={`rounded-full px-4 py-1.5 font-medium transition ${
                 modality === key
-                  ? "bg-gradient-to-r from-indigo-500 to-cyan-400 text-slate-950"
+                  ? "bg-primary text-[#f4f1ea]"
                   : "text-foreground/70 hover:text-foreground"
               }`}
             >
@@ -310,7 +310,7 @@ function ModalitySwap({ others }: { others?: Others }) {
               <p className="text-[11px] uppercase tracking-wider text-muted">Likelihood ratio</p>
               <p
                 className={`font-mono text-4xl font-semibold sm:text-5xl ${
-                  positive ? "accent-text" : "text-rose-500 dark:text-rose-300"
+                  positive ? "accent-text" : "text-oxblood"
                 }`}
               >
                 {formatLR(panel.lr)}
@@ -384,7 +384,7 @@ export default function MethodPage() {
                   key={k}
                   onClick={() => setMode(k)}
                   className={`rounded-full px-4 py-1.5 font-medium transition ${
-                    mode === k ? "bg-gradient-to-r from-indigo-500 to-cyan-400 text-slate-950" : "text-foreground/70 hover:text-foreground"
+                    mode === k ? "bg-primary text-[#f4f1ea]" : "text-foreground/70 hover:text-foreground"
                   }`}
                 >
                   {k === "km" ? "Same firearm" : "Different firearms"}
@@ -394,7 +394,7 @@ export default function MethodPage() {
             <div className="glass mt-4 flex flex-wrap items-baseline justify-between gap-3 rounded-2xl p-5">
               <div>
                 <p className="text-xs uppercase tracking-wider text-muted">{ex.sublabel}</p>
-                <p className={`font-mono text-4xl font-semibold ${positive ? "accent-text" : "text-rose-500 dark:text-rose-300"}`}>
+                <p className={`font-mono text-4xl font-semibold ${positive ? "accent-text" : "text-oxblood"}`}>
                   {formatLR(ex.lr)}
                 </p>
               </div>
@@ -540,7 +540,7 @@ export default function MethodPage() {
           viz={
             <div className="glass rounded-2xl p-6">
               <p className="text-xs uppercase tracking-wider text-muted">Likelihood ratio</p>
-              <p className={`font-mono text-5xl font-semibold ${positive ? "accent-text" : "text-rose-500 dark:text-rose-300"}`}>
+              <p className={`font-mono text-5xl font-semibold ${positive ? "accent-text" : "text-oxblood"}`}>
                 {formatLR(ex.lr)}
               </p>
               <p className="mt-2 text-sm text-foreground/80">{ex.verbal}.</p>
@@ -633,7 +633,7 @@ export default function MethodPage() {
             </p>
             <a
               href="/#compare"
-              className="mt-6 inline-block rounded-full bg-gradient-to-r from-indigo-500 via-sky-500 to-cyan-400 px-6 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-cyan-500/20 transition hover:opacity-90"
+              className="mt-6 inline-block rounded-full bg-primary px-6 py-3 text-sm font-semibold text-[#f4f1ea] shadow-lg shadow-[#0e2a47]/20 transition hover:opacity-90"
             >
               Try it on your own scans →
             </a>

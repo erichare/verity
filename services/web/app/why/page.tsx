@@ -229,7 +229,7 @@ export default function WhyPage() {
             <div className="mt-6 flex flex-wrap justify-center gap-3">
               <a
                 href="/#compare"
-                className="rounded-full bg-gradient-to-r from-indigo-500 via-sky-500 to-cyan-400 px-6 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-cyan-500/20 transition hover:opacity-90"
+                className="rounded-full bg-primary px-6 py-3 text-sm font-semibold text-[#f4f1ea] shadow-lg shadow-[#0e2a47]/20 transition hover:opacity-90"
               >
                 Try a comparison →
               </a>

@@ -52,7 +52,7 @@ function Section({
 
 function Endpoint({ method, path, children }: { method: string; path: string; children: ReactNode }) {
   const tone =
-    method === "GET" ? "text-emerald-500 dark:text-emerald-300" : "text-accent";
+    method === "GET" ? "text-brass" : "text-accent";
   return (
     <div className="rounded-xl border border-border bg-foreground/[0.02] p-4">
       <div className="flex items-center gap-3">

@@ -4,44 +4,64 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme inline {
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-display: var(--font-display);
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-plex-mono);
+  --font-display: var(--font-newsreader);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
+  --color-panel: var(--panel);
   --color-border: var(--border);
   --color-muted: var(--muted);
+  --color-primary: var(--primary);
   --color-accent: var(--accent);
   --color-accent-2: var(--accent-2);
+  --color-brass: var(--brass);
+  --color-oxblood: var(--oxblood);
+  --color-danger: var(--danger);
 }
 
 :root {
-  /* Light — clean scientific */
-  --background: #eef2f8;
-  --foreground: #0a0f1e;
-  --card: rgba(255, 255, 255, 0.7);
-  --border: rgba(15, 23, 42, 0.1);
-  --muted: #51607a;
-  --accent: #0e7490;
-  --accent-2: #4f46e5;
-  --glow-1: rgba(79, 70, 229, 0.1);
-  --glow-2: rgba(14, 116, 144, 0.08);
-  --glow-3: rgba(139, 92, 246, 0.08);
+  /* Evidence — paper-first, courtroom / archival */
+  --background: #f4f1ea;   /* canvas / bone */
+  --panel: #ece7db;        /* secondary surface — opaque, slightly deeper than canvas */
+  --foreground: #13243a;   /* ink */
+  --card: rgba(255, 252, 245, 0.72);   /* warm translucent paper for .glass */
+  --border: rgba(19, 36, 58, 0.14);    /* ink hairline */
+  --muted: #5a6677;        /* muted ink */
+
+  --primary: #0e2a47;      /* deep navy — primary actions, wordmark */
+  --accent: #0e2a47;       /* accent == navy in Evidence */
+  --brass: #a9803e;        /* brass — seal node, highlights, secondary accent */
+  --accent-2: #a9803e;     /* alias → brass, for existing --color-accent-2 consumers */
+  --oxblood: #7a2e2e;      /* semantic: exclusion / different-source / refusal */
+  --danger: #7a2e2e;       /* alias → oxblood */
+
+  /* Faint archival paper tints + ledger grid, in place of cinematic glows */
+  --paper-tint-1: rgba(169, 128, 62, 0.05);  /* faint brass warmth, top */
+  --paper-tint-2: rgba(14, 42, 71, 0.04);    /* faint navy cool, bottom */
+  --grid-line: rgba(19, 36, 58, 0.035);      /* hairline ledger grid */
 }
 
 .dark {
-  /* Dark — cinematic */
-  --background: #050509;
-  --foreground: #e7eaf0;
-  --card: rgba(255, 255, 255, 0.04);
-  --border: rgba(255, 255, 255, 0.09);
-  --muted: #97a3b6;
-  --accent: #22d3ee;
-  --accent-2: #818cf8;
-  --glow-1: rgba(79, 70, 229, 0.2);
-  --glow-2: rgba(34, 211, 238, 0.14);
-  --glow-3: rgba(139, 92, 246, 0.14);
+  /* Evidence — navy-black archival night */
+  --background: #0c1420;   /* navy-black canvas */
+  --panel: #16263b;        /* opaque dark panel (rarely needed; .card covers most) */
+  --foreground: #e8e2d4;   /* bone-tinted foreground */
+  --card: rgba(232, 226, 212, 0.05);   /* faint bone film for .glass */
+  --border: rgba(232, 226, 212, 0.12);
+  --muted: #9aa6b6;
+
+  --primary: #173b5e;      /* navy that reads as a surface on near-black */
+  --accent: #6e97c4;       /* lifted steel-blue — navy is invisible on the dark canvas */
+  --brass: #c9a063;        /* brass that holds on dark (lighter, warmer) */
+  --accent-2: #c9a063;
+  --oxblood: #c76b6b;      /* oxblood lifted for contrast on dark */
+  --danger: #c76b6b;
+
+  --paper-tint-1: rgba(201, 160, 99, 0.06);
+  --paper-tint-2: rgba(110, 151, 196, 0.05);
+  --grid-line: rgba(232, 226, 212, 0.04);
 }
 
 html {
@@ -52,17 +72,22 @@ body {
   color: var(--foreground);
   background-color: var(--background);
   background-image:
-    radial-gradient(60rem 60rem at 12% -12%, var(--glow-1), transparent 60%),
-    radial-gradient(48rem 48rem at 100% -5%, var(--glow-2), transparent 55%),
-    radial-gradient(44rem 44rem at 50% 118%, var(--glow-3), transparent 60%);
+    /* faint warm/cool paper tints — directional, very low alpha */
+    radial-gradient(70rem 50rem at 8% -10%, var(--paper-tint-1), transparent 60%),
+    radial-gradient(60rem 50rem at 100% 110%, var(--paper-tint-2), transparent 60%),
+    /* hairline ledger grid — archival, courtroom-exhibit feel */
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: auto, auto, 38px 38px, 38px 38px;
   background-attachment: fixed;
   -webkit-font-smoothing: antialiased;
   transition: background-color 0.4s ease, color 0.4s ease;
 }
 
-/* Brand gradient — wordmark, headline figures, CTAs */
+/* Brand text — a restrained navy→brass sweep (light) / steel→brass (dark).
+   Drop-in for the existing wordmark / headline `.accent-text` usages. */
 .accent-text {
-  background: linear-gradient(100deg, var(--accent-2) 0%, var(--accent) 70%);
+  background: linear-gradient(100deg, var(--accent) 0%, var(--brass) 115%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;

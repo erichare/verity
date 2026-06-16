@@ -7,9 +7,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   return (
     <NextThemeProvider
       attribute="class"
-      defaultTheme="dark"
+      defaultTheme="light"
       enableSystem={false}
-      storageKey="verity-theme"
+      storageKey="verity-theme-evidence"
     >
       {children}
     </NextThemeProvider>
