@@ -87,12 +87,12 @@ function Scene({
   regions?: AttributionRegion[];
   isDark: boolean;
 }) {
-  const accent = isDark ? "#34d399" : "#059669";
+  const accent = isDark ? "#c9a063" : "#a9803e";
   return (
     <>
       <ambientLight intensity={isDark ? 0.35 : 0.6} />
-      <directionalLight position={[-2, 3, 2]} intensity={isDark ? 2.2 : 1.6} color={isDark ? "#a5b4fc" : "#4f46e5"} />
-      <directionalLight position={[3, 2, -1]} intensity={isDark ? 1.4 : 0.7} color={isDark ? "#22d3ee" : "#0e7490"} />
+      <directionalLight position={[-2, 3, 2]} intensity={isDark ? 2.2 : 1.6} color={isDark ? "#c9a063" : "#f0ece2"} />
+      <directionalLight position={[3, 2, -1]} intensity={isDark ? 1.4 : 0.7} color={isDark ? "#6e97c4" : "#cfc9ba"} />
       <group rotation={[-Math.PI / 2, 0, 0]}>
         <Heightmap grid={grid} isDark={isDark} />
         {regions?.length ? <RegionMarkers regions={regions} accent={accent} /> : null}

@@ -90,10 +90,10 @@ export function AlignedSignatures({
   return (
     <svg ref={ref} viewBox={`0 0 ${W} ${H}`} className={className} style={{ width: "100%" }}>
       {bandsA.map((r, i) => (
-        <rect key={`a${i}`} x={xs(r.x_frac * a.length)} y={aY0} width={xs(r.w_frac * a.length)} height={laneH} fill="#10b981" fillOpacity={0.16} style={fade(0.7)} />
+        <rect key={`a${i}`} x={xs(r.x_frac * a.length)} y={aY0} width={xs(r.w_frac * a.length)} height={laneH} fill="var(--brass)" fillOpacity={0.16} style={fade(0.7)} />
       ))}
       {bandsB.map((r, i) => (
-        <rect key={`b${i}`} x={xs(r.x_frac * b.length)} y={bY0} width={xs(r.w_frac * b.length)} height={laneH} fill="#10b981" fillOpacity={0.16} style={fade(0.7)} />
+        <rect key={`b${i}`} x={xs(r.x_frac * b.length)} y={bY0} width={xs(r.w_frac * b.length)} height={laneH} fill="var(--brass)" fillOpacity={0.16} style={fade(0.7)} />
       ))}
       {Array.from({ length: m }).map((_, i) => (
         <line
@@ -102,7 +102,7 @@ export function AlignedSignatures({
           y1={aY1}
           x2={xs((bandsB[i].x_frac + bandsB[i].w_frac / 2) * b.length)}
           y2={bY0}
-          stroke="#10b981"
+          stroke="var(--brass)"
           strokeWidth={1}
           opacity={0.55}
           style={fade(0.9)}

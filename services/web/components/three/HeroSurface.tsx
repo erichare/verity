@@ -64,7 +64,7 @@ function Surface({ isDark }: { isDark: boolean }) {
   return (
     <mesh ref={meshRef} geometry={geo} rotation={[-Math.PI / 2.5, 0, 0]}>
       <meshStandardMaterial
-        color={isDark ? "#0e1320" : "#aeb8cc"}
+        color={isDark ? "#0e1a2b" : "#c9c3b4"}
         metalness={0.72}
         roughness={isDark ? 0.34 : 0.5}
         envMapIntensity={0.5}
@@ -74,22 +74,23 @@ function Surface({ isDark }: { isDark: boolean }) {
 }
 
 function Scene({ isDark }: { isDark: boolean }) {
-  const bg = isDark ? "#050509" : "#eef2f8";
+  // Fog color must equal the page canvas (Evidence tokens) or the hero edges seam.
+  const bg = isDark ? "#0c1420" : "#f4f1ea";
   return (
     <>
       <fog attach="fog" args={[bg, 4.2, 9.5]} />
       <ambientLight intensity={isDark ? 0.22 : 0.6} />
-      {/* Dark mode: dramatic brand-colored rake light. Light mode: neutral steel,
-          so the colored "Verity" wordmark reads cleanly over it. */}
+      {/* Dark mode: archival brass + steel rake light. Light mode: warm paper key
+          + cool fill, so the navy "Verity" wordmark reads cleanly over it. */}
       <directionalLight
         position={[-3, 2.6, 2]}
         intensity={isDark ? 2.6 : 2.1}
-        color={isDark ? "#818cf8" : "#f4f6fb"}
+        color={isDark ? "#c9a063" : "#fbf8f1"}
       />
       <directionalLight
         position={[3.6, 1.1, -1.8]}
         intensity={isDark ? 2.0 : 0.85}
-        color={isDark ? "#22d3ee" : "#cfd8e6"}
+        color={isDark ? "#6e97c4" : "#d8d2c4"}
       />
       <Surface isDark={isDark} />
     </>
@@ -100,7 +101,9 @@ export default function HeroSurface() {
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
-  const isDark = !mounted || resolvedTheme === "dark";
+  // Light-first: before mount (and when light) use the paper materials, matching
+  // the new default theme and avoiding a dark flash on first paint.
+  const isDark = mounted && resolvedTheme === "dark";
 
   return (
     <Canvas

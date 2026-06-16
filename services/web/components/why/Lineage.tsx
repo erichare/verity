@@ -50,7 +50,7 @@ const PILLARS: Pillar[] = [
 export function Lineage() {
   return (
     <Reveal>
-      <section className="overflow-hidden rounded-[1.45rem] bg-gradient-to-br from-indigo-500/80 via-sky-500/70 to-cyan-400/70 p-[1.5px] shadow-xl shadow-indigo-500/15 dark:shadow-cyan-400/10">
+      <section className="overflow-hidden rounded-[1.45rem] bg-gradient-to-br from-brass via-primary to-brass p-[1.5px] shadow-xl shadow-[#0e2a47]/15">
         <div className="rounded-[1.35rem] bg-background p-6 sm:p-9">
           <div className="max-w-3xl">
             <span className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/[0.08] px-3 py-1 text-xs font-medium text-foreground/80">

@@ -156,7 +156,7 @@ export default function Home() {
           <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
             <a
               href="#proof"
-              className="rounded-full bg-gradient-to-r from-indigo-500 via-sky-500 to-cyan-400 px-6 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-cyan-500/20 transition hover:opacity-90"
+              className="rounded-full bg-primary px-6 py-3 text-sm font-semibold text-[#f4f1ea] shadow-lg shadow-[#0e2a47]/20 transition hover:opacity-90"
             >
               See it work ↓
             </a>
@@ -197,7 +197,7 @@ export default function Home() {
         <Reveal className="mt-12 sm:mt-16">
           <div
             id="compare"
-            className="scroll-mt-20 rounded-[1.45rem] bg-gradient-to-br from-indigo-500 via-sky-500 to-cyan-400 p-[1.5px] shadow-2xl shadow-indigo-500/25 dark:shadow-cyan-400/15"
+            className="scroll-mt-20 rounded-[1.45rem] bg-gradient-to-br from-brass via-primary to-brass p-[1.5px] shadow-2xl shadow-[#0e2a47]/15"
           >
             <section className="space-y-5 rounded-[1.35rem] bg-background p-6 sm:p-8">
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -259,12 +259,12 @@ export default function Home() {
             <button
               onClick={onCompare}
               disabled={!markA.length || !markB.length || loading}
-              className="w-full rounded-lg bg-gradient-to-r from-indigo-500 via-sky-500 to-cyan-400 px-4 py-3 font-semibold text-slate-950 shadow-lg shadow-cyan-500/20 transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+              className="w-full rounded-lg bg-primary px-4 py-3 font-semibold text-[#f4f1ea] shadow-lg shadow-[#0e2a47]/20 transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
             >
               {loading ? "Comparing…" : "Compute likelihood ratio"}
             </button>
             {error && (
-              <p className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-sm text-rose-500 dark:text-rose-200">
+              <p className="rounded-lg border border-oxblood/30 bg-oxblood/10 p-3 text-sm text-oxblood">
                 {error}
               </p>
             )}

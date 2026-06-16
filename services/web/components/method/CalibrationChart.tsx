@@ -67,7 +67,7 @@ export function CalibrationChart({
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className={className} style={{ width: "100%" }}>
       <line x1="0" y1={base} x2={W} y2={base} stroke="var(--border)" strokeWidth={1} />
-      <path d={area(v.knmY)} fill="#f43f5e" fillOpacity={0.18} stroke="#f43f5e" strokeOpacity={0.5} strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
+      <path d={area(v.knmY)} fill="var(--oxblood)" fillOpacity={0.18} stroke="var(--oxblood)" strokeOpacity={0.5} strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
       <path d={area(v.kmY)} fill="var(--accent)" fillOpacity={0.2} stroke="var(--accent)" strokeOpacity={0.7} strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
       {/* the comparison's score */}
       <line x1={sx} y1={6} x2={sx} y2={base} stroke="var(--foreground)" strokeWidth={1.5} strokeDasharray="4 3" />
@@ -75,7 +75,7 @@ export function CalibrationChart({
       <text x={Math.min(Math.max(sx, 60), W - 60)} y={20} textAnchor="middle" fontSize="13" fill="var(--foreground)">
         score {score.toFixed(3)} → LR {lrLabel}
       </text>
-      <text x={12} y={base + 18} fontSize="12" fill="#f43f5e">different-source</text>
+      <text x={12} y={base + 18} fontSize="12" fill="var(--oxblood)">different-source</text>
       <text x={W - 12} y={base + 18} textAnchor="end" fontSize="12" fill="var(--accent)">same-source</text>
     </svg>
   );

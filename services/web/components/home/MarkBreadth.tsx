@@ -53,7 +53,7 @@ export function MarkBreadth() {
               <h3 className="mt-3 font-display text-lg font-medium text-foreground">{c.title}</h3>
               <p
                 className={`mt-2 font-mono text-4xl font-semibold ${
-                  positive ? "accent-text" : "text-rose-500 dark:text-rose-300"
+                  positive ? "accent-text" : "text-oxblood"
                 }`}
               >
                 {formatLRx(c.ex.lr)}

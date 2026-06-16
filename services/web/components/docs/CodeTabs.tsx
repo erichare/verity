@@ -24,7 +24,7 @@ export function CodeTabs({ tabs, className }: { tabs: Tab[]; className?: string 
             onClick={() => setActive(i)}
             className={`rounded-full px-3 py-1 text-xs font-medium transition ${
               i === active
-                ? "bg-gradient-to-r from-indigo-500 to-cyan-400 text-slate-950"
+                ? "bg-primary text-[#f4f1ea]"
                 : "border border-border text-foreground/70 hover:text-foreground"
             }`}
           >

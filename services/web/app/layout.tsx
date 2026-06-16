@@ -1,26 +1,34 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Fraunces } from "next/font/google";
+import { Newsreader, Inter, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// Editorial serif — display, wordmark, section headings. Courtroom/archival gravitas.
+const newsreader = Newsreader({
+  variable: "--font-newsreader",
   subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-// Editorial serif for the wordmark + section headings — premium counterpoint to the tech hero.
-const fraunces = Fraunces({
-  variable: "--font-display",
-  subsets: ["latin"],
+  display: "swap",
   axes: ["opsz"],
 });
 
+// Body & UI.
+const inter = Inter({
+  variable: "--font-inter",
+  subsets: ["latin"],
+  display: "swap",
+});
+
+// Data / metrics / code — LR values, hashes, endpoints. IBM Plex Mono is NOT a
+// variable font on Google Fonts, so the weights must be enumerated explicitly.
+const plexMono = IBM_Plex_Mono({
+  variable: "--font-plex-mono",
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  display: "swap",
+});
+
 export const metadata: Metadata = {
+  metadataBase: new URL("https://verity.codes"),
   title: "Verity — calibrated forensic surface comparison",
   description:
     "A domain-general, calibrated, explainable method for forensic surface comparison: a likelihood ratio with a characterized cost and region-level attribution, across striated and impressed marks.",
@@ -35,7 +43,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} ${fraunces.variable} h-full antialiased`}
+      className={`${inter.variable} ${newsreader.variable} ${plexMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <ThemeProvider>{children}</ThemeProvider>

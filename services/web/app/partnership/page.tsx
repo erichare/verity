@@ -223,7 +223,7 @@ export default function PartnershipPage() {
         </Reveal>
 
         <Reveal className="mt-16">
-          <div className="overflow-hidden rounded-[1.45rem] bg-gradient-to-br from-indigo-500/80 via-sky-500/70 to-cyan-400/70 p-[1.5px] shadow-xl shadow-indigo-500/15 dark:shadow-cyan-400/10">
+          <div className="overflow-hidden rounded-[1.45rem] bg-gradient-to-br from-brass via-primary to-brass p-[1.5px] shadow-xl shadow-[#0e2a47]/15">
             <div className="rounded-[1.35rem] bg-background p-8 text-center">
               <h2 className="font-display text-2xl font-medium text-foreground sm:text-3xl">
                 The honest version of the offer
@@ -242,7 +242,7 @@ export default function PartnershipPage() {
                 </a>
                 <a
                   href="/references"
-                  className="rounded-full bg-gradient-to-r from-indigo-500 via-sky-500 to-cyan-400 px-6 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-cyan-500/20 transition hover:opacity-90"
+                  className="rounded-full bg-primary px-6 py-3 text-sm font-semibold text-[#f4f1ea] shadow-lg shadow-[#0e2a47]/20 transition hover:opacity-90"
                 >
                   The science behind it →
                 </a>
