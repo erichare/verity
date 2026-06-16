@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { SiteNav } from "@/components/SiteNav";
 import {
   catalogConfigured,
   getScans,
@@ -60,7 +59,6 @@ export default function CatalogPage() {
 
   return (
     <>
-      <SiteNav />
       <main className="mx-auto w-full max-w-6xl px-6 pb-24 pt-28 sm:pt-36">
         <section className="rise max-w-3xl">
           <span className="glass inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs text-foreground/70">

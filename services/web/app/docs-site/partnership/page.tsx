@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { Reveal } from "@/components/Reveal";
-import { SiteNav } from "@/components/SiteNav";
 
 export const metadata: Metadata = {
   title: "CSAFE × Verity — a proposed partnership",
@@ -126,7 +125,6 @@ function BringsCard({
 export default function PartnershipPage() {
   return (
     <>
-      <SiteNav />
 
       <main className="mx-auto w-full max-w-5xl px-6 pb-24 pt-28 sm:pt-36">
         <section className="rise max-w-3xl">

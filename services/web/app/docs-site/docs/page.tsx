@@ -4,7 +4,6 @@ import { Reveal } from "@/components/Reveal";
 import { CodeBlock } from "@/components/docs/CodeBlock";
 import { CodeTabs } from "@/components/docs/CodeTabs";
 import { DocsNav, type NavSection } from "@/components/docs/DocsNav";
-import { SiteNav } from "@/components/SiteNav";
 
 export const metadata: Metadata = {
   title: "Verity Docs — REST API, X3P codec, and method",
@@ -214,7 +213,6 @@ write_x3p(s, tempfile(fileext = ".x3p"))`,
 export default function DocsPage() {
   return (
     <>
-      <SiteNav />
 
       <main className="mx-auto w-full max-w-6xl px-6 pb-24 pt-28 sm:pt-32">
         {/* Intro */}
@@ -251,7 +249,7 @@ export default function DocsPage() {
               </p>
               <p>
                 There are three ways in: the hosted <strong className="text-foreground">web app</strong>{" "}
-                at <a href="/" className="text-accent hover:underline">verity.codes</a>, the{" "}
+                at <a href="https://verity.codes" className="text-accent hover:underline">verity.codes</a>, the{" "}
                 <strong className="text-foreground">REST API</strong> below, and the{" "}
                 <strong className="text-foreground">open-source</strong> Rust/Python/R libraries. The
                 decision always stays behind a glass-box statistical firewall — the representation
@@ -269,7 +267,7 @@ export default function DocsPage() {
               <CodeTabs tabs={QUICKSTART_TABS} />
               <p className="text-xs text-muted">
                 No <code className="font-mono">.x3p</code> files handy? The web app&rsquo;s{" "}
-                <a href="/#compare" className="text-accent hover:underline">Compare tool</a> has a
+                <a href="https://verity.codes/#compare" className="text-accent hover:underline">Compare tool</a> has a
                 &ldquo;Load a sample&rdquo; button that runs a real comparison.
               </p>
             </Section>

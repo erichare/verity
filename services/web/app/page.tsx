@@ -9,7 +9,7 @@ import { StatBand } from "@/components/home/StatBand";
 import { LiveProof } from "@/components/home/LiveProof";
 import { MarkBreadth } from "@/components/home/MarkBreadth";
 import { WhyTeaser } from "@/components/home/WhyTeaser";
-import { SiteNav } from "@/components/SiteNav";
+import { AppNav } from "@/components/app/AppNav";
 import { Workspace } from "@/components/workspace/Workspace";
 import { LabBench } from "@/components/workspace/LabBench";
 
@@ -109,7 +109,7 @@ export default function Home() {
   return (
     <>
       {/* Top bar — the shared fixed nav (cinematic scrim variant on the home hero) */}
-      <SiteNav cinematic />
+      <AppNav />
 
       {/* Cinematic hero */}
       <section

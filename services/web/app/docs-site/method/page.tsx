@@ -9,7 +9,6 @@ import { Heatmap } from "@/components/method/Heatmap";
 import { SignaturePlot } from "@/components/method/SignaturePlot";
 import { AlignedSignatures } from "@/components/method/AlignedSignatures";
 import { CalibrationChart } from "@/components/method/CalibrationChart";
-import { SiteNav } from "@/components/SiteNav";
 
 const SurfaceViewer = dynamic(() => import("@/components/three/SurfaceViewer"), { ssr: false });
 
@@ -339,7 +338,6 @@ export default function MethodPage() {
 
   return (
     <>
-      <SiteNav />
 
       <main className="mx-auto w-full max-w-4xl px-6 pb-24 pt-28 sm:pt-36">
         {/* Intro */}
@@ -632,7 +630,7 @@ export default function MethodPage() {
               makes Verity one calibrated, explainable method rather than a pile of bespoke ones.
             </p>
             <a
-              href="/#compare"
+              href="https://verity.codes/#compare"
               className="mt-6 inline-block rounded-full bg-primary px-6 py-3 text-sm font-semibold text-[#f4f1ea] shadow-lg shadow-[#0e2a47]/20 transition hover:opacity-90"
             >
               Try it on your own scans →
