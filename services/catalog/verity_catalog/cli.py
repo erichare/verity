@@ -83,6 +83,50 @@ def ingest_toolmarks_cmd(
     typer.echo(f"ingested tmaRks toolmarks: {stats}")
 
 
+@app.command("ingest-virtual-kits")
+def ingest_virtual_kits_cmd(
+    cache_dir: Path | None = typer.Option(
+        None, help="Dataset cache dir (default ~/.cache/verity/virtual-kits)"
+    ),
+    download: bool = typer.Option(True, help="Download missing files from figshare first (~18 GB)"),
+    limit: int | None = typer.Option(None, help="Max number of scans to ingest"),
+    skip_invalid: bool = typer.Option(
+        False, help="Skip (and count) scans that fail validation instead of aborting"
+    ),
+) -> None:
+    """Ingest the CSAFE/ISU multi-instrument virtual-kits dataset (bullets +
+    cartridge cases on Evofinder/Quantum/Cadre TopMatch; figshare 30854414)."""
+    from . import virtual_kits as vk
+
+    cache = cache_dir or vk.CACHE_DIR
+    store = get_store()
+
+    if download:
+
+        def _dl(name: str, received: int, total: int | None) -> None:
+            pct = f"{100 * received / total:5.1f}%" if total else "  ?  "
+            typer.echo(f"\r  downloading {name:<26} {pct} ({received >> 20} MiB)", nl=False)
+
+        typer.echo(f"downloading dataset into {cache} ...")
+        vk.download_dataset(cache, on_progress=_dl)
+        typer.echo("")
+
+    def _progress(index: int, total: int, name: str) -> None:
+        if index % 25 == 0 or index == total:
+            typer.echo(f"  [{index}/{total}] {name}")
+
+    with Session(engine) as session:
+        stats = vk.ingest_virtual_kits(
+            session,
+            store,
+            cache_dir=cache,
+            limit=limit,
+            continue_on_error=skip_invalid,
+            on_progress=_progress,
+        )
+    typer.echo(f"ingested virtual-kits: {stats}")
+
+
 @app.command("manifests")
 def list_manifests() -> None:
     """List the bundled dataset manifests."""
