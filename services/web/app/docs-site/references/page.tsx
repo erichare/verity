@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Reveal } from "@/components/Reveal";
-import { SiteNav } from "@/components/SiteNav";
 import {
   GROUP_BLURBS,
   GROUP_LABELS,
@@ -51,7 +50,6 @@ function RefRow({ r }: { r: Reference }) {
 export default function ReferencesPage() {
   return (
     <>
-      <SiteNav />
 
       <main className="mx-auto w-full max-w-4xl px-6 pb-24 pt-28 sm:pt-36">
         <section className="rise">

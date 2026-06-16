@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Reveal } from "@/components/Reveal";
-import { SiteNav } from "@/components/SiteNav";
 import {
   benchmarkConfigured,
   getSplits,
@@ -196,7 +195,6 @@ export default async function BenchmarkPage() {
 
   return (
     <main className="mx-auto max-w-5xl px-4 pb-24 pt-28 sm:px-6">
-      <SiteNav />
 
       <Reveal>
         <p className="text-xs font-medium uppercase tracking-[0.2em] accent-text">

@@ -119,6 +119,41 @@ vercel --prod        # from the repo ROOT, not services/web
 > cache that must never ship. It's git-ignored (so Git deploys never see it), and
 > the root `.vercelignore` keeps it out of any manual CLI upload too.
 
+### `docs.verity.codes` cutover (the app / science split)
+
+The redesign serves **two hosts from the one `verity` Vercel project**: `verity.codes`
+is the app (the compare workspace), and `docs.verity.codes` is the science/docs
+(method, why, benchmark, catalog, references, the docs page). Host routing lives in
+`services/web/proxy.ts` (rewrites the docs host onto the internal `/docs-site` segment)
+and the moved-path redirects live in `services/web/next.config.ts`.
+
+**Deploy the code and attach the domain together** — until `docs.verity.codes` is
+attached, the `verity.codes/<seg>` → `docs.verity.codes/<seg>` redirects 404, so old
+`/method` etc. links break. One-time, by Eric:
+
+```bash
+# 1. Add the domain to the SAME project (no new project, no new env vars — the build
+#    is shared; NEXT_PUBLIC_API_URL / NEXT_PUBLIC_DATA_API_URL already apply to both).
+vercel domains add docs.verity.codes verity        # or dashboard → verity → Settings → Domains
+
+# 2. DNS (the verity.codes zone is on Vercel): add the docs CNAME, then wait for TLS.
+vercel dns add verity.codes docs CNAME cname.vercel-dns.com.
+
+# 3. Smoke test after the deploy is live:
+curl -I https://docs.verity.codes/method     # 200 (proxy → /docs-site/method)
+curl -I https://verity.codes/method           # 308 → https://docs.verity.codes/method
+curl -I https://verity.codes/docs-site/method # 308 → /method (internal segment guarded)
+curl    https://verity.codes/robots.txt        # Disallow: /docs-site/ + sitemap
+
+# 4. Google Search Console: add the docs.verity.codes property, submit
+#    https://verity.codes/sitemap.xml, and request recrawl on a few moved paths
+#    (/method, /benchmark) so the index moves to the docs host cleanly.
+```
+
+Local dev simulates the docs host with `*.localhost` (no hosts-file edit needed in
+Chrome/Safari): the app at `http://localhost:3000`, the docs at
+`http://docs.localhost:3000/method`.
+
 ## 3. Data API (catalog + benchmark) → Railway
 
 The data API (`services/catalog`) serves the scan catalog, the frozen

@@ -3,7 +3,6 @@ import { Reveal } from "@/components/Reveal";
 import { Benchmarks } from "@/components/why/Benchmarks";
 import { Lineage } from "@/components/why/Lineage";
 import { CuellarResponse } from "@/components/why/CuellarResponse";
-import { SiteNav } from "@/components/SiteNav";
 
 export const metadata: Metadata = {
   title: "Why Verity — what was missing",
@@ -114,7 +113,6 @@ function Gap({ n, title, children }: { n: string; title: string; children: React
 export default function WhyPage() {
   return (
     <>
-      <SiteNav />
 
       <main className="mx-auto w-full max-w-4xl px-6 pb-24 pt-28 sm:pt-36">
         <section className="rise">
@@ -228,7 +226,7 @@ export default function WhyPage() {
             </p>
             <div className="mt-6 flex flex-wrap justify-center gap-3">
               <a
-                href="/#compare"
+                href="https://verity.codes/#compare"
                 className="rounded-full bg-primary px-6 py-3 text-sm font-semibold text-[#f4f1ea] shadow-lg shadow-[#0e2a47]/20 transition hover:opacity-90"
               >
                 Try a comparison →
