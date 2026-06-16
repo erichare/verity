@@ -138,7 +138,16 @@ def list_manifests() -> None:
 
 @app.command("migrate-db")
 def migrate_db_cmd(
-    to: str = typer.Option(..., "--to", help="Target DB URL, e.g. postgresql://user:pass@host/db"),
+    to: str = typer.Option(
+        ...,
+        "--to",
+        help=(
+            "Target DB URL, e.g. postgresql://user:pass@host:5432/db (bare "
+            "postgresql:// is auto-routed to the psycopg v3 driver). For Supabase "
+            "use the Session pooler host (…pooler.supabase.com:5432) — the direct "
+            "db.<ref>.supabase.co host is IPv6-only."
+        ),
+    ),
     create_schema: bool = typer.Option(
         True, help="Create tables on the target first (disable if you ran alembic upgrade head)"
     ),

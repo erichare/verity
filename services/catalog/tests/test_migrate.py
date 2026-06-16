@@ -10,8 +10,21 @@ from sqlmodel import Session, create_engine, select
 
 from verity_catalog import models
 from verity_catalog.db import create_all
-from verity_catalog.migrate import migrate_db, sync_blobs
+from verity_catalog.migrate import migrate_db, normalize_db_url, sync_blobs
 from verity_catalog.store import LocalBlobStore, sha256_hex
+
+
+def test_normalize_db_url_routes_postgres_to_psycopg3():
+    # bare postgresql:// -> psycopg v3 (we don't ship psycopg2)
+    assert (
+        normalize_db_url(
+            "postgresql://postgres.ref:pw@aws-1-us-west-1.pooler.supabase.com:5432/postgres"
+        )
+        == "postgresql+psycopg://postgres.ref:pw@aws-1-us-west-1.pooler.supabase.com:5432/postgres"
+    )
+    # already-explicit driver and other schemes are left untouched
+    assert normalize_db_url("postgresql+psycopg://h/db") == "postgresql+psycopg://h/db"
+    assert normalize_db_url("sqlite:///x.db") == "sqlite:///x.db"
 
 
 def _seed(engine) -> None:

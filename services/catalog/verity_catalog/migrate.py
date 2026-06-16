@@ -48,6 +48,22 @@ def _existing_ids(session: Session, model: type[SQLModel]) -> set[int]:
     return set(session.exec(select(model.id)).all())  # type: ignore[attr-defined]
 
 
+def normalize_db_url(url: str) -> str:
+    """Route a bare ``postgresql://`` URL to the psycopg **v3** driver.
+
+    SQLAlchemy maps the bare ``postgresql://`` scheme to psycopg **2**, which we
+    don't ship — the ``postgres`` extra installs ``psycopg[binary]`` (v3). Without
+    this, a standard Supabase/Postgres connection string fails with
+    ``ModuleNotFoundError: No module named 'psycopg2'``. The ``+psycopg`` form
+    leaves the dialect name as ``postgresql`` so sequence handling still applies.
+    Any other scheme (e.g. ``sqlite://`` or an explicit ``+psycopg``) is unchanged.
+    """
+    prefix = "postgresql://"
+    if url.startswith(prefix):
+        return "postgresql+psycopg://" + url[len(prefix) :]
+    return url
+
+
 def migrate_db(
     target_url: str,
     *,
@@ -65,7 +81,7 @@ def migrate_db(
     for the canonical path run ``alembic upgrade head`` against the target and
     pass ``create_schema=False``)."""
     src = source_engine or local_engine
-    dst = create_engine(target_url)
+    dst = create_engine(normalize_db_url(target_url))
     if create_schema:
         SQLModel.metadata.create_all(dst)
 
@@ -105,9 +121,9 @@ def _reset_pg_sequences(dst: Engine) -> None:
             max_id = session.exec(select(func.max(model.id))).one()  # type: ignore[attr-defined]
             if max_id:
                 session.exec(
-                    text(
-                        "SELECT setval(pg_get_serial_sequence(:t, 'id'), :v, true)"
-                    ).bindparams(t=table, v=max_id)
+                    text("SELECT setval(pg_get_serial_sequence(:t, 'id'), :v, true)").bindparams(
+                        t=table, v=max_id
+                    )
                 )
         session.commit()
 
