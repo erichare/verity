@@ -23,9 +23,30 @@ function buildStats(): { value: string; label: string }[] {
   ];
 }
 
-/** A thin row of real, verifiable numbers — the credibility the hero was missing. */
-export function StatBand({ className }: { className?: string }) {
+/**
+ * A thin row of real, verifiable numbers. The default is the full stat block; the
+ * `compact` variant collapses it to a single dot-separated caption — used as the
+ * calibration footing directly under the compare workspace rather than in the hero.
+ */
+export function StatBand({ className, compact }: { className?: string; compact?: boolean }) {
   const stats = buildStats();
+  if (compact) {
+    return (
+      <p
+        className={`flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-center text-xs text-muted ${className ?? ""}`}
+      >
+        {stats.map((s, i) => (
+          <span key={s.label} className="inline-flex items-center gap-2">
+            {i > 0 && <span aria-hidden className="text-border">·</span>}
+            <span>
+              <span className="font-mono font-medium text-foreground/80">{s.value}</span>{" "}
+              {s.label.toLowerCase()}
+            </span>
+          </span>
+        ))}
+      </p>
+    );
+  }
   return (
     <dl
       className={`mx-auto flex max-w-2xl flex-wrap items-stretch justify-center gap-x-8 gap-y-4 ${className ?? ""}`}
