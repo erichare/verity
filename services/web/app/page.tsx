@@ -109,11 +109,7 @@ export default function Home() {
         className="relative flex min-h-[72svh] items-center justify-center px-6 pt-28 sm:pt-24"
       >
         <div className="rise mx-auto max-w-3xl text-center">
-          <span className="glass inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs text-foreground/70">
-            <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-            Open-science forensic surface comparison
-          </span>
-          <h1 className="mt-6 font-display text-4xl font-semibold leading-[1.05] tracking-tight sm:text-7xl">
+          <h1 className="font-display text-4xl font-semibold leading-[1.05] tracking-tight sm:text-7xl">
             Forensic marks, <span className="accent-text">weighed as evidence</span>.
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-foreground/80 sm:text-xl">
@@ -144,15 +140,11 @@ export default function Home() {
       </section>
 
       {/* Content */}
-      <main className="mx-auto mt-6 w-full max-w-4xl px-6 pb-24 sm:-mt-16">
+      <main className="mx-auto mt-6 w-full max-w-4xl px-6 pb-24">
         {/* The compare workspace — the live app, front and center. */}
         <section id="compare" className="scroll-mt-20">
           <div className="mb-5">
-            <span className="inline-flex items-center gap-2 rounded-full border border-brass/30 bg-brass/[0.08] px-3 py-1 text-xs font-medium text-foreground/80">
-              <span className="h-1.5 w-1.5 rounded-full bg-brass" />
-              The live tool
-            </span>
-            <h2 className="mt-3 font-display text-2xl font-medium text-foreground sm:text-3xl">
+            <h2 className="font-display text-2xl font-medium text-foreground sm:text-3xl">
               Compare <span className="accent-text">two marks</span>
             </h2>
             <p className="mt-2 max-w-2xl text-sm text-muted">
@@ -167,7 +159,7 @@ export default function Home() {
         </section>
 
         {/* Why this exists — one line; the full scientific argument lives on docs.verity.codes */}
-        <Reveal className="mt-20 sm:mt-28">
+        <Reveal className="mt-28 sm:mt-40">
           <div className="text-center">
             <p className="mx-auto max-w-2xl text-sm leading-relaxed text-foreground/70">
               Forensic mark comparison is used in criminal courts yet has no characterized error
@@ -184,18 +176,14 @@ export default function Home() {
         </Reveal>
 
         {/* Upload-your-own path — the live API, for visitors with their own .x3p scans. */}
-        <Reveal className="mt-20 sm:mt-28">
+        <Reveal className="mt-28 sm:mt-40">
           <div
             id="upload"
             className="scroll-mt-20 rounded-[1.45rem] bg-gradient-to-br from-brass via-primary to-brass p-[1.5px] shadow-2xl shadow-[#0e2a47]/15"
           >
             <section className="space-y-5 rounded-[1.35rem] bg-background p-6 sm:p-8">
             <div>
-              <span className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/[0.08] px-3 py-1 text-xs font-medium text-foreground/80">
-                <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-                Upload your own
-              </span>
-              <h2 className="mt-3 font-display text-2xl font-medium text-foreground sm:text-3xl">
+              <h2 className="font-display text-2xl font-medium text-foreground sm:text-3xl">
                 Bring your <span className="accent-text">own scans</span>
               </h2>
               <p className="mt-2 max-w-2xl text-sm text-muted">
