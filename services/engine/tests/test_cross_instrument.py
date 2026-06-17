@@ -44,6 +44,18 @@ def test_summarize_stratum_metrics_and_folds():
     assert isinstance(s["folds"], list)
 
 
+def test_stratified_pairs_caps_knm_and_keeps_km_whole():
+    marks = _marks()
+    capped = stratified_pairs(marks, _perfect, max_knm=50)
+    within, cross = capped["within"], capped["cross"]
+    # same-source pairs kept whole (12 / 24); different-source capped to 50 per stratum
+    assert int(within[1].sum()) == 12 and len(within[0]) == 12 + 50
+    assert int(cross[1].sum()) == 24 and len(cross[0]) == 24 + 50
+    # the subsample is seeded -> reproducible (same KNM source pairs selected)
+    again = stratified_pairs(marks, _perfect, max_knm=50)
+    assert np.array_equal(within[2], again["within"][2])
+
+
 def test_summarize_single_class_is_safe():
     # one instrument, all distinct firearms -> only KNM pairs; metrics degrade to
     # NaN and no folds, without calling the metrics on a single-class set.

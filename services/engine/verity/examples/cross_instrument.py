@@ -33,11 +33,29 @@ import numpy as np
 
 from verity import cllr_min, roc_auc
 from verity.areal import areal_score, areal_signature
+from verity.cmr import areal_votes, consensus_members
+from verity.decision import DEFAULT_SCORER_CONFIG
 from verity.decision.validation import barrel_disjoint_folds
 from verity.examples.hamby_km_knm import _catalog_dir, read_surface
 
 VIRTUAL_KITS_EXTERNAL_ID = "iastate-virtual-kits-30854414"
 BREECH_FACE = "breech_face"
+_CFG = DEFAULT_SCORER_CONFIG
+
+# Different-source pairs per stratum to keep when scoring (the CMR pass is costly;
+# same-source pairs are always kept whole). AUC/Cllr are stable at this size.
+MAX_KNM_PER_STRATUM = 500
+
+
+def cmr_score(sig_a: np.ndarray, sig_b: np.ndarray) -> float:
+    """The DEPLOYED impressed scorer: the count of congruent matching regions
+    (CMR-2d) — local cells that agree on a registration, not one whole-surface
+    cross-correlation. Scored exactly as live cartridge comparisons are."""
+    members = consensus_members(
+        areal_votes(sig_a, sig_b), corr_thresh=_CFG.cmr_corr, transform_tol=_CFG.cmr_tol
+    )
+    return float(len(members))
+
 
 # A loaded specimen: its true source firearm, the instrument it was scanned on,
 # and its 2-D impressed-mark signature.
@@ -82,30 +100,58 @@ Stratum = tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]
 
 
 def stratified_pairs(
-    marks: list[Mark], score_fn: Callable[[np.ndarray, np.ndarray], float]
+    marks: list[Mark],
+    score_fn: Callable[[np.ndarray, np.ndarray], float],
+    *,
+    max_knm: int | None = None,
+    seed: int = 0,
+    on_progress: Callable[[int, int], None] | None = None,
 ) -> dict[str, Stratum]:
-    """Bucket all mark-pairs into ``within`` / ``cross`` instrument strata.
+    """Bucket all mark-pairs into ``within`` / ``cross`` instrument strata and score them.
 
-    Pure over ``score_fn`` (injected so the bucketing is testable without the real
-    scorer): each pair contributes its score, KM/KNM label (same firearm?), and
-    the two source firearms, to the stratum chosen by whether the two scans share
-    an instrument.
+    Pairs are bucketed by index first (cheap, no scoring). When ``max_knm`` is set,
+    each stratum's different-source pairs are deterministically subsampled to that
+    cap (seeded) *before* scoring — so the expensive scorer runs on far fewer pairs
+    while the same-source set is kept whole. ``score_fn`` is injected so the
+    bucketing is testable without the real scorer; ``on_progress(done, total)``
+    fires periodically during scoring.
     """
-    buckets: dict[str, tuple[list, list, list, list]] = {
-        "within": ([], [], [], []),
-        "cross": ([], [], [], []),
+    # 1. Bucket pair *indices* by stratum (shared instrument?) and class (same firearm?).
+    buckets: dict[str, dict[str, list[tuple[int, int]]]] = {
+        "within": {"km": [], "knm": []},
+        "cross": {"km": [], "knm": []},
     }
-    for (fa, ia, sa), (fb, ib, sb) in combinations(marks, 2):
-        key = "within" if ia == ib else "cross"
-        scores, labels, src_a, src_b = buckets[key]
-        scores.append(float(score_fn(sa, sb)))
-        labels.append(1 if fa == fb else 0)
-        src_a.append(fa)
-        src_b.append(fb)
-    return {
-        key: (np.array(s), np.array(lb), np.array(a), np.array(b))
-        for key, (s, lb, a, b) in buckets.items()
-    }
+    for i, j in combinations(range(len(marks)), 2):
+        key = "within" if marks[i][1] == marks[j][1] else "cross"
+        cls = "km" if marks[i][0] == marks[j][0] else "knm"
+        buckets[key][cls].append((i, j))
+
+    # 2. Optionally cap each stratum's different-source pairs (seeded, stable order).
+    rng = np.random.default_rng(seed)
+    selected: dict[str, list[tuple[tuple[int, int], int]]] = {}
+    for key, cls in buckets.items():
+        knm = cls["knm"]
+        if max_knm is not None and len(knm) > max_knm:
+            keep = sorted(rng.choice(len(knm), size=max_knm, replace=False).tolist())
+            knm = [knm[k] for k in keep]
+        selected[key] = [(p, 1) for p in cls["km"]] + [(p, 0) for p in knm]
+
+    # 3. Score only the kept pairs.
+    total = sum(len(v) for v in selected.values())
+    done = 0
+    out: dict[str, Stratum] = {}
+    for key, pairs in selected.items():
+        scores, labels, src_a, src_b = [], [], [], []
+        for (i, j), label in pairs:
+            scores.append(float(score_fn(marks[i][2], marks[j][2])))
+            labels.append(label)
+            src_a.append(marks[i][0])
+            src_b.append(marks[j][0])
+            done += 1
+            if on_progress and done % 200 == 0:
+                on_progress(done, total)
+        out[key] = (np.array(scores), np.array(labels), np.array(src_a), np.array(src_b))
+    return out
 
 
 def summarize_stratum(stratum: Stratum) -> dict:
@@ -129,9 +175,13 @@ def summarize_stratum(stratum: Stratum) -> dict:
     return res
 
 
-def evaluate(marks: list[Mark]) -> dict[str, dict]:
-    """Score every breech-face pair and summarize the two instrument strata."""
-    strata = stratified_pairs(marks, areal_score)
+def evaluate(
+    marks: list[Mark], score_fn=areal_score, *, max_knm=None, on_progress=None
+) -> dict[str, dict]:
+    """Score every breech-face pair with ``score_fn`` and summarize the two
+    instrument strata (defaults to the global areal CCF). ``max_knm`` caps the
+    different-source pairs per stratum so the expensive scorers stay tractable."""
+    strata = stratified_pairs(marks, score_fn, max_knm=max_knm, on_progress=on_progress)
     return {key: summarize_stratum(stratum) for key, stratum in strata.items()}
 
 
@@ -153,17 +203,29 @@ def _load(session_factory=None):
     return study, marks
 
 
-def _fold_line(res: dict) -> str:
-    folds = res["folds"]
-    if not folds:
-        return "    (too few firearms for a source-disjoint split)"
-    c = np.array([f["cllr"] for f in folds])
-    cm = np.array([f["cllr_min"] for f in folds])
-    au = np.array([f["auc"] for f in folds])
-    return (
-        f"    source-disjoint over {len(folds)} splits: "
-        f"Cllr={c.mean():.3f}+/-{c.std():.3f}  Cllr_min={cm.mean():.3f}  AUC={au.mean():.3f}"
-    )
+def _report(name: str, results: dict[str, dict]) -> None:
+    """Print one scorer's within/cross strata and its cross-instrument penalty."""
+    print(f"  [{name}]")
+    for key, label in (("within", "within-instrument"), ("cross", "cross-instrument")):
+        r = results[key]
+        print(
+            f"    {label:17} pairs={r['pairs']:>5} KM={r['km']:>4}  "
+            f"AUC={r['auc']:.3f}  Cllr_min={r['cllr_min']:.3f}"
+        )
+        folds = r["folds"]
+        if folds:
+            c = np.array([f["cllr"] for f in folds])
+            au = np.array([f["auc"] for f in folds])
+            print(
+                f"      source-disjoint x{len(folds)}: "
+                f"Cllr={c.mean():.3f}+/-{c.std():.3f}  AUC={au.mean():.3f}"
+            )
+    w, x = results["within"], results["cross"]
+    if np.isfinite(w["auc"]) and np.isfinite(x["auc"]):
+        print(
+            f"    -> cross-instrument penalty: AUC {w['auc']:.3f} -> {x['auc']:.3f} "
+            f"({x['auc'] - w['auc']:+.3f})\n"
+        )
 
 
 def main() -> None:
@@ -178,33 +240,36 @@ def main() -> None:
     instruments = sorted({i for _f, i, _s in marks})
     n_firearms = len({f for f, _i, _s in marks})
     print("Cross-instrument validation — virtual-kits breech faces")
-    print("  same areal metrology as the Fadul cartridge proof; same-source = same firearm\n")
+    print("  does same-source determination survive a change of 3D imaging system?\n")
     print(
         f"  {len(marks)} breech-face scans, {n_firearms} firearms, "
         f"instruments: {', '.join(instruments)}\n"
     )
 
-    results = evaluate(marks)
-    for key, label in (("within", "WITHIN-instrument"), ("cross", "CROSS-instrument")):
-        r = results[key]
-        print(f"  {label}  (pairs={r['pairs']} KM={r['km']} KNM={r['knm']})")
-        print(f"    pooled AUC={r['auc']:.3f}  Cllr_min={r['cllr_min']:.3f}")
-        print(_fold_line(r))
-    w, x = results["within"], results["cross"]
-    if np.isfinite(w["auc"]) and np.isfinite(x["auc"]):
-        print(
-            f"\n  cross-instrument penalty: AUC {w['auc']:.3f} -> {x['auc']:.3f} "
-            f"({x['auc'] - w['auc']:+.3f}),  Cllr_min {w['cllr_min']:.3f} -> {x['cllr_min']:.3f}"
-        )
+    # Two scorers on the SAME (capped) pair set so the head-to-head is fair: the
+    # global whole-surface CCF, and the deployed cell-based CMR count. Comparing
+    # their cross-instrument penalties shows whether local cell-matching is more
+    # robust to an instrument change. KNM pairs are capped per stratum (seeded) so
+    # the CMR pass stays tractable; same-source pairs are kept whole.
+    def _progress(done: int, total: int) -> None:
+        print(f"      scored {done}/{total} pairs", flush=True)
+
+    for name, fn in (
+        ("global areal CCF", areal_score),
+        ("CMR-2d cell count (deployed)", cmr_score),
+    ):
+        print(f"  scoring [{name}] (KNM capped at {MAX_KNM_PER_STRATUM}/stratum)...", flush=True)
+        _report(name, evaluate(marks, fn, max_knm=MAX_KNM_PER_STRATUM, on_progress=_progress))
+
     print(
-        "\n  NOTE: this is the GLOBAL areal cross-correlation, not the cell-based CMR\n"
-        "  count — so a cross-instrument collapse here is a property of the global\n"
-        "  scorer (the instrument signature dominates the whole-surface CCF); whether\n"
-        "  CMR's local cell matching is more instrument-robust is the natural follow-up.\n"
-        "  The finding is the RELATIVE within- vs cross-instrument change on one\n"
-        "  consecutively-controlled set (only 2 instruments reach the breech faces).\n"
-        "  Bullets need strip-aware land extraction (a whole-bullet strip is not a\n"
-        "  single land) and are left to follow-on work."
+        "  NOTE: the global CCF correlates the whole surface; CMR counts local cells\n"
+        "  that independently agree on a registration. A smaller cross-instrument\n"
+        "  penalty under CMR would mean local matching survives an instrument change\n"
+        "  that whole-surface correlation does not. Different-source pairs are\n"
+        "  subsampled per stratum (seeded) for tractability — full-data global numbers\n"
+        "  are in PR #120; same-source pairs are kept whole. One consecutively-\n"
+        "  controlled set, only the instruments that reach the breech faces; bullets\n"
+        "  need strip-aware land extraction (follow-on work)."
     )
 
 
