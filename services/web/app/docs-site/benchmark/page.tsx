@@ -42,8 +42,78 @@ function Leaderboard({
     );
   }
   return (
-    <div className="mt-4 overflow-x-auto">
-      <table className="w-full min-w-[640px] border-collapse text-left">
+    <>
+      {/* Mobile (<md): one card per submission so every metric — including the
+          headline calibration loss — is visible without horizontal scrolling. */}
+      <ul className="mt-4 space-y-3 md:hidden">
+        {rows.map((s, i) => (
+          <li
+            key={`${s.submitter}-${s.created_at}-card`}
+            className={`rounded-xl border p-4 ${
+              s.is_reference ? "border-accent/30 bg-accent/5" : "border-border"
+            }`}
+          >
+            <div className="flex items-baseline gap-2">
+              <span className="font-mono text-sm text-foreground/50">{i + 1}</span>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm font-medium">
+                    {s.url ? (
+                      <a
+                        href={s.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:accent-text underline-offset-4 hover:underline"
+                      >
+                        {s.method}
+                      </a>
+                    ) : (
+                      s.method
+                    )}
+                  </span>
+                  {s.is_reference && (
+                    <span className="rounded-full border border-accent/30 px-2 py-0.5 text-[10px] uppercase tracking-wider accent-text">
+                      reference
+                    </span>
+                  )}
+                </div>
+                <div className="text-xs text-foreground/50">{s.submitter}</div>
+              </div>
+            </div>
+            <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 border-t border-border/50 pt-3">
+              <div>
+                <dt className="text-xs text-foreground/50">Calibration loss</dt>
+                <dd className="font-mono text-sm font-semibold accent-text">
+                  {s.calibration_loss >= 0 ? "+" : ""}
+                  {fmt(s.calibration_loss)}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs text-foreground/50">Cllr</dt>
+                <dd className="font-mono text-sm">
+                  {fmt(s.cllr)}
+                  <span className="text-foreground/40"> ±{fmt(s.cllr_std, 2)}</span>
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs text-foreground/50">Cllr_min</dt>
+                <dd className="font-mono text-sm text-foreground/70">{fmt(s.cllr_min)}</dd>
+              </div>
+              <div>
+                <dt className="text-xs text-foreground/50">AUC</dt>
+                <dd className="font-mono text-sm text-foreground/70">{fmt(s.auc)}</dd>
+              </div>
+            </dl>
+            <div className="mt-2 text-xs text-foreground/50">
+              {new Date(s.created_at).toISOString().slice(0, 10)}
+            </div>
+          </li>
+        ))}
+      </ul>
+
+      {/* md+: the full leaderboard table (640px fits without horizontal scroll). */}
+      <div className="mt-4 hidden overflow-x-auto md:block">
+        <table className="w-full min-w-[640px] border-collapse text-left">
         <thead>
           <tr className="border-b border-border text-xs uppercase tracking-wider text-foreground/50">
             <th className="px-2 py-2 sm:px-3">#</th>
@@ -107,7 +177,8 @@ function Leaderboard({
           ))}
         </tbody>
       </table>
-    </div>
+      </div>
+    </>
   );
 }
 
@@ -194,7 +265,7 @@ export default async function BenchmarkPage() {
   }
 
   return (
-    <main className="mx-auto max-w-5xl px-4 pb-24 pt-28 sm:px-6">
+    <main className="mx-auto w-full min-w-0 max-w-5xl px-4 pb-24 pt-28 sm:px-6">
 
       <Reveal>
         <p className="text-xs font-medium uppercase tracking-[0.2em] accent-text">
