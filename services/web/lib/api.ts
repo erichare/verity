@@ -1,10 +1,11 @@
 import type { CompareResponse } from "./types";
+import { fetchWithTimeout, SHORT_TIMEOUT_MS } from "./http";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 
 export async function getDomains(): Promise<string[]> {
   try {
-    const res = await fetch(`${API_BASE}/health`, { cache: "no-store" });
+    const res = await fetchWithTimeout(`${API_BASE}/health`, { cache: "no-store" }, SHORT_TIMEOUT_MS);
     if (!res.ok) return [];
     const body = await res.json();
     return body.domains ?? [];
@@ -23,7 +24,7 @@ export async function detectDomain(file: File): Promise<Detection | null> {
   try {
     const form = new FormData();
     form.append("scan", file);
-    const res = await fetch(`${API_BASE}/detect`, { method: "POST", body: form });
+    const res = await fetchWithTimeout(`${API_BASE}/detect`, { method: "POST", body: form }, SHORT_TIMEOUT_MS);
     if (!res.ok) return null;
     return await res.json();
   } catch {
@@ -41,7 +42,8 @@ export async function compareMarks(
   // each mark may be several scans (a bullet's lands); the field repeats
   for (const f of marksA) form.append("mark_a", f);
   for (const f of marksB) form.append("mark_b", f);
-  const res = await fetch(`${API_BASE}/compare`, { method: "POST", body: form });
+  // The comparison (with a cold bootstrap CI) can run long — uses the generous default.
+  const res = await fetchWithTimeout(`${API_BASE}/compare`, { method: "POST", body: form });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: res.statusText }));
     throw new Error(err.detail ?? "comparison failed");

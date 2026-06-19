@@ -340,6 +340,13 @@ function UploadModal({
           {loading ? "Walking the pipeline…" : "Run the pipeline"}
         </button>
 
+        {loading && (
+          <p className="text-center text-xs text-muted">
+            Running the real engine — the first comparison can take a minute or two while the
+            reference calibration warms up.
+          </p>
+        )}
+
         {error && (
           <p className="rounded-lg border border-oxblood/30 bg-oxblood/10 p-3 text-sm text-oxblood">{error}</p>
         )}
