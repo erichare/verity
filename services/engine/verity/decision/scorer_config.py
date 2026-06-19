@@ -38,6 +38,33 @@ class ScorerConfig:
         d["cmr_tol"] = list(self.cmr_tol)  # JSON has no tuples
         return d
 
+    @classmethod
+    def from_overrides(cls, overrides: dict) -> ScorerConfig:
+        """Build a config from a dict of overrides on top of the deployed default.
+
+        Unknown keys raise ``ValueError``; the ``cmr_tol`` list is coerced to a
+        tuple (JSON has no tuples), and the band ordering
+        (``lambda_s < lambda_c``) is enforced — so HTTP and in-process (MCP)
+        callers share one validator. A ``None`` or empty dict returns the default
+        unchanged."""
+        if not overrides:
+            return DEFAULT_SCORER_CONFIG
+        if not isinstance(overrides, dict):
+            raise ValueError("scorer_config must be a JSON object")
+        known = set(asdict(DEFAULT_SCORER_CONFIG))
+        unknown = set(overrides) - known
+        if unknown:
+            raise ValueError(f"unknown scorer_config keys: {sorted(unknown)}")
+        merged = {**DEFAULT_SCORER_CONFIG.to_dict(), **overrides}
+        merged["cmr_tol"] = tuple(merged["cmr_tol"])
+        try:
+            cfg = cls(**merged)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(f"invalid scorer_config: {exc}") from exc
+        if not cfg.lambda_s < cfg.lambda_c:
+            raise ValueError("scorer_config requires lambda_s < lambda_c")
+        return cfg
+
     @property
     def config_hash(self) -> str:
         """A stable content hash (sha256 of canonical JSON) identifying this config."""
