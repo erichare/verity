@@ -9,6 +9,8 @@ entry point the validation harness consumes.
 
 from __future__ import annotations
 
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 
@@ -17,6 +19,8 @@ from ...ingest import MANIFEST_DIR, Manifest, load_manifest, load_manifest_by_na
 from ..deps import get_session
 from ..envelope import Envelope, ok
 from ..schemas import DatasetDetail, DatasetSummary, PinnedScan
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/datasets", tags=["datasets"])
 
@@ -42,6 +46,7 @@ def list_datasets() -> Envelope[list[DatasetSummary]]:
         try:
             summaries.append(_summary(load_manifest(path)))
         except Exception:  # noqa: BLE001 - skip an unparseable manifest, don't 500 the list
+            logger.exception("skipping unparseable dataset manifest %s", path)
             continue
     return ok(summaries)
 

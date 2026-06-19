@@ -32,6 +32,7 @@ keeping coverage/signal shortfalls as non-blocking warnings.
 
 from __future__ import annotations
 
+import logging
 from dataclasses import asdict, dataclass, field
 
 import numpy as np
@@ -40,6 +41,8 @@ from ..detect import detect_domain
 from ..preprocess import isolate_roughness, remove_form
 from ..surface import Surface
 from .scorer_config import DEFAULT_SCORER_CONFIG
+
+logger = logging.getLogger(__name__)
 
 # Striated roughness band (m) — sourced from the one scorer config so the guard and the
 # comparison pipeline can never drift apart.
@@ -190,6 +193,7 @@ def _signal_check(surface: Surface) -> ScopeCheck:
         finite = z[np.isfinite(z)]
         sq_nm = float(np.sqrt(np.mean(finite**2)) * 1e9) if finite.size else 0.0
     except Exception:  # noqa: BLE001 - a surface we cannot even filter is out of scope
+        logger.exception("could not isolate a roughness band; marking scan out of scope")
         return ScopeCheck(
             "signal", False, "warn", 0.0, 20.0, "could not isolate a roughness band from this scan"
         )

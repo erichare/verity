@@ -20,6 +20,7 @@
 //! # Ok::<(), verity_x3p::X3pError>(())
 //! ```
 
+mod checksum;
 mod error;
 mod model;
 mod reader;

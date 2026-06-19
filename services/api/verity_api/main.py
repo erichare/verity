@@ -20,6 +20,7 @@ import asyncio
 import functools
 import hashlib
 import json
+import logging
 import os
 import tempfile
 import time
@@ -67,6 +68,8 @@ from .references import (
     reference_metadata,
 )
 from .steps import steps as steps_router
+
+logger = logging.getLogger(__name__)
 
 _LAMBDA_S, _LAMBDA_C = DEFAULT_SCORER_CONFIG.lambda_s, DEFAULT_SCORER_CONFIG.lambda_c
 
@@ -137,7 +140,7 @@ def _warm_caches() -> None:
                 b.scores, b.labels, n_boot=default_n_boot(), seed=0, cluster_ids=b.cluster_ids
             )
     except Exception:  # noqa: BLE001 - warmup is best-effort; never block startup
-        pass
+        logger.exception("reference bootstrap warmup failed; first comparison will build on demand")
 
 
 @asynccontextmanager
@@ -434,29 +437,13 @@ def _refusal_envelope(
     }
 
 
-_SCORER_CONFIG_KEYS = frozenset(DEFAULT_SCORER_CONFIG.to_dict())
-
-
 def _coerce_scorer_config(overrides: dict | None) -> ScorerConfig | None:
     """Validate a ``scorer_config`` override dict into a frozen :class:`ScorerConfig` (None
-    when absent). Unknown keys and an inverted band raise :class:`ValueError`, so both the
-    HTTP path (wrapped to a 400 below) and the in-process MCP tool share one validator."""
+    when absent). Delegates to :meth:`ScorerConfig.from_overrides` so the HTTP path and
+    the in-process MCP tool share one validator."""
     if not overrides:
         return None
-    if not isinstance(overrides, dict):
-        raise ValueError("scorer_config must be a JSON object")
-    unknown = set(overrides) - _SCORER_CONFIG_KEYS
-    if unknown:
-        raise ValueError(f"unknown scorer_config keys: {sorted(unknown)}")
-    merged = {**DEFAULT_SCORER_CONFIG.to_dict(), **overrides}
-    merged["cmr_tol"] = tuple(merged["cmr_tol"])
-    try:
-        cfg = ScorerConfig(**merged)
-    except (TypeError, ValueError) as exc:
-        raise ValueError(f"invalid scorer_config: {exc}") from exc
-    if not cfg.lambda_s < cfg.lambda_c:
-        raise ValueError("scorer_config requires lambda_s < lambda_c")
-    return cfg
+    return ScorerConfig.from_overrides(overrides)
 
 
 def _parse_scorer_config(raw: str | None) -> ScorerConfig | None:
