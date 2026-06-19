@@ -16,6 +16,12 @@ export function AppNav() {
         </a>
         <div className="flex items-center gap-4 sm:gap-5">
           <a
+            href="https://app.verity.codes"
+            className="whitespace-nowrap text-sm font-medium text-accent transition hover:opacity-80"
+          >
+            Studio ↗
+          </a>
+          <a
             href="https://docs.verity.codes"
             className="whitespace-nowrap text-sm text-foreground/70 transition hover:text-foreground"
           >

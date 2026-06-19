@@ -100,6 +100,15 @@ body {
   -webkit-backdrop-filter: blur(14px);
 }
 
+/* A more opaque panel for the Studio's 2-D stage overlays — they sit over the receded
+   3-D scene and must stay readable in both themes. */
+.stage-card {
+  background: color-mix(in srgb, var(--background) 90%, transparent);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
 /* Hairline that reads in both themes */
 .hairline {
   border-color: var(--border);
