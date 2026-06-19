@@ -4,6 +4,8 @@
 // render every intermediate the way `verity-build-tour` bakes it for the curated tour.
 // Shapes mirror services/api/verity_api/{steps.py,intermediates.py,artifacts.py} exactly.
 
+import { fetchWithTimeout, SHORT_TIMEOUT_MS } from "./http";
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 
 export interface ArtifactRef {
@@ -38,7 +40,7 @@ export interface AlignResult {
 }
 
 async function postForm<T>(path: string, form: FormData): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, { method: "POST", body: form });
+  const res = await fetchWithTimeout(`${API_BASE}${path}`, { method: "POST", body: form });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: res.statusText }));
     throw new Error(err.detail ?? `${path} failed`);
@@ -92,7 +94,11 @@ export interface ScorerConfig {
 /** The deployed scorer config — compare its hash to a baked tour's to detect drift. */
 export async function getScorerConfig(): Promise<ScorerConfig | null> {
   try {
-    const res = await fetch(`${API_BASE}/v1/scorer-config`, { cache: "no-store" });
+    const res = await fetchWithTimeout(
+      `${API_BASE}/v1/scorer-config`,
+      { cache: "no-store" },
+      SHORT_TIMEOUT_MS,
+    );
     if (!res.ok) return null;
     return (await res.json()) as ScorerConfig;
   } catch {
