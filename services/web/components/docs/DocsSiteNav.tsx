@@ -83,10 +83,10 @@ export function DocsSiteNav() {
         <div className="hidden items-center gap-4 lg:flex xl:gap-5">
           {DOCS_LINKS.map((link) => renderLink(link, false))}
           <a
-            href="https://verity.codes"
+            href="https://app.verity.codes"
             className="whitespace-nowrap text-sm font-medium text-accent transition hover:opacity-80"
           >
-            Open the app ↗
+            Studio ↗
           </a>
           <ThemeToggle />
         </div>

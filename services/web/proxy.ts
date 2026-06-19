@@ -11,10 +11,26 @@ const DOCS_HOSTS = new Set([
   "docs.localhost:3000", // local dev: visit http://docs.localhost:3000
 ]);
 
+// app.verity.codes → the full-screen "Studio" (app/studio/*), mirroring the docs host.
+// The studio segment is rewritten onto the app host so its public URL stays clean
+// (app.verity.codes/, not app.verity.codes/studio).
+const APP_HOSTS = new Set([
+  "app.verity.codes",
+  "app.localhost:3000", // local dev: visit http://app.localhost:3000
+]);
+
 export function proxy(request: NextRequest) {
   const host = request.headers.get("host") ?? "";
   const { pathname } = request.nextUrl;
   const isDocsHost = DOCS_HOSTS.has(host);
+  const isAppHost = APP_HOSTS.has(host);
+
+  // App host: rewrite /<path> → /studio/<path> (transparent to the URL bar).
+  if (isAppHost && !pathname.startsWith("/studio")) {
+    const url = request.nextUrl.clone();
+    url.pathname = `/studio${pathname === "/" ? "" : pathname}`;
+    return NextResponse.rewrite(url);
+  }
 
   // Docs host: rewrite /<path> → /docs-site/<path> (transparent to the URL bar).
   if (isDocsHost && !pathname.startsWith("/docs-site")) {
