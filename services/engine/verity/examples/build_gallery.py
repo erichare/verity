@@ -26,7 +26,13 @@ from pathlib import Path
 
 import numpy as np
 
-from verity.cmr import cmr_regions_1d_pair, cmr_score_1d
+from verity.cmr import (
+    areal_votes,
+    cmr_regions_1d_pair,
+    cmr_score_1d,
+    consensus_members,
+    striated_votes,
+)
 from verity.compare import (
     _areal_sigs,
     _land_fields,
@@ -93,6 +99,84 @@ def _calibration(scores: np.ndarray, labels: np.ndarray, score: float, lr: float
     }
 
 
+def _plot_coord(value: float, center: float, tol: float) -> float:
+    """Map a registration value onto [0,1] plot space, centered on the consensus and scaled to
+    the agreement tolerance: a vote within ``tol`` of the consensus sits near the middle (so a
+    true cluster reads as a tight blob), and disagreeing votes spread to — and clamp at — the
+    edges. Tolerance-relative, not absolute, so 'agreement' looks tight regardless of units."""
+    half = 4.0 * tol  # ±4·tol spans the plot; consensus (±tol) lands in the central ~1/8
+    return float(min(0.98, max(0.02, 0.5 + (value - center) / (2.0 * half))))
+
+
+def _centroid(values: list[float]) -> float:
+    return sum(values) / len(values) if values else 0.0
+
+
+def _cmr_votes_1d(a: np.ndarray, b: np.ndarray) -> dict:
+    """The REAL per-window CMR votes for a striated/toolmark pair: each window's best lag (the
+    shift that aligns it) vs its registration correlation, flagged for membership in the
+    consensus cluster. Plot x = lag (centered on the consensus lag, scaled to ``cmr_1d_lag``);
+    plot y = correlation. Raw values ride along in ``tip`` for the mouseover."""
+    votes = striated_votes(a, b)
+    members = consensus_members(
+        votes, corr_thresh=_CFG.cmr_1d_corr, transform_tol=(_CFG.cmr_1d_lag,)
+    )
+    member_ids = {id(m) for m in members}
+    cx = _centroid([v[0][0] for v in (members or votes)])  # consensus lag (else all)
+    out = [
+        {
+            "x": round(_plot_coord(v[0][0], cx, _CFG.cmr_1d_lag), 4),
+            "y": round(float(min(0.98, max(0.02, v[1]))), 4),  # correlation in [0,1]
+            "consensus": id(v) in member_ids,
+            "tip": {"shift": f"{v[0][0]:+.0f} px", "corr": f"{v[1]:.2f}"},
+        }
+        for v in votes
+    ]
+    return {
+        "kind": "1d",
+        "axisX": "shift (lag)",
+        "axisY": "correlation",
+        "nConsensus": len(members),
+        "votes": out,
+    }
+
+
+def _cmr_votes_areal(sig_a: np.ndarray, sig_b: np.ndarray) -> dict:
+    """The REAL per-cell CMR votes for an impressed pair (this is CMC): each cell's best
+    registration against B — horizontal/vertical shift (dx, dy) and rotation (θ) — vs its
+    correlation, flagged for consensus membership. Plot is the (dx, dy) translation plane,
+    centered on the consensus and scaled to the xy tolerance; twist + correlation ride in
+    ``tip`` for the mouseover."""
+    votes = areal_votes(sig_a, sig_b)
+    members = consensus_members(votes, corr_thresh=_CFG.cmr_corr, transform_tol=_CFG.cmr_tol)
+    member_ids = {id(m) for m in members}
+    ref = members or votes
+    cx = _centroid([v[0][1] for v in ref])  # consensus dx
+    cy = _centroid([v[0][0] for v in ref])  # consensus dy
+    xy_tol = _CFG.cmr_tol[0]
+    out = [
+        {
+            "x": round(_plot_coord(v[0][1], cx, xy_tol), 4),
+            "y": round(_plot_coord(v[0][0], cy, xy_tol), 4),
+            "consensus": id(v) in member_ids,
+            "tip": {
+                "shift x": f"{v[0][1]:+.0f} px",
+                "shift y": f"{v[0][0]:+.0f} px",
+                "twist": f"{v[0][2]:+.0f}°",
+                "corr": f"{v[1]:.2f}",
+            },
+        }
+        for v in votes
+    ]
+    return {
+        "kind": "areal",
+        "axisX": "horizontal shift Δx",
+        "axisY": "vertical shift Δy",
+        "nConsensus": len(members),
+        "votes": out,
+    }
+
+
 def _comp(
     a_id: str,
     b_id: str,
@@ -104,6 +188,7 @@ def _comp(
     *,
     signatures: dict | None = None,
     previews: dict | None = None,
+    cmr: dict | None = None,
 ) -> dict:
     report = rep if previews is None else {**rep, "previews": previews}
     out: dict = {
@@ -116,6 +201,8 @@ def _comp(
     }
     if signatures is not None:
         out["signatures"] = signatures
+    if cmr is not None:
+        out["cmr"] = cmr
     return out
 
 
@@ -189,6 +276,7 @@ def build_toolmarks() -> tuple[list[dict], list[dict]]:
                     "bandsA": bands_a,
                     "bandsB": bands_b,
                 },
+                cmr=_cmr_votes_1d(sig_a, sig_b),
             )
         )
     return specs, comps
@@ -270,6 +358,7 @@ def build_bullets() -> tuple[list[dict], list[dict]]:
                     "raw_a": _round_grid(_to_preview(sa[ia].heights, _SURF)),
                     "raw_b": _round_grid(_to_preview(sb[ib].heights, _SURF)),
                 },
+                cmr=_cmr_votes_1d(sig_a, sig_b),
             )
         )
     return specs, comps
@@ -344,12 +433,16 @@ def build_cartridges() -> tuple[list[dict], list[dict]]:
         # breech face (no top-left crop) and every measured cell. A specimen's areal signature is
         # independent of its partner, so it is identical across that A's comparisons — emit it
         # once per A id (the web side reuses it by aId) to avoid a ~330 KB duplicate.
+        sig_a, sig_b = _areal_sigs(sa, sb, _CFG)
         aid = _cart_id(pa)
         if aid not in seen_areal:
-            prev["areal_a"] = _round_grid(_to_preview(_areal_sigs(sa, sb, _CFG)[0], _AREAL))
+            prev["areal_a"] = _round_grid(_to_preview(sig_a, _AREAL))
             seen_areal.add(aid)
         comps.append(
-            _comp(_cart_id(pa), _cart_id(pb), rel, rep, scores, labels, rep["score"], previews=prev)
+            _comp(
+                _cart_id(pa), _cart_id(pb), rel, rep, scores, labels, rep["score"],
+                previews=prev, cmr=_cmr_votes_areal(sig_a, sig_b),
+            )
         )
     return specs, comps
 

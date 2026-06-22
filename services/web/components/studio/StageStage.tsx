@@ -117,7 +117,8 @@ function Overlay({ run, stage, progress }: { run: StudioRun; stage: Stage; progr
             votes={d.votes}
             progress={progress}
             nConsensus={d.nConsensus}
-            relation={d.relation}
+            axisX={d.axisX}
+            axisY={d.axisY}
             className="h-full w-full"
           />
         </div>

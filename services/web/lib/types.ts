@@ -141,6 +141,25 @@ export interface GalleryCalibration {
   lrLabel: string;
 }
 
+// One real CMR window/cell vote: the alignment it proposes (plot coords `x`,`y` in the
+// engine's own units), whether it joined the consensus cluster, and labelled values for hover.
+export interface GalleryVote {
+  x: number; // plot coords in [0,1] (consensus-centered, tolerance-scaled)
+  y: number;
+  consensus: boolean;
+  tip?: Record<string, string>; // ordered label → value pairs, shown on mouseover (real votes only)
+}
+
+// The real per-window CMR votes for the consensus stage — `areal` (impressed: a Δx/Δy
+// translation plane, twist on hover) or `1d` (striated/toolmark: lag vs correlation).
+export interface GalleryCmr {
+  kind: "areal" | "1d";
+  axisX: string;
+  axisY: string;
+  nConsensus: number;
+  votes: GalleryVote[];
+}
+
 // One precomputed comparison between two specimens — everything the reveal animates.
 export interface GalleryComparison {
   id: string; // "<aId>__<bId>"
@@ -150,6 +169,7 @@ export interface GalleryComparison {
   report: ComparisonReport; // the full report <ReportView> renders
   signatures?: GallerySignatures; // present for striated / toolmark marks
   calibration: GalleryCalibration;
+  cmr?: GalleryCmr; // real per-window votes for the consensus scatter (curated gallery only)
 }
 
 export interface GalleryManifest {
