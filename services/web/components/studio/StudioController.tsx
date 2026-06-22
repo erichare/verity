@@ -24,6 +24,7 @@ export function StudioController() {
   const [upload, setUpload] = useState<StudioRun | null>(null);
   const [refusal, setRefusal] = useState<RefusalResponse | null>(null);
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [animate, setAnimate] = useState(true);
 
   const run = upload ?? tourRun(domain, relation) ?? FLAGSHIP;
   const tl = useTimeline(run?.stages.length ?? 1, run?.id ?? "none");
@@ -33,7 +34,7 @@ export function StudioController() {
     setDomain(d);
   }, []);
 
-  // Keyboard: ← → step · space play/pause · Home/End jump · R restart · M match toggle · U upload.
+  // Keyboard: ← → step · space play/pause · Home/End jump · R restart · M match · U upload · A animate.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName;
@@ -68,6 +69,10 @@ export function StudioController() {
         case "U":
           setUploadOpen(true);
           break;
+        case "a":
+        case "A":
+          setAnimate((v) => !v);
+          break;
       }
     };
     window.addEventListener("keydown", onKey);
@@ -90,7 +95,7 @@ export function StudioController() {
 
       <div className="flex min-h-0 flex-1">
         <div className="relative min-w-0 flex-1">
-          <StageStage run={run} stage={stage} progress={tl.progress} />
+          <StageStage run={run} stage={stage} progress={tl.progress} autoRotate={animate} />
           <UploadPill onOpen={() => setUploadOpen(true)} live={run.provenance === "upload"} />
         </div>
         <div className="hidden w-[340px] shrink-0 border-l border-border lg:block">
@@ -110,6 +115,8 @@ export function StudioController() {
         domain={domain}
         relation={relation}
         live={run.provenance === "upload"}
+        animate={animate}
+        onToggleAnimate={() => setAnimate((v) => !v)}
         onDomain={pickDomain}
         onRelation={(r) => {
           setUpload(null);
@@ -190,6 +197,8 @@ function SubBar({
   domain,
   relation,
   live,
+  animate,
+  onToggleAnimate,
   onDomain,
   onRelation,
   onReturnToTour,
@@ -197,6 +206,8 @@ function SubBar({
   domain: MarkDomain;
   relation: "KM" | "KNM";
   live: boolean;
+  animate: boolean;
+  onToggleAnimate: () => void;
   onDomain: (d: MarkDomain) => void;
   onRelation: (r: "KM" | "KNM") => void;
   onReturnToTour: () => void;
@@ -215,6 +226,22 @@ function SubBar({
       </div>
 
       <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={onToggleAnimate}
+          aria-pressed={animate}
+          title="Toggle the rotating 3-D view (A)"
+          className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+            animate
+              ? "border-brass/40 bg-brass/15 text-brass"
+              : "border-border text-muted hover:text-foreground"
+          }`}
+        >
+          <span className={animate ? "animate-spin-slow" : ""} aria-hidden>
+            ⟳
+          </span>
+          Animate
+        </button>
         {live && (
           <button
             type="button"

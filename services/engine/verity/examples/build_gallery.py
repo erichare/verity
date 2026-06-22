@@ -259,7 +259,15 @@ def build_bullets() -> tuple[list[dict], list[dict]]:
                     "bandsA": rep["attribution"],
                     "bandsB": rep["attribution_b"],
                 },
-                previews={"a": _round_grid(previews["a"]), "b": _round_grid(previews["b"])},
+                # `a`/`b` are the form-removed striae bands (the preprocess view); `raw_a`/`raw_b`
+                # are the genuine raw land scans WITH the bullet's gross form still present (the
+                # ingest view), so the raw→preprocess step honestly shows ISO form removal.
+                previews={
+                    "a": _round_grid(previews["a"]),
+                    "b": _round_grid(previews["b"]),
+                    "raw_a": _round_grid(_to_preview(sa[ia].heights, _SURF)),
+                    "raw_b": _round_grid(_to_preview(sb[ib].heights, _SURF)),
+                },
             )
         )
     return specs, comps

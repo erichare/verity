@@ -79,6 +79,10 @@ export interface StudioRun {
   bLabel: string;
   gridA: number[][];
   gridB: number[][];
+  // The ingest view: the raw land scan WITH the bullet's gross form (real measured curvature),
+  // before form removal. Falls back to gridA (flat) when no raw source is available.
+  rawFormA: number[][];
+  rawFormB: number[][];
   bandA: number[][];
   bandB: number[][];
   regionsA: AttributionRegion[];
@@ -449,10 +453,17 @@ function makeRun(input: RunInput): StudioRun {
     gridA = [[0, 0], [0, 0]];
     gridB = [[0, 0], [0, 0]];
   }
+  // Ingest view: the raw scan with the bullet's gross form. Prefer a real raw source — the
+  // live /v1/steps raw_preview, or the gallery's raw_a/raw_b — so the curvature is the
+  // measured one; otherwise fall back to the (flat) main grid, never a fabricated shape.
+  const rawFormA = input.rawA ? center(input.rawA) : previews?.raw_a ? center(previews.raw_a) : gridA;
+  const rawFormB = input.rawB ? center(input.rawB) : previews?.raw_b ? center(previews.raw_b) : gridB;
   const partial: Omit<StudioRun, "stages"> = {
     ...input,
     gridA,
     gridB,
+    rawFormA,
+    rawFormB,
     bandA: input.bandA ? center(input.bandA) : highpass(gridA),
     bandB: input.bandB ? center(input.bandB) : highpass(gridB),
     regionsA: report.attribution ?? [],
