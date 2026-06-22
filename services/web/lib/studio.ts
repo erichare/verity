@@ -240,9 +240,19 @@ function generateVotes(nConsensus: number, seed: number): Vote[] {
   for (let i = 0; i < BUDGET; i++) {
     const consensus = i < cons;
     if (consensus) {
-      votes.push({ consensus, x: clamp(0.5 + gauss() * 0.08), y: clamp(0.55 + gauss() * 0.08) });
+      votes.push({
+        consensus,
+        x: clamp(0.5 + gauss() * 0.08),
+        y: clamp(0.55 + gauss() * 0.08),
+        corr: 0.7 + rng() * 0.25, // plausible strength for the opacity encoding (no real value)
+      });
     } else {
-      votes.push({ consensus, x: clamp(0.06 + rng() * 0.88), y: clamp(0.08 + rng() * 0.86) });
+      votes.push({
+        consensus,
+        x: clamp(0.06 + rng() * 0.88),
+        y: clamp(0.08 + rng() * 0.86),
+        corr: 0.25 + rng() * 0.5,
+      });
     }
   }
   return votes;

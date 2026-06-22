@@ -127,6 +127,7 @@ def _cmr_votes_1d(a: np.ndarray, b: np.ndarray) -> dict:
         {
             "x": round(_plot_coord(v[0][0], cx, _CFG.cmr_1d_lag), 4),
             "y": round(float(min(0.98, max(0.02, v[1]))), 4),  # correlation in [0,1]
+            "corr": round(float(v[1]), 3),  # registration strength → dot opacity
             "consensus": id(v) in member_ids,
             "tip": {"shift": f"{v[0][0]:+.0f} px", "corr": f"{v[1]:.2f}"},
         }
@@ -158,6 +159,7 @@ def _cmr_votes_areal(sig_a: np.ndarray, sig_b: np.ndarray) -> dict:
         {
             "x": round(_plot_coord(v[0][1], cx, xy_tol), 4),
             "y": round(_plot_coord(v[0][0], cy, xy_tol), 4),
+            "corr": round(float(v[1]), 3),  # registration strength → dot opacity
             "consensus": id(v) in member_ids,
             "tip": {
                 "shift x": f"{v[0][1]:+.0f} px",
