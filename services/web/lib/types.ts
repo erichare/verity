@@ -76,7 +76,15 @@ export interface ComparisonReport {
   // API presentation: small grayscale previews of each mark to overlay regions on.
   // `a`/`b` are the form-removed striae bands; `raw_a`/`raw_b` (gallery bullets) are the
   // genuine raw land scans with the bullet's gross form still present (the ingest view).
-  previews?: { a: number[][]; b: number[][]; raw_a?: number[][]; raw_b?: number[][] };
+  previews?: {
+    a: number[][];
+    b: number[][];
+    raw_a?: number[][];
+    raw_b?: number[][];
+    // Full-field, native-resolution areal map for the impressed breech face (the flat heatmap
+    // stage). The lean a/b previews drive the 3-D surfaces; this shows the whole face, sharply.
+    areal_a?: number[][];
+  };
 }
 
 // The structured out-of-scope result the API returns instead of a junk LR.

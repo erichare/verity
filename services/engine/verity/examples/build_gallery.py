@@ -28,6 +28,7 @@ import numpy as np
 
 from verity.cmr import cmr_regions_1d_pair, cmr_score_1d
 from verity.compare import (
+    _areal_sigs,
     _land_fields,
     _to_preview,
     compare_bullets_with_previews,
@@ -49,7 +50,7 @@ _BULLET_CACHE = (
 )
 
 _SURF = 56  # idle SurfaceViewer / comparison preview grid (downsampled, kept lean)
-_AREAL = 144  # impressed breech-face areal map — the flagship cartridge visual, kept detailed
+_AREAL = 256  # impressed areal map at full native areal-signature resolution (the whole face)
 _THUMB = 24  # gallery-card thumbnail grid
 
 
@@ -323,24 +324,32 @@ def build_cartridges() -> tuple[list[dict], list[dict]]:
         )
 
     comps = []
+    seen_areal: set[str] = set()
     for pa, pb, rel in ((a_path, b_path, "KM"), (a_path, c_path, "KNM")):
+        sa, sb = _read_surface(pa), _read_surface(pb)
         report, previews = compare_with_previews(
-            _read_surface(pa),
-            _read_surface(pb),
+            sa,
+            sb,
             domain="impressed",
             reference_scores=scores,
             reference_labels=labels,
             reference_name="Fadul cartridge cases",
-            # The breech-face areal map is the headline cartridge visual; the native Fadul scans
-            # are ~1200px/side, so a 56-px preview threw away almost all of it. Keep it detailed.
-            preview_size=_AREAL,
+            preview_size=_SURF,
         )
         rep = report.to_dict()
+        prev = {"a": _round_grid(previews["a"]), "b": _round_grid(previews["b"])}
+        # The flat areal heatmap is the headline cartridge visual. The lean _SURF a/b previews
+        # drive the 3-D surfaces; for the areal map we render the FULL areal signature at its
+        # native resolution (256²) — `_to_preview` with `_AREAL` ≥ that size keeps the whole
+        # breech face (no top-left crop) and every measured cell. A specimen's areal signature is
+        # independent of its partner, so it is identical across that A's comparisons — emit it
+        # once per A id (the web side reuses it by aId) to avoid a ~330 KB duplicate.
+        aid = _cart_id(pa)
+        if aid not in seen_areal:
+            prev["areal_a"] = _round_grid(_to_preview(_areal_sigs(sa, sb, _CFG)[0], _AREAL))
+            seen_areal.add(aid)
         comps.append(
-            _comp(
-                _cart_id(pa), _cart_id(pb), rel, rep, scores, labels, rep["score"],
-                previews={"a": _round_grid(previews["a"]), "b": _round_grid(previews["b"])},
-            )
+            _comp(_cart_id(pa), _cart_id(pb), rel, rep, scores, labels, rep["score"], previews=prev)
         )
     return specs, comps
 
