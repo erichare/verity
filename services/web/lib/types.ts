@@ -146,6 +146,7 @@ export interface GalleryCalibration {
 export interface GalleryVote {
   x: number; // plot coords in [0,1] (consensus-centered, tolerance-scaled)
   y: number;
+  corr?: number; // registration strength in [0,1] → dot opacity (weak cells fade)
   consensus: boolean;
   tip?: Record<string, string>; // ordered label → value pairs, shown on mouseover (real votes only)
 }

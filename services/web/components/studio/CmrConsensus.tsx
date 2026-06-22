@@ -6,6 +6,11 @@ import type { Vote } from "@/lib/studio";
 const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
 const clamp01 = (t: number) => Math.min(1, Math.max(0, t));
 
+// Registration strength → a 0–1 factor driving dot opacity. Weak cells (low correlation) fade,
+// so the prominent dots — including any hollow ones near the cluster — are the ones that matched
+// strongly (and therefore dissent on twist, not for lack of a match). corr ~0.15→0, ~0.85→1.
+const corrFactor = (c: number | undefined) => (c == null ? 0.85 : clamp01((c - 0.15) / 0.7));
+
 // Plot area inside the 0–100 viewBox, leaving margins for the axes and their labels.
 const L = 14;
 const R = 95;
@@ -119,6 +124,7 @@ export function CmrConsensus({
           const y = py(v.y);
           const hovered = hover === i;
           const interactive = !!v.tip;
+          const cf = corrFactor(v.corr); // dot opacity ∝ registration strength
           const common = {
             onMouseEnter: interactive ? () => setHover(i) : undefined,
             onMouseLeave: interactive ? () => setHover(null) : undefined,
@@ -132,7 +138,7 @@ export function CmrConsensus({
                 cy={y}
                 r={(hovered ? 2.1 : 1.5) * dotsIn}
                 fill="var(--brass)"
-                opacity={(0.55 + 0.45 * focus) * dotsIn}
+                opacity={hovered ? 1 : dotsIn * (0.45 + 0.55 * cf)}
                 {...common}
               />
             );
@@ -146,7 +152,7 @@ export function CmrConsensus({
               fill={hovered ? "var(--muted)" : "none"}
               stroke="var(--muted)"
               strokeWidth={0.4}
-              opacity={0.5 * dotsIn}
+              opacity={hovered ? 0.95 : dotsIn * (0.2 + 0.5 * cf)}
               {...common}
             />
           );
@@ -157,19 +163,22 @@ export function CmrConsensus({
         )}
       </svg>
 
-      <div className="mt-1.5 flex items-center justify-center gap-4 font-mono text-[10px] text-muted">
-        <span className="inline-flex items-center gap-1.5">
-          <svg width="9" height="9" viewBox="0 0 9 9" aria-hidden>
-            <circle cx="4.5" cy="4.5" r="3" fill="var(--brass)" />
-          </svg>
-          agrees on alignment
-        </span>
-        <span className="inline-flex items-center gap-1.5">
-          <svg width="9" height="9" viewBox="0 0 9 9" aria-hidden>
-            <circle cx="4.5" cy="4.5" r="2.6" fill="none" stroke="var(--muted)" strokeWidth="0.9" />
-          </svg>
-          dissents
-        </span>
+      <div className="mt-1.5 flex flex-col items-center gap-0.5 font-mono text-[10px] text-muted">
+        <div className="flex items-center justify-center gap-4">
+          <span className="inline-flex items-center gap-1.5">
+            <svg width="9" height="9" viewBox="0 0 9 9" aria-hidden>
+              <circle cx="4.5" cy="4.5" r="3" fill="var(--brass)" />
+            </svg>
+            agrees on alignment
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <svg width="9" height="9" viewBox="0 0 9 9" aria-hidden>
+              <circle cx="4.5" cy="4.5" r="2.6" fill="none" stroke="var(--muted)" strokeWidth="0.9" />
+            </svg>
+            dissents
+          </span>
+        </div>
+        <span className="text-muted/70">brighter = stronger match · hover for values</span>
       </div>
     </div>
   );
