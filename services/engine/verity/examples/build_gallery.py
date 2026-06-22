@@ -49,6 +49,7 @@ _BULLET_CACHE = (
 )
 
 _SURF = 56  # idle SurfaceViewer / comparison preview grid (downsampled, kept lean)
+_AREAL = 144  # impressed breech-face areal map — the flagship cartridge visual, kept detailed
 _THUMB = 24  # gallery-card thumbnail grid
 
 
@@ -330,7 +331,9 @@ def build_cartridges() -> tuple[list[dict], list[dict]]:
             reference_scores=scores,
             reference_labels=labels,
             reference_name="Fadul cartridge cases",
-            preview_size=_SURF,
+            # The breech-face areal map is the headline cartridge visual; the native Fadul scans
+            # are ~1200px/side, so a 56-px preview threw away almost all of it. Keep it detailed.
+            preview_size=_AREAL,
         )
         rep = report.to_dict()
         comps.append(
