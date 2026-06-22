@@ -473,6 +473,14 @@ function makeRun(input: RunInput): StudioRun {
   return { ...partial, stages: buildStages(partial) };
 }
 
+// The full-field areal map is emitted once per A specimen (it's identical across that A's
+// comparisons), so index it by aId and let every comparison sharing that A reuse it.
+const AREAL_BY_AID: Record<string, number[][]> = {};
+for (const c of GALLERY_COMPARISONS) {
+  const ar = c.report.previews?.areal_a;
+  if (ar && !AREAL_BY_AID[c.aId]) AREAL_BY_AID[c.aId] = ar;
+}
+
 function comparisonToRun(c: GalleryComparison): StudioRun {
   const a = getSpecimen(c.aId);
   const b = getSpecimen(c.bId);
@@ -486,6 +494,8 @@ function comparisonToRun(c: GalleryComparison): StudioRun {
     report: c.report,
     signatures: c.signatures,
     calibration: c.calibration,
+    // Impressed: the full-field native areal map for the flat heatmap stage (whole breech face).
+    arealRaw: c.report.previews?.areal_a ?? AREAL_BY_AID[c.aId],
   });
 }
 
