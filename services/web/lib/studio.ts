@@ -12,8 +12,10 @@ import type {
   AttributionRegion,
   ComparisonReport,
   GalleryCalibration,
+  GalleryCmr,
   GalleryComparison,
   GallerySignatures,
+  GalleryVote,
   MarkDomain,
 } from "./types";
 
@@ -37,13 +39,10 @@ export interface Readout {
   value: string;
 }
 
-export interface Vote {
-  consensus: boolean;
-  hx: number; // scattered "home" position (0..100)
-  hy: number;
-  tx: number; // settled target (cluster for consensus, ~home for dissent)
-  ty: number;
-}
+// A rendered consensus-scatter vote: plot coords in [0,1], consensus membership, and (real
+// votes only) the labelled raw values for the mouseover. Real votes come from the engine
+// (`GalleryCmr`); synthetic ones are generated for the upload fallback (no `tip`).
+export type Vote = GalleryVote;
 
 export type StageDisplay =
   | { type: "surfaces"; variant: "raw" | "bandpassed" | "attribution" }
@@ -55,7 +54,14 @@ export type StageDisplay =
       bandsA: GallerySignatures["bandsA"];
       bandsB: GallerySignatures["bandsB"];
     }
-  | { type: "cmr"; relation: "KM" | "KNM"; votes: Vote[]; nConsensus: number }
+  | {
+      type: "cmr";
+      relation: "KM" | "KNM";
+      votes: Vote[];
+      nConsensus: number;
+      axisX: string;
+      axisY: string;
+    }
   | { type: "calibration"; km: number[]; knm: number[]; score: number; lrLabel: string }
   | { type: "verdict"; report: ComparisonReport };
 
@@ -90,6 +96,8 @@ export interface StudioRun {
   report: ComparisonReport;
   signatures?: GallerySignatures;
   calibration?: GalleryCalibration;
+  // Real per-window CMR votes for the consensus scatter (curated gallery only).
+  cmr?: GalleryCmr;
   // Real intermediates from the live /v1/steps walk (absent on the curated gallery path).
   align?: { lag: number; ccf: number };
   arealRaw?: number[][];
@@ -219,22 +227,22 @@ function ridgeFromSignature(sig: number[], cols = 60, rows = 48, seed = 1): numb
   return out;
 }
 
+// Synthetic votes for the upload fallback only (no real per-window votes from the live API):
+// a central consensus blob + scattered dissent in [0,1], mirroring the real-vote layout so the
+// renderer is identical. No `tip` — uploads carry no measured registration values to show.
 function generateVotes(nConsensus: number, seed: number): Vote[] {
   const rng = mulberry32(seed);
   const BUDGET = 46;
   const cons = Math.max(0, Math.min(40, nConsensus));
-  const cx = 64;
-  const cy = 50;
-  const votes: Vote[] = [];
+  const clamp = (v: number) => Math.min(0.98, Math.max(0.02, v));
   const gauss = () => rng() + rng() + rng() - 1.5; // ~N(0, ~0.5)
+  const votes: Vote[] = [];
   for (let i = 0; i < BUDGET; i++) {
-    const hx = 8 + rng() * 84;
-    const hy = 12 + rng() * 76;
     const consensus = i < cons;
     if (consensus) {
-      votes.push({ consensus, hx, hy, tx: cx + gauss() * 13, ty: cy + gauss() * 13 });
+      votes.push({ consensus, x: clamp(0.5 + gauss() * 0.08), y: clamp(0.55 + gauss() * 0.08) });
     } else {
-      votes.push({ consensus, hx, hy, tx: hx + gauss() * 4, ty: hy + gauss() * 4 });
+      votes.push({ consensus, x: clamp(0.06 + rng() * 0.88), y: clamp(0.08 + rng() * 0.86) });
     }
   }
   return votes;
@@ -363,11 +371,31 @@ function buildStages(run: Omit<StudioRun, "stages">): Stage[] {
     );
   }
 
+  // Prefer the engine's REAL per-window votes (curated gallery); fall back to synthetic only
+  // for live uploads, where the API exposes no per-window votes.
+  const realCmr = run.cmr;
   const nConsensus =
-    domain === "striated" ? regionsA.length || Math.round(report.score) : Math.round(report.score);
+    realCmr?.nConsensus ??
+    (domain === "striated" ? regionsA.length || Math.round(report.score) : Math.round(report.score));
   push(
     "cmr",
-    { type: "cmr", relation, votes: generateVotes(nConsensus, hashSeed(run.id)), nConsensus },
+    realCmr
+      ? {
+          type: "cmr",
+          relation,
+          votes: realCmr.votes,
+          nConsensus,
+          axisX: realCmr.axisX,
+          axisY: realCmr.axisY,
+        }
+      : {
+          type: "cmr",
+          relation,
+          votes: generateVotes(nConsensus, hashSeed(run.id)),
+          nConsensus,
+          axisX: "proposed shift",
+          axisY: "proposed twist",
+        },
     [{ label: "congruent regions", value: `${nConsensus}` }],
     true,
   );
@@ -424,6 +452,7 @@ interface RunInput {
   report: ComparisonReport;
   signatures?: GallerySignatures;
   calibration?: GalleryCalibration;
+  cmr?: GalleryCmr;
   // Real intermediates from the live /v1/steps walk; each falls back to a derivation.
   rawA?: number[][];
   rawB?: number[][];
@@ -494,6 +523,7 @@ function comparisonToRun(c: GalleryComparison): StudioRun {
     report: c.report,
     signatures: c.signatures,
     calibration: c.calibration,
+    cmr: c.cmr,
     // Impressed: the full-field native areal map for the flat heatmap stage (whole breech face).
     arealRaw: c.report.previews?.areal_a ?? AREAL_BY_AID[c.aId],
   });
