@@ -5,10 +5,14 @@ import type { Vote } from "@/lib/studio";
 const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
 
 /**
- * The congruent-matching-regions moment: each window casts a vote on how to align the two
- * marks. As the stage plays, the votes that agree migrate into a tight consensus cluster
- * (brass), while the dissenters stay scattered (faint). A same-source pair locks; a
+ * The congruent-matching-regions moment: the two marks are tiled into many small windows, and
+ * each window casts a vote on how to align them. As the stage plays, the windows that agree on
+ * the same shift-and-twist (filled brass) migrate into a tight consensus cluster, while the
+ * dissenters (hollow) stay scattered. A same-source pair locks into consensus; a
  * different-source pair never does. `progress` (0→1) drives the convergence.
+ *
+ * The header count, the labelled legend, and the "consensus" call-out exist so the graphic
+ * reads on its own — each dot is one comparison window; filled = agrees, hollow = dissents.
  */
 export function CmrConsensus({
   votes,
@@ -25,39 +29,87 @@ export function CmrConsensus({
 }) {
   const e = easeOut(progress);
   const ring = nConsensus >= 6 && relation === "KM";
+  const agreeing = votes.filter((v) => v.consensus).length;
+  const total = votes.length;
+  // The count ramps up as the agreeing windows migrate together.
+  const liveAgree = Math.round(agreeing * e);
 
   return (
-    <svg viewBox="0 0 100 100" className={className} style={{ width: "100%", height: "100%" }}>
-      {ring && (
-        <circle
-          cx={64}
-          cy={50}
-          r={4 + e * 16}
-          fill="none"
-          stroke="var(--brass)"
-          strokeWidth={0.5}
-          opacity={e * 0.7}
-        />
-      )}
-      {votes.map((v, i) => {
-        const x = v.hx + (v.tx - v.hx) * e;
-        const y = v.hy + (v.ty - v.hy) * e;
-        if (v.consensus) {
-          return <circle key={i} cx={x} cy={y} r={1.5} fill="var(--brass)" opacity={0.5 + e * 0.5} />;
-        }
-        return (
+    <div className={`flex flex-col ${className ?? ""}`}>
+      <div className="mb-1.5 flex items-baseline justify-between gap-2">
+        <span className="font-mono text-[10px] uppercase tracking-wider text-muted">
+          Comparison windows
+        </span>
+        <span className="font-mono text-[11px] tabular-nums">
+          <span className="text-brass">{liveAgree}</span>
+          <span className="text-muted"> / {total} agree</span>
+        </span>
+      </div>
+
+      <svg
+        viewBox="0 0 100 100"
+        preserveAspectRatio="xMidYMid meet"
+        className="min-h-0 w-full flex-1"
+      >
+        {ring && (
           <circle
-            key={i}
-            cx={x}
-            cy={y}
-            r={1.3}
+            cx={64}
+            cy={50}
+            r={4 + e * 16}
             fill="none"
-            stroke="var(--muted)"
-            strokeWidth={0.4}
-            opacity={0.5}
+            stroke="var(--brass)"
+            strokeWidth={0.5}
+            opacity={e * 0.7}
           />
-        );
-      })}
-    </svg>
+        )}
+        {ring && e > 0.55 && (
+          <text
+            x={64}
+            y={26}
+            textAnchor="middle"
+            fontSize={3.6}
+            fill="var(--brass)"
+            opacity={(e - 0.55) / 0.45}
+            style={{ textTransform: "uppercase", letterSpacing: "0.12em" }}
+          >
+            consensus
+          </text>
+        )}
+        {votes.map((v, i) => {
+          const x = v.hx + (v.tx - v.hx) * e;
+          const y = v.hy + (v.ty - v.hy) * e;
+          if (v.consensus) {
+            return <circle key={i} cx={x} cy={y} r={1.5} fill="var(--brass)" opacity={0.5 + e * 0.5} />;
+          }
+          return (
+            <circle
+              key={i}
+              cx={x}
+              cy={y}
+              r={1.3}
+              fill="none"
+              stroke="var(--muted)"
+              strokeWidth={0.4}
+              opacity={0.5}
+            />
+          );
+        })}
+      </svg>
+
+      <div className="mt-1.5 flex items-center justify-center gap-4 font-mono text-[10px] text-muted">
+        <span className="inline-flex items-center gap-1.5">
+          <svg width="9" height="9" viewBox="0 0 9 9" aria-hidden>
+            <circle cx="4.5" cy="4.5" r="3" fill="var(--brass)" />
+          </svg>
+          agrees on alignment
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <svg width="9" height="9" viewBox="0 0 9 9" aria-hidden>
+            <circle cx="4.5" cy="4.5" r="2.6" fill="none" stroke="var(--muted)" strokeWidth="0.9" />
+          </svg>
+          dissents
+        </span>
+      </div>
+    </div>
   );
 }
