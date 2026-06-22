@@ -51,6 +51,29 @@ export function CmrConsensus({
         preserveAspectRatio="xMidYMid meet"
         className="min-h-0 w-full flex-1"
       >
+        {/* Axes name what the plane means: each window is placed by the alignment it proposes —
+            how far to shift and how much to twist (rotate) to line its patch up. Windows that
+            propose the same shift-and-twist land together. The layout is schematic (no measured
+            units, hence no ticks); the message is the clustering, not the coordinates. */}
+        <g opacity={0.55} className="font-mono">
+          <line x1={7} y1={92} x2={93} y2={92} stroke="var(--muted)" strokeWidth={0.3} />
+          <path d="M93 92 l-2.2 -1.1 v2.2 z" fill="var(--muted)" />
+          <text x={50} y={98.5} textAnchor="middle" fontSize={3} fill="var(--muted)">
+            shift →
+          </text>
+          <line x1={7} y1={92} x2={7} y2={9} stroke="var(--muted)" strokeWidth={0.3} />
+          <path d="M7 9 l-1.1 2.2 h2.2 z" fill="var(--muted)" />
+          <text
+            x={2.8}
+            y={50}
+            textAnchor="middle"
+            fontSize={3}
+            fill="var(--muted)"
+            transform="rotate(-90 2.8 50)"
+          >
+            twist →
+          </text>
+        </g>
         {ring && (
           <circle
             cx={64}
