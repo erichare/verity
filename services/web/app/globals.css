@@ -149,9 +149,20 @@ body {
   transform: none;
 }
 
+@keyframes spin-slow {
+  to { transform: rotate(360deg); }
+}
+
+/* Slow spin for the "Animate" toggle glyph (mirrors the rotating 3-D view). */
+.animate-spin-slow {
+  display: inline-block;
+  animation: spin-slow 3.2s linear infinite;
+}
+
 /* Respect reduced-motion across animated bits. */
 @media (prefers-reduced-motion: reduce) {
   .rise { animation: none; }
   .reveal { opacity: 1; transform: none; transition: none; }
+  .animate-spin-slow { animation: none; }
   html { scroll-behavior: auto; }
 }

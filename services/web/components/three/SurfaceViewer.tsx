@@ -1,6 +1,6 @@
 "use client";
 
-import { OrbitControls } from "@react-three/drei";
+import { Environment, Lightformer, OrbitControls } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
 import { useTheme } from "next-themes";
 import { useEffect, useMemo, useState } from "react";
@@ -26,7 +26,21 @@ function downsample(grid: number[][]): number[][] {
   return out;
 }
 
-function Heightmap({ grid, isDark }: { grid: number[][]; isDark: boolean }) {
+// A heightmap surface: the grid's own heights are the relief. For the raw bullet scan that
+// includes the gross form (the measured curvature); after form removal it's flat roughness.
+function Heightmap({
+  grid,
+  color,
+  metalness,
+  roughness,
+  envMapIntensity,
+}: {
+  grid: number[][];
+  color: string;
+  metalness: number;
+  roughness: number;
+  envMapIntensity: number;
+}) {
   const geo = useMemo(() => {
     const rows = grid.length;
     const cols = grid[0]?.length ?? 1;
@@ -42,12 +56,15 @@ function Heightmap({ grid, isDark }: { grid: number[][]; isDark: boolean }) {
     return g;
   }, [grid]);
 
+  useEffect(() => () => geo.dispose(), [geo]);
+
   return (
     <mesh geometry={geo}>
       <meshStandardMaterial
-        color={isDark ? "#1b2540" : "#9fb0cc"}
-        metalness={0.55}
-        roughness={0.45}
+        color={color}
+        metalness={metalness}
+        roughness={roughness}
+        envMapIntensity={envMapIntensity}
         side={THREE.DoubleSide}
       />
     </mesh>
@@ -67,7 +84,7 @@ function RegionMarkers({ regions, accent }: { regions: AttributionRegion[]; acce
             <meshBasicMaterial
               color={accent}
               transparent
-              opacity={0.28}
+              opacity={0.3}
               side={THREE.DoubleSide}
               depthWrite={false}
             />
@@ -78,28 +95,65 @@ function RegionMarkers({ regions, accent }: { regions: AttributionRegion[]; acce
   );
 }
 
+// A small procedural studio (rendered into an env map, not shown directly): a couple of
+// bright strips against a dark surround give the satin-bronze surface a travelling sheen
+// and a tight specular line, without washing out its body — no external HDRI to fetch.
+function StudioEnv({ isDark }: { isDark: boolean }) {
+  const warm = isDark ? "#e9c98f" : "#fff3da";
+  const cool = isDark ? "#7e9fc6" : "#dbe6f4";
+  return (
+    <Environment key={isDark ? "d" : "l"} frames={1} resolution={256} environmentIntensity={isDark ? 0.4 : 0.32}>
+      {/* Dark surround → reflections read as a sheen, not a wash. */}
+      <color attach="background" args={["#0a0e16"]} />
+      {/* Soft key sweeping from upper-left. */}
+      <Lightformer form="rect" intensity={2.6} position={[-3, 5, 3]} scale={[7, 5, 1]} color="#fff7e8" />
+      {/* A long, narrow strip → a tight specular line that travels across the striae. */}
+      <Lightformer form="rect" intensity={2.4} rotation={[0, Math.PI / 2, 0]} position={[-5, 1, 0]} scale={[8, 1.1, 1]} color={warm} />
+      {/* Cool counter-rim from the right. */}
+      <Lightformer form="rect" intensity={1.6} rotation={[0, -Math.PI / 2, 0]} position={[5, 0.5, 0]} scale={[6, 3, 1]} color={cool} />
+    </Environment>
+  );
+}
+
 function Scene({
   grid,
   regions,
+  autoRotate,
   isDark,
 }: {
   grid: number[][];
   regions?: AttributionRegion[];
+  autoRotate: boolean;
   isDark: boolean;
 }) {
   const accent = isDark ? "#c9a063" : "#a9803e";
+  // Warm machined bronze that reads as a metal bullet jacket in both themes.
+  const metal = isDark ? "#c19a64" : "#a8854f";
   return (
     <>
-      <ambientLight intensity={isDark ? 0.35 : 0.6} />
-      <directionalLight position={[-2, 3, 2]} intensity={isDark ? 2.2 : 1.6} color={isDark ? "#c9a063" : "#f0ece2"} />
-      <directionalLight position={[3, 2, -1]} intensity={isDark ? 1.4 : 0.7} color={isDark ? "#6e97c4" : "#cfc9ba"} />
+      <ambientLight intensity={isDark ? 0.35 : 0.5} />
+      {/* Strong key from upper-left → a bright-top / dark-flank falloff that reveals the form,
+          plus a specular glint that sweeps across the striae as the surface turns. */}
+      <directionalLight
+        position={[-3, 4, 2.5]}
+        intensity={isDark ? 2.3 : 2.5}
+        color={isDark ? "#f3e4c2" : "#fffaf0"}
+      />
+      <directionalLight position={[3, 1.5, -2]} intensity={isDark ? 0.7 : 0.55} color={isDark ? "#7e9fc6" : "#c4cedd"} />
+      <StudioEnv isDark={isDark} />
       <group rotation={[-Math.PI / 2, 0, 0]}>
-        <Heightmap grid={grid} isDark={isDark} />
+        <Heightmap
+          grid={grid}
+          color={metal}
+          metalness={0.42}
+          roughness={isDark ? 0.48 : 0.46}
+          envMapIntensity={isDark ? 0.7 : 0.55}
+        />
         {regions?.length ? <RegionMarkers regions={regions} accent={accent} /> : null}
       </group>
       <OrbitControls
         enablePan={false}
-        autoRotate
+        autoRotate={autoRotate}
         autoRotateSpeed={0.7}
         minDistance={1.8}
         maxDistance={5}
@@ -114,10 +168,13 @@ export default function SurfaceViewer({
   grid,
   regions,
   className,
+  autoRotate = true,
 }: {
   grid: number[][];
   regions?: AttributionRegion[];
   className?: string;
+  /** Auto-rotate the camera. Turn off via the Studio "Animate" toggle. */
+  autoRotate?: boolean;
 }) {
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -128,8 +185,8 @@ export default function SurfaceViewer({
 
   return (
     <div className={className}>
-      <Canvas camera={{ position: [0, 1.9, 2.5], fov: 38 }} dpr={[1, 2]} gl={{ antialias: true, alpha: true }}>
-        <Scene grid={small} regions={regions} isDark={isDark} />
+      <Canvas camera={{ position: [0, 1.85, 2.95], fov: 38 }} dpr={[1, 2]} gl={{ antialias: true, alpha: true }}>
+        <Scene grid={small} regions={regions} autoRotate={autoRotate} isDark={isDark} />
       </Canvas>
     </div>
   );

@@ -15,14 +15,16 @@ function SurfacePane({
   label,
   grid,
   regions,
+  autoRotate,
 }: {
   label: string;
   grid: number[][];
   regions?: StudioRun["regionsA"];
+  autoRotate: boolean;
 }) {
   return (
     <div className="relative min-h-0 min-w-0 flex-1">
-      <SurfaceViewer grid={grid} regions={regions} className="h-full w-full" />
+      <SurfaceViewer grid={grid} regions={regions} autoRotate={autoRotate} className="h-full w-full" />
       <span className="pointer-events-none absolute left-3 top-3 font-mono text-[10px] uppercase tracking-wider text-muted">
         {label}
       </span>
@@ -40,15 +42,18 @@ export function StageStage({
   run,
   stage,
   progress,
+  autoRotate = true,
 }: {
   run: StudioRun;
   stage: Stage;
   progress: number;
+  autoRotate?: boolean;
 }) {
-  const showBand = stage.id === "preprocess";
   const showRegions = stage.display.type === "surfaces" && stage.display.variant === "attribution";
-  const gridA = showBand ? run.bandA : run.gridA;
-  const gridB = showBand ? run.bandB : run.gridB;
+  // Ingest shows the raw scan with the bullet's gross form; preprocess shows it after form
+  // removal (the roughness band) — so stepping from one to the next IS the form-removal step.
+  const gridA = stage.id === "ingest" ? run.rawFormA : stage.id === "preprocess" ? run.bandA : run.gridA;
+  const gridB = stage.id === "ingest" ? run.rawFormB : stage.id === "preprocess" ? run.bandB : run.gridB;
 
   return (
     <div className="relative h-full w-full overflow-hidden">
@@ -61,8 +66,18 @@ export function StageStage({
           transform: stage.recede ? "scale(0.96)" : "scale(1)",
         }}
       >
-        <SurfacePane label={run.aLabel} grid={gridA} regions={showRegions ? run.regionsA : undefined} />
-        <SurfacePane label={run.bLabel} grid={gridB} regions={showRegions ? run.regionsB : undefined} />
+        <SurfacePane
+          label={run.aLabel}
+          grid={gridA}
+          regions={showRegions ? run.regionsA : undefined}
+          autoRotate={autoRotate}
+        />
+        <SurfacePane
+          label={run.bLabel}
+          grid={gridB}
+          regions={showRegions ? run.regionsB : undefined}
+          autoRotate={autoRotate}
+        />
       </div>
 
       {/* Per-stage 2-D overlay. */}
