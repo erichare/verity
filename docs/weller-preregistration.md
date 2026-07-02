@@ -426,3 +426,31 @@ claim stands and is auditable: at the registered commit, no Verity code path ref
 the Weller data (verifiable by repository search); no Weller file was parsed, scored,
 or inspected; and no quantity derived from Weller surface data existed at registration.
 The confirmatory analysis had not been run when this note was filed."
+
+### A.2 — 2026-07-02: run-execution note (no effect on the reported numbers)
+
+The registered scoring is deterministic (§2.2: no tunable analysis parameter). The
+reported result was produced by re-invoking the identical frozen pipeline for execution
+reasons only, none of which touch a score:
+
+- An initial serial invocation of the driver was interrupted before it completed (no
+  result was written); a monitoring mistake initially misread it as failed. No output or
+  partial result from that invocation was used.
+- The per-pair scoring loop was then parallelized across CPU cores (`ProcessPoolExecutor`
+  over the independent pairs) purely for speed. This changes execution scheduling, not the
+  computation: `ProcessPoolExecutor.map` preserves pair order and each pair runs the same
+  frozen `score_pair`. Correctness is enforced by the committed self-check, which requires
+  the parallel path to reproduce the committed `cartridge_fadul.npz` reference **bit-for-bit**
+  (190 pairs, identical per-pair scores) before any run is trusted.
+
+The reported result is the first complete run under the registered protocol (§2.1); the
+above concerns only how that single deterministic computation was scheduled.
+
+### A.3 — 2026-07-02: registered result
+
+Run once as registered (`git_commit` recorded in `docs/whitepaper/data/weller_external.json`):
+**H1 supported** — pooled Cllr **0.163** (95% cluster-bootstrap CI [0.147, 0.189]),
+AUC 0.9995, Cllr_min 0.032, on 4,465 pairs (370 KM) from 95/95 evaluable scans with **zero
+exclusions**. The within-study companion split `cartridge-v2` reads Cllr 0.045 ± 0.024
+(fold mean). Full numbers and interpretation: `docs/headline-numbers.md` (Weller external
+row set); machine-readable record: `docs/whitepaper/data/weller_external.json`.

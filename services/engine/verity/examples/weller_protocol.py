@@ -218,22 +218,74 @@ def score_pair(sig_a: np.ndarray, sig_b: np.ndarray) -> float:
     return float(len(members))
 
 
+# Per-worker signature table, populated once per process by the pool initializer
+# (§0 frozen scorer): workers reference scans by index instead of re-pickling the
+# ~95 signature arrays for every one of the thousands of pairs.
+_WORKER_SIGS: list[np.ndarray] | None = None
+
+
+def _init_scoring(signatures: list[np.ndarray]) -> None:
+    global _WORKER_SIGS
+    _WORKER_SIGS = signatures
+
+
+def _score_ij(ij: tuple[int, int]) -> tuple[float, str | None]:
+    """Worker: the identical frozen ``score_pair`` on two precomputed signatures.
+    A per-pair exception is returned (not raised) so §5.6 handling is unchanged."""
+    i, j = ij
+    assert _WORKER_SIGS is not None
+    try:
+        return score_pair(_WORKER_SIGS[i], _WORKER_SIGS[j]), None
+    except Exception as exc:  # noqa: BLE001 - §5.6: counted, reported, excluded upstream
+        return float("nan"), f"pipeline crash: {exc}"
+
+
+def _progress(done: int, total: int, *, every: int = 250) -> None:
+    if total and (done % every == 0 or done == total):
+        print(f"  scored {done}/{total} pairs", flush=True)
+
+
 def score_pairs(
     evaluable: Sequence[EvaluableScan],
     pairs: Sequence[BenchmarkPair],
     idx: Sequence[tuple[int, int]],
     *,
     score_fn: Callable[[np.ndarray, np.ndarray], float] = score_pair,
+    workers: int = 1,
 ) -> tuple[np.ndarray, tuple[Exclusion, ...]]:
     """Score every enumerated pair once. A per-pair crash yields ``NaN`` plus a
-    counted §5.6 exclusion — the pair is never retried differently."""
-    scores = np.full(len(pairs), np.nan)
+    counted §5.6 exclusion — the pair is never retried differently.
+
+    ``workers <= 1`` runs the serial path (and honors an injected ``score_fn``,
+    used by the synthetic unit tests). ``workers > 1`` fans the *independent*
+    per-pair scoring across processes using the module-level frozen ``score_pair``;
+    ``ProcessPoolExecutor.map`` preserves input order, so ``scores[k]`` still aligns
+    with ``pairs[k]`` and the result is bit-identical to the serial path (validated
+    by the Fadul self-check, which runs through this same function)."""
+    n = len(pairs)
+    scores = np.full(n, np.nan)
     excluded: list[Exclusion] = []
-    for k, (p, (i, j)) in enumerate(zip(pairs, idx, strict=True)):
-        try:
-            scores[k] = score_fn(evaluable[i].signature, evaluable[j].signature)
-        except Exception as exc:  # noqa: BLE001 - §5.6: counted, reported, excluded
-            excluded.append(Exclusion(RULE_PAIR_CRASH, p.pair_id, f"pipeline crash: {exc}"))
+    if workers <= 1 or n == 0:
+        for k, (p, (i, j)) in enumerate(zip(pairs, idx, strict=True)):
+            try:
+                scores[k] = score_fn(evaluable[i].signature, evaluable[j].signature)
+            except Exception as exc:  # noqa: BLE001 - §5.6: counted, reported, excluded
+                excluded.append(Exclusion(RULE_PAIR_CRASH, p.pair_id, f"pipeline crash: {exc}"))
+            _progress(k + 1, n)
+        return scores, tuple(excluded)
+
+    from concurrent.futures import ProcessPoolExecutor
+
+    signatures = [e.signature for e in evaluable]
+    with ProcessPoolExecutor(
+        max_workers=workers, initializer=_init_scoring, initargs=(signatures,)
+    ) as pool:
+        for k, (value, err) in enumerate(pool.map(_score_ij, idx, chunksize=16)):
+            if err is None:
+                scores[k] = value
+            else:
+                excluded.append(Exclusion(RULE_PAIR_CRASH, pairs[k].pair_id, err))
+            _progress(k + 1, n)
     return scores, tuple(excluded)
 
 
@@ -459,9 +511,14 @@ def run_protocol(
     min_km_pairs: int = MIN_KM_PAIRS,
     n_boot: int = BOOTSTRAP_B,
     seed: int = BOOTSTRAP_SEED,
+    workers: int = 1,
 ) -> ProtocolResult:
     """§5.1/§5.2 end to end: screen → enumerate → floor → score → calibrate →
-    metrics → bootstrap. Pure with respect to its inputs; writes nothing."""
+    metrics → bootstrap. Pure with respect to its inputs; writes nothing.
+
+    ``workers`` only fans the independent per-pair scoring across processes; every
+    score, label, LR, and metric is identical to a serial run (§2.2: no analysis
+    parameter changes — this is execution scheduling, not a scorer knob)."""
     ordered = sorted(records, key=lambda r: (r.source or "", r.name))
     evaluable, exclusions = screen_scans(
         ordered, get_bytes=get_bytes, read_surface=_surface_from_bytes,
@@ -474,8 +531,9 @@ def run_protocol(
     if not ev.evaluable:
         return _not_evaluable(len(records), evaluable, exclusions, ev, len(pairs), n_km_enum)
 
-    print(f"scoring {len(pairs)} pairs through the frozen CMR-2D path ...")
-    raw_scores, crash_exclusions = score_pairs(evaluable, pairs, idx)
+    print(f"scoring {len(pairs)} pairs through the frozen CMR-2D path "
+          f"({workers} worker{'s' if workers != 1 else ''}) ...", flush=True)
+    raw_scores, crash_exclusions = score_pairs(evaluable, pairs, idx, workers=workers)
     exclusions = exclusions + crash_exclusions
     scored = np.isfinite(raw_scores)
     kept_pairs = tuple(p for p, ok in zip(pairs, scored, strict=True) if ok)
@@ -493,6 +551,8 @@ def run_protocol(
     lrs, bound_hits, model = calibrate_frozen(scores, reference)
     metrics = compute_metrics(scores, labels, lrs, bound_hits)
     matrix = lr_matrix_from(len(evaluable), kept_idx, lrs)
+    print(f"pooled Cllr {metrics['pooled_cllr']:.4f}; running {n_boot}-replicate "
+          f"slide bootstrap ...", flush=True)
     boot = bootstrap_cllr([str(s.record.source) for s in evaluable], matrix,
                           n_boot=n_boot, seed=seed)
     return ProtocolResult(

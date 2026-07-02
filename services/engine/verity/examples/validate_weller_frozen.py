@@ -317,6 +317,16 @@ def print_summary(result: ProtocolResult, *, title: str) -> None:
 # --------------------------------------------------------------------------- #
 # Modes
 # --------------------------------------------------------------------------- #
+def _workers() -> int:
+    """Process count for the independent per-pair scoring. Defaults to all cores;
+    ``VERITY_WELLER_WORKERS`` overrides (1 = serial). Scores are identical either
+    way — this is scheduling, not a scorer parameter (§2.2)."""
+    override = os.environ.get("VERITY_WELLER_WORKERS", "").strip()
+    if override:
+        return max(1, int(override))
+    return max(1, os.cpu_count() or 1)
+
+
 def run_weller() -> None:
     """THE one-shot registered run. The first complete execution under the
     registered protocol is the reported result (§2.1)."""
@@ -325,7 +335,7 @@ def run_weller() -> None:
     records, get_bytes = load_weller_records()
     print(f"catalog: {len(records)} Weller scan rows "
           f"(registered metadata expects {N_REGISTERED_SCANS})")
-    result = run_protocol(records, get_bytes, reference=reference)
+    result = run_protocol(records, get_bytes, reference=reference, workers=_workers())
     write_artifacts(result, out_json=OUT_JSON, out_csv=OUT_PAIRS_CSV)
     print(f"wrote {OUT_JSON}")
     print(f"wrote {OUT_PAIRS_CSV}")
@@ -376,7 +386,7 @@ def run_self_check() -> None:
     # Floor thresholds are Weller-registered quantities; Fadul's known counts
     # (40 scans, 10 KM pairs) are asserted directly below instead.
     result = run_protocol(records, get_bytes, reference=reference,
-                          n_registered=len(records), min_km_pairs=1)
+                          n_registered=len(records), min_km_pairs=1, workers=_workers())
     problems: list[str] = []
     if result.exclusions:
         problems.append(f"expected zero exclusions, got {result.exclusions}")

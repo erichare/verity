@@ -1,0 +1,551 @@
+{
+ "study": "Weller et al. (2012) \u2014 wellerMasked, slide directories TW01\u2013TW11",
+ "protocol": "docs/weller-preregistration.md",
+ "registration": "OSF https://osf.io/prjs9 (registered 2026-07-01, before any access)",
+ "run": {
+  "git_commit": "cf95fe7",
+  "generated_at": "2026-07-02",
+  "one_shot": true
+ },
+ "frozen": {
+  "scorer_config_hash": "ea4ddd513b57ce8a3dd117dabc6d539432f7ddfab382c425837ead8199a6e127",
+  "reference_npz": "services/api/verity_api/references/cartridge_fadul.npz",
+  "reference_sha256": "08133ee1dddc41ea1a9ebb32febb83a785c0b420786d26a404eeb7b8b342ec7c",
+  "score_kind": "cmr-2d",
+  "calibration": "ScoreLRModel(lr_bound='auto') fit once on the frozen Fadul reference (the deployed report.py idiom); no refits",
+  "lr_bound_log10": 1.0
+ },
+ "counts": {
+  "n_scans_registered": 95,
+  "n_scans_in_catalog": 95,
+  "n_evaluable_scans": 95,
+  "n_slides": 11,
+  "n_pairs_enumerated": 4465,
+  "n_km_enumerated": 370,
+  "n_pairs_scored": 4465,
+  "n_km_scored": 370,
+  "n_knm_scored": 4095
+ },
+ "exclusions": {
+  "n_total": 0,
+  "by_rule": {
+   "unparseable": 0,
+   "unattributable": 0,
+   "duplicate": 0,
+   "scope_refusal": 0,
+   "pair_crash": 0
+  },
+  "scope_refusal_reasons": [],
+  "detail": []
+ },
+ "scans": [
+  {
+   "source": "TW01",
+   "name": "TW01/TW01-01.x3p",
+   "content_hash": "514154ed3615701f009dba2af83b1715dac1fdca8289979d2f80b4cdedc97503"
+  },
+  {
+   "source": "TW01",
+   "name": "TW01/TW01-02.x3p",
+   "content_hash": "e381d491bca23d8d7b74b7cb4b8a22d1a238280a2012a8bb8adf24d79684ff5f"
+  },
+  {
+   "source": "TW01",
+   "name": "TW01/TW01-03.x3p",
+   "content_hash": "ec40bd93fbce5fc91b03ea94383f07d86d21d1adc9a284b0231f9840b17e1f82"
+  },
+  {
+   "source": "TW01",
+   "name": "TW01/TW01-04.x3p",
+   "content_hash": "662716372651dde552642ba0dea0d8806f387cba59b611f3c7a2b04ab4d447c0"
+  },
+  {
+   "source": "TW01",
+   "name": "TW01/TW01-05.x3p",
+   "content_hash": "425e8f8128c40ceddce201cbd1f9fb0efe4bae827c10403fae97912ee23641fd"
+  },
+  {
+   "source": "TW01",
+   "name": "TW01/TW01-06.x3p",
+   "content_hash": "7581e50ea7430cb4225850d805b636241774dc728cca011c49e90aba4f1e141f"
+  },
+  {
+   "source": "TW01",
+   "name": "TW01/TW01-07.x3p",
+   "content_hash": "dbd8eaa6e0a6f01c25ee038015c499c3a6ec758312a8bf4ef8add1d9c057dde0"
+  },
+  {
+   "source": "TW01",
+   "name": "TW01/TW01-08.x3p",
+   "content_hash": "04147d0161381a630e6f9442dcc6e2deef468d0707dc95dc94fd5813d4d8f5cf"
+  },
+  {
+   "source": "TW01",
+   "name": "TW01/TW01-09.x3p",
+   "content_hash": "8874bd7a54e4c60a5dd91ad067ad94f36e3d31c99abca74fd86d3b53b2c2afc9"
+  },
+  {
+   "source": "TW02",
+   "name": "TW02/TW02-01.x3p",
+   "content_hash": "4e0a0df4694b121bfc3391d32b40a7cea059778b68d091cf90f2cd769adb65a6"
+  },
+  {
+   "source": "TW02",
+   "name": "TW02/TW02-02.x3p",
+   "content_hash": "727b3ed47530679a53f775364f67be64b1d1c43c84cbccfb9c0971dfa9df3b65"
+  },
+  {
+   "source": "TW02",
+   "name": "TW02/TW02-03.x3p",
+   "content_hash": "d727b90db35a9cb5e1db781988f544277803b268d9815e33583e4061f14c7715"
+  },
+  {
+   "source": "TW02",
+   "name": "TW02/TW02-04.x3p",
+   "content_hash": "1faa8d6f1e1cf520da3b1ec68988060f929a42527693783ba149d413dfc632cf"
+  },
+  {
+   "source": "TW02",
+   "name": "TW02/TW02-05.x3p",
+   "content_hash": "8cdd970cb7a741b46c5fbad86dca56f7bcd625e7844cafd09271be0cd78ea375"
+  },
+  {
+   "source": "TW02",
+   "name": "TW02/TW02-06.x3p",
+   "content_hash": "f3e7e4966622000ec2b2088caae1b17548f63f2381c886f2334989928426fa16"
+  },
+  {
+   "source": "TW02",
+   "name": "TW02/TW02-07.x3p",
+   "content_hash": "dd7e4226219b35052df6b43daec950f09be5fae9c9d25a028401dc4e6d447973"
+  },
+  {
+   "source": "TW02",
+   "name": "TW02/TW02-08.x3p",
+   "content_hash": "cbc4cdacc7ede1a64edaf8a4838f8442286bf318c48b80543f97e1fe940fea05"
+  },
+  {
+   "source": "TW02",
+   "name": "TW02/TW02-09.x3p",
+   "content_hash": "a067503cda33b9377c453e0bd80d5f5cf8d0d7812723855f45aeb84b9db561b5"
+  },
+  {
+   "source": "TW03",
+   "name": "TW03/TW03-01.x3p",
+   "content_hash": "9b5a64fe07baed331490d0a31f438aec2c310fd8eafb860cc61fcb0a1b27e56d"
+  },
+  {
+   "source": "TW03",
+   "name": "TW03/TW03-02.x3p",
+   "content_hash": "f80b3fc8fe6b8abce4a03105fb9aa7b8d6c4f4c05f458fd8e04b6c43952b38bd"
+  },
+  {
+   "source": "TW03",
+   "name": "TW03/TW03-03.x3p",
+   "content_hash": "0da1b138a01b935c888d754a76a86e2fab7989f0c033787b8a763837f46231c2"
+  },
+  {
+   "source": "TW03",
+   "name": "TW03/TW03-04.x3p",
+   "content_hash": "dcbda2fcf0c19f19588a4ba3f0f4c15120b2eb5b5ba760d96e3aa1fc45bdbb68"
+  },
+  {
+   "source": "TW03",
+   "name": "TW03/TW03-05.x3p",
+   "content_hash": "b3e72728de115d818494714bd0b4099cbdf236ab858404cffc1c1e15105b6b34"
+  },
+  {
+   "source": "TW03",
+   "name": "TW03/TW03-06.x3p",
+   "content_hash": "c42d51bab8ef1aaf4608f8f2f34b5318af8e75e6c74805d2570b2a4503d9a6b0"
+  },
+  {
+   "source": "TW03",
+   "name": "TW03/TW03-07.x3p",
+   "content_hash": "5f04b62d18163190b85eddf7ac362a4385fecc6690f293180a640892c7b216d9"
+  },
+  {
+   "source": "TW03",
+   "name": "TW03/TW03-08.x3p",
+   "content_hash": "4574a25f6f09b01216ce9dbbfac2f5513092f713a867ece7550bd1991d88fe20"
+  },
+  {
+   "source": "TW03",
+   "name": "TW03/TW03-09.x3p",
+   "content_hash": "db22cdcfa809cde3bb375e9d7594897c018771d005be421bf63c4aa9326782b3"
+  },
+  {
+   "source": "TW04",
+   "name": "TW04/TW04-01.x3p",
+   "content_hash": "464089767c6810e869ef9a0c8687a6b0818509365487b19a9ea58dd01742fa35"
+  },
+  {
+   "source": "TW04",
+   "name": "TW04/TW04-02.x3p",
+   "content_hash": "ae47e8af41fbd2362b293a0f5e8c5bc0510218db759a67a99510a0bb6f7a2303"
+  },
+  {
+   "source": "TW04",
+   "name": "TW04/TW04-03.x3p",
+   "content_hash": "a8e2ac1742e027ecb2293d4ca94dce5be09301640ea222449d33dc9e730e151e"
+  },
+  {
+   "source": "TW04",
+   "name": "TW04/TW04-04.x3p",
+   "content_hash": "471ce78d80b5a783927a14d05247638e7076bfc1ec9896d61b192f0f1e3b7e0e"
+  },
+  {
+   "source": "TW04",
+   "name": "TW04/TW04-05.x3p",
+   "content_hash": "eda12567ccfaf2cc8042b69dc17e1ab1b13778a408be849ff506ae33a6aaa291"
+  },
+  {
+   "source": "TW04",
+   "name": "TW04/TW04-06.x3p",
+   "content_hash": "96fcb3d6766c4d9309d7cfe1ad585f3ca09d16681569ed00008df2c9b01ac299"
+  },
+  {
+   "source": "TW04",
+   "name": "TW04/TW04-07.x3p",
+   "content_hash": "b5c999fc028042ee63e278f79445c36087ca3f7902867740e5c16830a252ef01"
+  },
+  {
+   "source": "TW04",
+   "name": "TW04/TW04-08.x3p",
+   "content_hash": "bebe12abde40da9d60da07692a254c7800b115e0923bfaffb8e5944987eb2a3a"
+  },
+  {
+   "source": "TW04",
+   "name": "TW04/TW04-09.x3p",
+   "content_hash": "2b13b11fdd3857118934c4c92fe9d9855baad9ff10f3029319ef84d4bc484832"
+  },
+  {
+   "source": "TW05",
+   "name": "TW05/TW05-01.x3p",
+   "content_hash": "3edd32fa229244f81dba5098f9963b1939c8e386dcdf04928aeb48327915cb99"
+  },
+  {
+   "source": "TW05",
+   "name": "TW05/TW05-02.x3p",
+   "content_hash": "64f62ced896b6cec71495265677e8671df4cad76a98b0eab2ef4b4e95136a3e7"
+  },
+  {
+   "source": "TW05",
+   "name": "TW05/TW05-03.x3p",
+   "content_hash": "8d9957220d873c15b24c0b805c8da7559b944341ab3013c4d0aadfddb00c17a8"
+  },
+  {
+   "source": "TW05",
+   "name": "TW05/TW05-04.x3p",
+   "content_hash": "4d3f021a210db1682f93a886a9874f9bb2ba490bac95bcc5fdc73ed5dbe67801"
+  },
+  {
+   "source": "TW05",
+   "name": "TW05/TW05-05.x3p",
+   "content_hash": "f667118e38bb8e393bd3b534c7a6f341d909cd43f09edaa85e7dd76b39d141d2"
+  },
+  {
+   "source": "TW05",
+   "name": "TW05/TW05-06.x3p",
+   "content_hash": "8c7566fb8bab98063619e4370c875949a9bdd0314f55c0cb29970eb5144cb49e"
+  },
+  {
+   "source": "TW05",
+   "name": "TW05/TW05-07.x3p",
+   "content_hash": "842e5dc38a02c213357c1d351e76cf08fa73d7ed6669b646299e1b7cf3028428"
+  },
+  {
+   "source": "TW05",
+   "name": "TW05/TW05-08.x3p",
+   "content_hash": "11ff025ae45cec2ea7e94b7f901ce245a02bc08482f9b3ab93a4d89b35248341"
+  },
+  {
+   "source": "TW05",
+   "name": "TW05/TW05-09.x3p",
+   "content_hash": "d5b9fff8018cb104ca9043218ed3d2bb28f8aa0c2efcef4fde444d602188fd73"
+  },
+  {
+   "source": "TW06",
+   "name": "TW06/TW06-01.x3p",
+   "content_hash": "e2c12d0b488580276e0ab61366f104065dd7833a8155a3fdccc048e31e83d593"
+  },
+  {
+   "source": "TW06",
+   "name": "TW06/TW06-02.x3p",
+   "content_hash": "842fec12c9066633f009d5e78f45fa957e5e854271782e4e133256086c6228df"
+  },
+  {
+   "source": "TW06",
+   "name": "TW06/TW06-03.x3p",
+   "content_hash": "6cdb4f614f6b9f239c1ea0f982ea88cb5f5a571282d5ff65bdc9a09513f3f3f8"
+  },
+  {
+   "source": "TW06",
+   "name": "TW06/TW06-04.x3p",
+   "content_hash": "d63ee35fdb6a4c70222c9877780ca88b45b349c995497c79fa8b0224958dffc9"
+  },
+  {
+   "source": "TW06",
+   "name": "TW06/TW06-05.x3p",
+   "content_hash": "9564fc790c48ca642adad0bec3af6e310bf0949243e778a97f164926c233bffb"
+  },
+  {
+   "source": "TW06",
+   "name": "TW06/TW06-06.x3p",
+   "content_hash": "a5d6ca8dd8e75c83449622e998cd050b8e0462c74ee39dc1f393e60c05ea6512"
+  },
+  {
+   "source": "TW06",
+   "name": "TW06/TW06-07.x3p",
+   "content_hash": "f0bec868d4043b349656dac19140dd8219aedbcef22db17ded6159d904f573c8"
+  },
+  {
+   "source": "TW06",
+   "name": "TW06/TW06-08.x3p",
+   "content_hash": "62b779b6b16f520994cd9380882c33663296e890c610b517d549892c2220f286"
+  },
+  {
+   "source": "TW06",
+   "name": "TW06/TW06-09.x3p",
+   "content_hash": "df071aef4c8f3e9e83b95645fe6ed04e39549d20fd931d64d6a85900c89a2170"
+  },
+  {
+   "source": "TW07",
+   "name": "TW07/TW07-01.x3p",
+   "content_hash": "3593f87acff1690cfd940c914f8463f5e69e9abcdfe22a4ff5e90895c4587849"
+  },
+  {
+   "source": "TW07",
+   "name": "TW07/TW07-02.x3p",
+   "content_hash": "162e5d38ab2d21e2b6fddcb07b8083fb8af76c29d67a38245935a578cd71474b"
+  },
+  {
+   "source": "TW07",
+   "name": "TW07/TW07-03.x3p",
+   "content_hash": "393ab6de9d88964fa6f580211126cb927b9acc57dca28ec221c236026aab493d"
+  },
+  {
+   "source": "TW07",
+   "name": "TW07/TW07-04.x3p",
+   "content_hash": "bf982a063c8f6f05f891d111b6584de16530038de29b098e8d55089723dfae54"
+  },
+  {
+   "source": "TW07",
+   "name": "TW07/TW07-05.x3p",
+   "content_hash": "64764a8e696d779f14ac2a381352aaaf2f092540ee9e484b45ee181f3e154bc8"
+  },
+  {
+   "source": "TW07",
+   "name": "TW07/TW07-06.x3p",
+   "content_hash": "15ff9a54b286d60a2a8ace869d215446781dcc60260d25d78a8b8eb4d7e2061d"
+  },
+  {
+   "source": "TW07",
+   "name": "TW07/TW07-07.x3p",
+   "content_hash": "dcc8b4b1df5bbee1c7e560b330390a018be4798c9c7cc41f3105cf4b560c3379"
+  },
+  {
+   "source": "TW07",
+   "name": "TW07/TW07-08.x3p",
+   "content_hash": "08dda5a990c0873e360786f6a6766e88ec3a1045910a95b5d5e9f9caa60f324f"
+  },
+  {
+   "source": "TW07",
+   "name": "TW07/TW07-09.x3p",
+   "content_hash": "3bc453aa14721aa57b56c9fa45a4ff6f4d83c6315c1349abc302e2f671eb5888"
+  },
+  {
+   "source": "TW08",
+   "name": "TW08/TW08-01.x3p",
+   "content_hash": "e2a254275c0c1d1034d0b552fba2b2aabcc018d39d8beabbf0813451770a1788"
+  },
+  {
+   "source": "TW08",
+   "name": "TW08/TW08-02.x3p",
+   "content_hash": "bd04fd1029c9bfd7ade543ec8026631bad072f3a62ef3e17d732595fa55d53d5"
+  },
+  {
+   "source": "TW08",
+   "name": "TW08/TW08-03.x3p",
+   "content_hash": "aef46618eeaa508080683a192e4d3576f1b21b5767d8ac3e7950264014c38451"
+  },
+  {
+   "source": "TW08",
+   "name": "TW08/TW08-04.x3p",
+   "content_hash": "f333f8a0b283b48723b9574cd4412a34131ebeea510312e16942415351d34dbd"
+  },
+  {
+   "source": "TW08",
+   "name": "TW08/TW08-05.x3p",
+   "content_hash": "46922e3f3736a993734eca02057c5b2d4b8412cc97779a9b9a449b8e6f404bd0"
+  },
+  {
+   "source": "TW08",
+   "name": "TW08/TW08-06.x3p",
+   "content_hash": "134ec4fd306669bb56da03605be1ad349fb61d7d33248c9e2b643cac346b4913"
+  },
+  {
+   "source": "TW08",
+   "name": "TW08/TW08-07.x3p",
+   "content_hash": "67f8a131872d4abce9a13a72e3f324f6ec61f7e0a906c67c5f878c1e438591ee"
+  },
+  {
+   "source": "TW08",
+   "name": "TW08/TW08-08.x3p",
+   "content_hash": "4415cf135bef7a2fc5b0365b414182f74d5a4c2ea2a4afcd773944acc2501ffd"
+  },
+  {
+   "source": "TW08",
+   "name": "TW08/TW08-09.x3p",
+   "content_hash": "a115370f8dacf2701d6e3a9fa64265660b3287433aca0ab12be0b960d3718363"
+  },
+  {
+   "source": "TW09",
+   "name": "TW09/TW09-01.x3p",
+   "content_hash": "374013351b50f05f8aace51011b105a20f371f4a888607ff972858a7193c42ef"
+  },
+  {
+   "source": "TW09",
+   "name": "TW09/TW09-02.x3p",
+   "content_hash": "2404201ffde97b969afc1fd3c07d192ee01019e8ed5082e78e77b71ddad82868"
+  },
+  {
+   "source": "TW09",
+   "name": "TW09/TW09-03.x3p",
+   "content_hash": "2a631a967bb486b9ed14d7eb2e6aaa12d91036f5c095b109326d3195ccd09c2e"
+  },
+  {
+   "source": "TW09",
+   "name": "TW09/TW09-04.x3p",
+   "content_hash": "3023ae4e4096ebf8aa9d8d4a576549dc3ae4d4ecb738c2b6206581a60b8cc3cf"
+  },
+  {
+   "source": "TW09",
+   "name": "TW09/TW09-05.x3p",
+   "content_hash": "62620107ed259034c685db33d4d4ccf09c6261b02299255dadc0073bf7989b00"
+  },
+  {
+   "source": "TW09",
+   "name": "TW09/TW09-06.x3p",
+   "content_hash": "d9d578589cec05d64c593d4c637b1fc7b2926f8bbc54d5a1d14d16f1942f9bee"
+  },
+  {
+   "source": "TW09",
+   "name": "TW09/TW09-07.x3p",
+   "content_hash": "821f86e5f1ffdb4ed1f0ec06ee9bdfc62d9eed2b6a799bc368a3dd6b032872bf"
+  },
+  {
+   "source": "TW09",
+   "name": "TW09/TW09-08.x3p",
+   "content_hash": "538c4a4f7b19b9cbf7cf55038eaa65ec9f3f4200874dcdb104c58fdbd41036c4"
+  },
+  {
+   "source": "TW09",
+   "name": "TW09/TW09-09.x3p",
+   "content_hash": "9706c98031a834a51da695d071e5de9f34343c99987da2f5b3243920bed515e3"
+  },
+  {
+   "source": "TW10",
+   "name": "TW10/TW10-01.x3p",
+   "content_hash": "9f451a1987244047d5bc936516082f3cf2fe118f5551142b3e38f097dda7728e"
+  },
+  {
+   "source": "TW10",
+   "name": "TW10/TW10-02.x3p",
+   "content_hash": "8ac20c20f8206254c101ce45937caad219a54217c9d263a1c354c2e5d81f98d9"
+  },
+  {
+   "source": "TW10",
+   "name": "TW10/TW10-03.x3p",
+   "content_hash": "10726994ccc0d935509021fd21eb8f70d26af0812921cbe16a404e2407f7ffd9"
+  },
+  {
+   "source": "TW10",
+   "name": "TW10/TW10-04.x3p",
+   "content_hash": "0458d89046eaaae0ac0eea031075d401deb5e71e45885f4e607dc4abdaeb0fcb"
+  },
+  {
+   "source": "TW10",
+   "name": "TW10/TW10-05.x3p",
+   "content_hash": "1ac3bd9a9221023feb697291e41d38798d05a20f5f929e26a8a2e64e22a83e20"
+  },
+  {
+   "source": "TW10",
+   "name": "TW10/TW10-06.x3p",
+   "content_hash": "f38747a3c0f7c3937c5cc8a0a33ee92c6c246b8c9e1ef1314ec8ccb51952e080"
+  },
+  {
+   "source": "TW10",
+   "name": "TW10/TW10-07.x3p",
+   "content_hash": "2b2fec4096e3002b4294902cbf91b663c30ea55007eaaab553fb3dea49ff0b88"
+  },
+  {
+   "source": "TW10",
+   "name": "TW10/TW10-08.x3p",
+   "content_hash": "3c930ddf9fd9e12d4287b6a22a6c2130ead3957718213bae27c9af58427f59be"
+  },
+  {
+   "source": "TW10",
+   "name": "TW10/TW10-09.x3p",
+   "content_hash": "09d857a852627dc6922c4fde58a22ee6f4ef7c40d04806415b4c9b61aad2ece4"
+  },
+  {
+   "source": "TW11",
+   "name": "TW11/TW11-01.x3p",
+   "content_hash": "a7912515d43ce9f75f06c10e8caf5337eafa69d723432fcbcb1bc1ec19e4af7e"
+  },
+  {
+   "source": "TW11",
+   "name": "TW11/TW11-02.x3p",
+   "content_hash": "60b8caf55b648e5dd17a6c8714cbaa70628d3db7248cee4fec2ef4493ffb3cdd"
+  },
+  {
+   "source": "TW11",
+   "name": "TW11/TW11-03.x3p",
+   "content_hash": "d4ab9e9445d79a8049bffe9b4950bef70bab503a0762ac1fc667b72fea3d67d1"
+  },
+  {
+   "source": "TW11",
+   "name": "TW11/TW11-04.x3p",
+   "content_hash": "836362a697a2ede6f60513f5a09547ce2bd3bebf8c4957d8abbaefde3f5a0c58"
+  },
+  {
+   "source": "TW11",
+   "name": "TW11/TW11-05.x3p",
+   "content_hash": "441d3e277e1cea435d237b4bcf6aaf284fea3828d43737adb51bc3c1cfad96b4"
+  }
+ ],
+ "evaluability": {
+  "evaluable": true,
+  "reasons": []
+ },
+ "metrics": {
+  "pooled_cllr": 0.16336938123269024,
+  "cllr_min": 0.03176087594019354,
+  "calibration_loss": 0.13160850529249668,
+  "auc_scores": 0.9995109395109395,
+  "ece": 0.09273542182801144,
+  "rmed": 0.002702702702702703,
+  "rmep": 0.023443223443223443,
+  "frac_bound_limited": 0.9408734602463605,
+  "n_km": 370,
+  "n_knm": 4095
+ },
+ "bootstrap": {
+  "statistic": "pooled Cllr",
+  "resample": "slides (cluster bootstrap)",
+  "n_boot": 2000,
+  "seed": 0,
+  "ci_lo_2p5": 0.14741918980167873,
+  "ci_hi_97p5": 0.18857600745608016,
+  "n_used": 2000,
+  "n_skipped": 0
+ },
+ "h1": {
+  "threshold": 0.45,
+  "pooled_cllr": 0.16336938123269024,
+  "supported": true,
+  "label": "the frozen pipeline transferred to an independent study at near within-study performance"
+ },
+ "verdict": "the frozen pipeline transferred to an independent study at near within-study performance"
+}
