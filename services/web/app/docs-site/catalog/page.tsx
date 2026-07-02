@@ -122,6 +122,7 @@ export default function CatalogPage() {
             <div className="flex w-full max-w-md flex-wrap items-center gap-2">
               <input
                 type="search"
+                aria-label="Filter scans by filename"
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);
