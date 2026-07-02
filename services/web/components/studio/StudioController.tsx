@@ -11,6 +11,7 @@ import {
   type StudioRun,
 } from "@/lib/studio";
 import { type MarkDomain, type RefusalResponse } from "@/lib/types";
+import { FilePick } from "@/components/FilePick";
 import RefusalView from "@/components/RefusalView";
 import { StudioNav } from "./StudioNav";
 import { StageStage } from "./StageStage";
@@ -339,11 +340,14 @@ function UploadModal({
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-foreground/80">Mark type</label>
+          <label htmlFor="studio-mark-type" className="text-sm font-medium text-foreground/80">
+            Mark type
+          </label>
           <select
+            id="studio-mark-type"
             value={domain}
             onChange={(e) => setDomain(e.target.value as MarkDomain)}
-            className="w-full rounded-lg border border-border bg-background/60 px-3 py-2 text-sm text-foreground outline-none focus:border-accent/60"
+            className="w-full rounded-lg border border-border bg-background/60 px-3 py-2 text-sm text-foreground outline-none focus:border-accent/60 focus-visible:ring-2 focus-visible:ring-accent"
           >
             {DOMAIN_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>
@@ -379,40 +383,6 @@ function UploadModal({
         )}
       </div>
     </Backdrop>
-  );
-}
-
-function FilePick({
-  label,
-  files,
-  onPick,
-  multiple,
-}: {
-  label: string;
-  files: File[];
-  onPick: (f: File[]) => void;
-  multiple?: boolean;
-}) {
-  const summary =
-    files.length === 0
-      ? multiple
-        ? "Choose .x3p land scans…"
-        : "Choose an .x3p scan…"
-      : files.length === 1
-        ? files[0].name
-        : `${files.length} scans selected`;
-  return (
-    <label className="group flex cursor-pointer flex-col gap-1.5 rounded-xl border border-dashed border-border bg-foreground/[0.02] p-4 text-sm transition hover:border-accent/60">
-      <span className="font-medium text-foreground">{label}</span>
-      <span className="truncate text-muted group-hover:text-foreground/80">{summary}</span>
-      <input
-        type="file"
-        accept=".x3p"
-        multiple={multiple}
-        className="hidden"
-        onChange={(e) => onPick(Array.from(e.target.files ?? []))}
-      />
-    </label>
   );
 }
 
