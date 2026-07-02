@@ -23,6 +23,54 @@ def test_health_lists_domains():
     assert {"impressed", "striated"} <= set(body["domains"])
 
 
+def test_health_reports_rate_limiter_stats():
+    body = client.get("/health").json()
+    tracked = body["rate_limiter"]["tracked_ips"]
+    assert isinstance(tracked, int) and tracked >= 0
+
+
+def test_healthz_alias_matches_health():
+    rz = client.get("/healthz")
+    assert rz.status_code == 200
+    assert rz.json() == client.get("/health").json()
+
+
+def test_healthz_alias_hidden_from_openapi():
+    paths = client.get("/openapi.json").json()["paths"]
+    assert "/health" in paths
+    assert "/healthz" not in paths
+
+
+def test_app_imports_cleanly_without_sentry_dsn():
+    """With no SENTRY_DSN, importing the app must neither fail nor start Sentry."""
+    import os
+    import subprocess
+    import sys
+
+    env = {k: v for k, v in os.environ.items() if k != "SENTRY_DSN"}
+    code = (
+        "import sentry_sdk, verity_api.main; "
+        "assert not sentry_sdk.get_client().is_active(), 'sentry must stay off without a DSN'"
+    )
+    subprocess.run([sys.executable, "-c", code], env=env, check=True)
+
+
+def test_sentry_initializes_when_dsn_set():
+    """A well-formed DSN gates Sentry on at import (no network happens at init)."""
+    import os
+    import subprocess
+    import sys
+
+    env = {**os.environ, "SENTRY_DSN": "https://examplePublicKey@o0.ingest.example.invalid/0"}
+    code = (
+        "import verity_api.main, sentry_sdk; "
+        "client = sentry_sdk.get_client(); "
+        "assert client.is_active(), 'sentry must initialize when SENTRY_DSN is set'; "
+        "assert client.options['traces_sample_rate'] == 0.0"
+    )
+    subprocess.run([sys.executable, "-c", code], env=env, check=True)
+
+
 def test_compare_rejects_unknown_domain():
     r = client.post(
         "/compare",
@@ -102,9 +150,7 @@ def _toolmark_x3p(tmp_path: Path, name: str, shift: int = 0) -> Path:
 
     rng = np.random.default_rng(0)
     x = np.arange(256)
-    stripes = 0.5e-6 * (
-        np.sin(2 * np.pi * x / 12.0) + 0.4 * np.sin(2 * np.pi * x / 7.0 + 1.3)
-    )
+    stripes = 0.5e-6 * (np.sin(2 * np.pi * x / 12.0) + 0.4 * np.sin(2 * np.pi * x / 7.0 + 1.3))
     z = np.tile(np.roll(stripes, shift), (256, 1)) + rng.normal(scale=0.03e-6, size=(256, 256))
     path = tmp_path / name
     verity_x3p.write_x3p(

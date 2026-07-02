@@ -81,6 +81,33 @@ def _engine_version() -> str:
         return "unknown"
 
 
+def _init_sentry() -> None:
+    """Env-gated error monitoring: initialize Sentry only when ``SENTRY_DSN`` is set,
+    so local dev, tests, and CI stay a silent no-op. Tracing is off by default
+    (``SENTRY_TRACES_SAMPLE_RATE``, 0–1); the deploy environment comes from Railway's
+    ``RAILWAY_ENVIRONMENT_NAME`` and the release is pinned to the engine version."""
+    dsn = os.environ.get("SENTRY_DSN", "").strip()
+    if not dsn:
+        return
+    import sentry_sdk
+
+    raw_rate = os.environ.get("SENTRY_TRACES_SAMPLE_RATE", "0")
+    try:
+        traces_sample_rate = float(raw_rate)
+    except ValueError:
+        logger.warning("invalid SENTRY_TRACES_SAMPLE_RATE %r; tracing disabled", raw_rate)
+        traces_sample_rate = 0.0
+    sentry_sdk.init(
+        dsn=dsn,
+        traces_sample_rate=traces_sample_rate,
+        environment=os.environ.get("RAILWAY_ENVIRONMENT_NAME") or "production",
+        release=_engine_version(),
+    )
+
+
+_init_sentry()
+
+
 _DESCRIPTION = """\
 **Verity** — calibrated, bounded **likelihood ratios** for forensic surface
 comparison, across **striated** marks (bullet lands, toolmarks) and **impressed**
@@ -169,10 +196,15 @@ app = FastAPI(
 )
 
 
+class RateLimiterStats(BaseModel):
+    tracked_ips: int
+
+
 class HealthResponse(BaseModel):
     status: str
     engine_version: str
     domains: list[str]
+    rate_limiter: RateLimiterStats
 
 
 class DetectResponse(BaseModel):
@@ -378,7 +410,22 @@ async def _read_marks(
     response_model=HealthResponse,
 )
 def health() -> dict:
-    return {"status": "ok", "engine_version": _engine_version(), "domains": available_domains()}
+    return {
+        "status": "ok",
+        "engine_version": _engine_version(),
+        "domains": available_domains(),
+        # Cheap rate-limiter observability: how many client IPs currently hold a
+        # sliding-window bucket. A count only — no addresses, no PII.
+        "rate_limiter": {"tracked_ips": len(_rate_hits)},
+    }
+
+
+# /healthz alias: the catalog service answers on /healthz, so external monitors and
+# reviewers probe the same path here — serve the identical payload instead of a 404,
+# while keeping the OpenAPI schema to the one canonical /health route.
+app.add_api_route(
+    "/healthz", health, methods=["GET"], response_model=HealthResponse, include_in_schema=False
+)
 
 
 @app.post(
