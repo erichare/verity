@@ -195,6 +195,9 @@ cd services/api    && uv run --extra dev verity-api          # API on :8000
 cd services/web    && pnpm install && pnpm dev               # web on :3000
 ```
 
+Full per-package setup, PR conventions, and the method-change policy are in
+[`CONTRIBUTING.md`](CONTRIBUTING.md).
+
 Deployment (Vercel + a container host for the API) is documented in
 [`DEPLOY.md`](DEPLOY.md).
 
