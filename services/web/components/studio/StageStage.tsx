@@ -119,6 +119,7 @@ function Overlay({ run, stage, progress }: { run: StudioRun; stage: Stage; progr
             nConsensus={d.nConsensus}
             axisX={d.axisX}
             axisY={d.axisY}
+            schematic={d.schematic}
             className="h-full w-full"
           />
         </div>

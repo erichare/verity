@@ -28,8 +28,9 @@ const py = (y: number) => B - clamp01(y) * (B - T); // y = 1 → top
  * same-source pair forms a dense cluster; a different-source pair barely any. Hover a dot for
  * its real registration values. `progress` (0→1) reveals the dots, then the consensus.
  *
- * Synthetic fallback (live uploads, no per-window votes) reuses the same renderer with no
- * tooltips — the layout is identical, only the values are absent.
+ * Synthetic fallback (live uploads, no per-window votes): `schematic` marks the plot as an
+ * illustration — a SCHEMATIC badge on the plot, no strength/hover legend (the dots carry no
+ * real values), and an explicit disclosure that the count and score derive from the report.
  */
 export function CmrConsensus({
   votes,
@@ -37,6 +38,7 @@ export function CmrConsensus({
   nConsensus,
   axisX,
   axisY,
+  schematic,
   className,
 }: {
   votes: Vote[];
@@ -44,6 +46,7 @@ export function CmrConsensus({
   nConsensus: number;
   axisX: string;
   axisY: string;
+  schematic?: boolean;
   className?: string;
 }) {
   const [hover, setHover] = useState<number | null>(null);
@@ -75,11 +78,37 @@ export function CmrConsensus({
         </span>
         <span className="font-mono text-[11px] tabular-nums">
           <span className="text-brass">{liveAgree}</span>
-          <span className="text-muted"> / {total} agree</span>
+          {/* Schematic: the denominator would be the fabricated dot budget — don't show it. */}
+          <span className="text-muted">{schematic ? " agree (derived)" : ` / ${total} agree`}</span>
         </span>
       </div>
 
       <svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" className="min-h-0 w-full flex-1">
+        {schematic && (
+          <g className="font-mono">
+            <rect
+              x={R - 24}
+              y={T - 6}
+              width={25}
+              height={5.4}
+              rx={1.2}
+              fill="var(--background)"
+              stroke="var(--muted)"
+              strokeWidth={0.35}
+              opacity={0.9}
+            />
+            <text
+              x={R - 11.5}
+              y={T - 2.2}
+              textAnchor="middle"
+              fontSize={2.9}
+              fill="var(--muted)"
+              style={{ letterSpacing: "0.18em" }}
+            >
+              SCHEMATIC
+            </text>
+          </g>
+        )}
         {/* Axes name the plane: each dot is placed by the alignment its window proposes. No tick
             numbers — the real registration values live in the hover tooltip. */}
         <g opacity={0.55} className="font-mono">
@@ -178,7 +207,14 @@ export function CmrConsensus({
             dissents
           </span>
         </div>
-        <span className="text-muted/70">brighter = stronger match · hover for values</span>
+        {schematic ? (
+          <span className="max-w-md text-center text-muted/70">
+            Schematic illustration — the API does not expose per-window votes for uploads; the
+            consensus count and score are derived from the real report.
+          </span>
+        ) : (
+          <span className="text-muted/70">brighter = stronger match · hover for values</span>
+        )}
       </div>
     </div>
   );
