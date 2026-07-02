@@ -62,6 +62,33 @@ calibrated, bounded, deployable LR layer, not a better matcher.
 > say so. `cmcR` (the field specialist) still leads on Fadul; CMR-2D → CMC parity is open
 > roadmap.
 
+### Independent external validation — Weller cartridge cases (pre-registered)
+
+Pre-registered on OSF (<https://osf.io/prjs9>, 2026-07-01, **before any Weller data
+access**; protocol `docs/weller-preregistration.md`) and run **once** as registered on the
+independent Weller et al. (2012) set — `wellerMasked`, 95 breech-face scans across 11 Ruger
+P95 slides (TW01–TW11), **370 same-source pairs**. The frozen impressed pipeline
+(scorer-config `ea4ddd…`, Fadul calibration `cartridge_fadul.npz`) was applied with **zero
+refitting**; 95/95 scans evaluable, **no exclusions**.
+
+| Protocol | Cllr | Cllr_min | AUC |
+|---|---|---|---|
+| **Weller external, frozen Fadul calibration** (pooled; the registered H1 metric) | **0.163** [0.147, 0.189] | 0.032 | 0.9995 |
+| **Frozen benchmark `cartridge-v2`** (Weller, within-study LOSO; fold mean) | **0.045 ± 0.024** | 0.031 | 0.996 |
+| Frozen benchmark `cartridge-v2` (pooled) | 0.042 | 0.034 | 0.997 |
+
+**Read this as:** the confirmatory hypothesis (**pooled Cllr ≤ 0.45**) is **supported** —
+the frozen, Fadul-calibrated pipeline transferred to an independent study at **0.163** (95%
+cluster-bootstrap CI entirely below the threshold), *better* than the within-Fadul benchmark
+(0.398 fold-mean) because Weller supplies 37× more same-source pairs and the scores separate
+near-perfectly (AUC 0.9995). The discrimination transfers almost completely (Cllr_min 0.032);
+the residual 0.132 is *calibration-transfer* cost — the price of using Fadul's calibration
+rather than Weller's own, which the within-study `cartridge-v2` number (0.045) isolates.
+**Scope (registered §5.7):** weight of evidence on the *named Fadul reference*, not a field
+error rate; both studies are Ruger P95 / NanoFocus µsurf, so this is a two-**study** external
+validation, **not** a cross-manufacturer or cross-instrument claim. 94% of pair LRs are
+empirically bound-limited (the Fadul cap is |log₁₀ LR| ≤ 1), i.e. deliberately conservative.
+
 ### Quoting policy (cartridge)
 
 The rules every public surface (README, web, whitepaper, slides, press) follows for

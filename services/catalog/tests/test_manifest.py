@@ -51,6 +51,38 @@ def test_build_github_source():
     assert src.repo == "CSAFE-ISU/cartridgeCaseScans"
     assert src.ref == "main"
     assert src.path == "fadulMasked"
+    # backward compat: manifests without `recursive:` stay flat (Contents API)
+    assert m.source.recursive is False
+    assert src.recursive is False
+
+
+def test_load_weller_manifest():
+    m = load_manifest("weller-cartridge-cases")
+    assert m.name == "weller-cartridge-cases"
+    assert m.entity == "cartridge"
+    assert m.mark_type == "breech_face"
+    assert m.study.source == "csafe-isu"
+    assert m.study.external_id == "weller-cartridge-cases"
+    assert m.study.consecutively_manufactured is True
+    assert m.study.creator == "CSAFE-ISU / Weller et al."
+    assert "Weller, Zheng, Thompson & Tulleners (2012)" in m.study.references
+    assert "57: 912-917" in m.study.references
+    assert "CC-BY 4.0" in m.study.references
+    assert m.firearm_defaults.brand == "Ruger"
+    assert m.firearm_defaults.model == "P95"
+    assert m.source.kind == "github"
+    assert m.source.repo == "CSAFE-ISU/cartridgeCaseScans"
+    assert m.source.ref == "main"
+    assert m.source.path == "wellerMasked"
+    assert m.source.recursive is True
+
+
+def test_build_weller_github_source_is_recursive():
+    """The manifest's `recursive: true` drives the source's subtree walk."""
+    src = build_source(load_manifest("weller-cartridge-cases"))
+    assert isinstance(src, GithubSource)
+    assert src.recursive is True
+    assert src.path == "wellerMasked"
 
 
 def test_load_manifest_by_name_confined_to_manifest_dir():

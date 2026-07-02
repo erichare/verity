@@ -1,0 +1,60 @@
+{
+ "format_version": 1,
+ "protocol_version": 1,
+ "name": "cartridge-v2",
+ "title": "Cartridge breech faces (Weller, 11 slide directories; external one-shot)",
+ "modality": "impressed",
+ "split_hash": "919fe6c5878da593aee52f059c3320eeed51260f036d1387a3d643a7130390b1",
+ "protocol": {
+  "n_splits": 10,
+  "test_frac": 0.4,
+  "seed": 0,
+  "fold_rule": "repeated source-disjoint splits: per fold, hold out round(0.4 * n_sources) sources; a pair is a test pair iff both its sources are held out; folds keeping <3 train or <1 test same-source pairs are skipped",
+  "contract": "One likelihood ratio per pair. The LR for a pair must be produced without using the benchmark labels of any pair involving either of its sources (leave-the-pair's-sources-out) \u2014 the same source-disjoint discipline the frozen folds score.",
+  "headline_metric": "calibration_loss (Cllr - Cllr_min, mean over folds)"
+ },
+ "counts": {
+  "n_marks": 95,
+  "n_sources": 11,
+  "n_pairs": 4465,
+  "n_km": 370,
+  "n_knm": 4095,
+  "n_folds": 10,
+  "n_duplicate_pairs_dropped": 0
+ },
+ "scorer": {
+  "score_kind": "cmr-2d",
+  "scorer_config_hash": "ea4ddd513b57ce8a3dd117dabc6d539432f7ddfab382c425837ead8199a6e127",
+  "reference_npz": "",
+  "reference_generator": null,
+  "reference_git_commit": null
+ },
+ "datasets": [
+  {
+   "external_id": "weller-cartridge-cases",
+   "tag": "Weller-2012",
+   "source": "CSAFE-ISU/cartridgeCaseScans (wellerMasked, CC-BY 4.0)"
+  }
+ ],
+ "git_commit": "cf95fe7",
+ "verity_baseline": {
+  "protocol_version": 1,
+  "n_folds": 10,
+  "cllr": 0.044604293610315544,
+  "cllr_std": 0.023847707801124968,
+  "cllr_min": 0.030575980377118516,
+  "cllr_min_std": 0.022193631220303302,
+  "auc": 0.9961248043136252,
+  "auc_std": 0.003745604843092285,
+  "calibration_loss": 0.014028313233197028,
+  "pooled": {
+   "n_pairs": 4465,
+   "n_km": 370,
+   "n_knm": 4095,
+   "cllr": 0.04238042011625749,
+   "cllr_min": 0.03376335254074265,
+   "auc": 0.9970497970497971,
+   "ece": 0.013147265170531705
+  }
+ }
+}
