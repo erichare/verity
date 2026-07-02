@@ -382,3 +382,47 @@ SHA-256 in §0 bind the scored system to the registered one; the runtime drift g
   numbers and quoting policy), `docs/toolmark-roadmap.md` (Weller ingest plan),
   `docs/meeting-readout-carriquiry.md` (stated validation gap),
   `services/catalog/benchmarks/cartridge-v1/provenance.json` (within-study protocol).
+
+---
+
+## Appendix A. Deviations and transparent-changes log
+
+### A.1 — 2026-07-01: clarification to §3.2 ("downloaded"), filed before any analysis ran
+
+**Discovered** during pre-run integrity checks, before any Weller scan was parsed,
+scored, or ingested, and before the confirmatory analysis:
+
+The Fadul calibration set is fetched by `fetch_fadul()`
+(`services/engine/verity/examples/cartridge_fadul.py`) as a **shallow git clone of the
+full `CSAFE-ISU/cartridgeCaseScans` repository**. As a side effect, the `wellerMasked/`
+files were present *as bytes* in the author's local cache
+(`~/.cache/verity/cartridgeCaseScans/`) from **2026-06-06 17:19** — before this
+registration (2026-07-01). The §3.2 statement is therefore inaccurate in the narrow
+sense of the word "downloaded."
+
+**The substantive claim stands and is auditable:**
+
+- At the registered commit, **no Verity code path references the Weller data** — a
+  repository-wide search for "weller" across all source files returns zero code hits;
+  every cartridge code path consumes `fadulMasked/` only. No component *could* have
+  parsed or scored a Weller scan.
+- No Weller file was parsed, scored, or visually inspected; no quantity derived from
+  Weller surface data existed at registration. File access times in the cache equal
+  their clone-time creation times, consistent with the files never having been opened
+  (suggestive, not conclusive — the code-path audit above is the primary evidence).
+- The June-06 cache is **retained**, not deleted: its timestamps are the evidence.
+  Anyone reproducing the pipeline observes the same full-repository clone behavior.
+
+**Action:** this note is recorded here (in-repo, timestamped by commit) before the
+one-shot analysis, and filed as an OSF transparent addendum on the registration as soon
+as OSF archiving completes. The confirmatory run is held until that filing is confirmed.
+
+*OSF addendum text (to paste):* "Clarification to §3.2 (filed before any analysis was
+run). The Fadul calibration set was fetched via a shallow git clone of the full
+CSAFE-ISU/cartridgeCaseScans repository; as a side effect, the wellerMasked/ files were
+present as bytes on the author's machine from 2026-06-06 — before this registration.
+The §3.2 statement is inaccurate in the narrow sense of 'downloaded.' The substantive
+claim stands and is auditable: at the registered commit, no Verity code path references
+the Weller data (verifiable by repository search); no Weller file was parsed, scored,
+or inspected; and no quantity derived from Weller surface data existed at registration.
+The confirmatory analysis had not been run when this note was filed."
