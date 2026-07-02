@@ -61,6 +61,9 @@ export type StageDisplay =
       nConsensus: number;
       axisX: string;
       axisY: string;
+      // True when the votes are the synthetic upload fallback (no real per-window votes from
+      // the live API) — the renderer must badge the plot as a schematic, not evidence.
+      schematic?: boolean;
     }
   | { type: "calibration"; km: number[]; knm: number[]; score: number; lrLabel: string }
   | { type: "verdict"; report: ComparisonReport };
@@ -98,6 +101,9 @@ export interface StudioRun {
   calibration?: GalleryCalibration;
   // Real per-window CMR votes for the consensus scatter (curated gallery only).
   cmr?: GalleryCmr;
+  // True when the 3-D grids were tiled from the 1-D signature purely for display (toolmarks
+  // ship no 2-D scan) — the ingest stage must say so instead of claiming a measured surface.
+  ridgedFromSignature?: boolean;
   // Real intermediates from the live /v1/steps walk (absent on the curated gallery path).
   align?: { lag: number; ccf: number };
   arealRaw?: number[][];
@@ -288,8 +294,8 @@ const COPY: Record<StageId, { label: string; caption: string; why: string }> = {
   },
   cmr: {
     label: "Consensus",
-    caption: "Hundreds of windows vote on how to line the marks up.",
-    why: "When they converge on one shift and twist, that agreement — not raw similarity — is the evidence.",
+    caption: "Comparison windows vote on how to line the marks up.",
+    why: "When they converge on one alignment, that agreement — not raw similarity — is the evidence.",
   },
   attribution: {
     label: "Attribution",
@@ -317,19 +323,33 @@ function dims(grid: number[][]): string {
 function buildStages(run: Omit<StudioRun, "stages">): Stage[] {
   const { domain, relation, report, regionsA, gridA, signatures, calibration } = run;
   const stages: Stage[] = [];
-  const push = (id: StageId, display: StageDisplay, readouts: Readout[], recede: boolean) => {
-    stages.push({ id, num: stages.length + 1, ...COPY[id], readouts, display, recede });
+  const push = (
+    id: StageId,
+    display: StageDisplay,
+    readouts: Readout[],
+    recede: boolean,
+    copy?: Partial<Pick<Stage, "caption" | "why">>,
+  ) => {
+    stages.push({ id, num: stages.length + 1, ...COPY[id], ...copy, readouts, display, recede });
   };
 
+  // When the 3-D surface was tiled from the 1-D signature (toolmarks: no 2-D scan), say so —
+  // and report the real profile length, not the display tiling's dimensions.
+  const ridgedSig = run.ridgedFromSignature ? signatures : undefined;
   push(
     "ingest",
     { type: "surfaces", variant: "raw" },
     [
-      { label: "resolution", value: dims(gridA) },
+      ridgedSig
+        ? { label: "signature", value: `${ridgedSig.a.length}-sample profile` }
+        : { label: "resolution", value: dims(gridA) },
       { label: "domain", value: domain },
       { label: "role", value: "evidence vs reference" },
     ],
     false,
+    ridgedSig
+      ? { caption: "A measured striation profile, rendered as a ridged surface for display." }
+      : undefined,
   );
 
   push(
@@ -405,9 +425,28 @@ function buildStages(run: Omit<StudioRun, "stages">): Stage[] {
           nConsensus,
           axisX: "proposed shift",
           axisY: "proposed twist",
+          schematic: true,
         },
-    [{ label: "congruent regions", value: `${nConsensus}` }],
+    // Real votes → the engine's measured consensus count. Synthetic fallback → the count is
+    // itself a proxy derived from the report (attribution regions or the CMR score): say so.
+    [
+      realCmr
+        ? { label: "congruent regions", value: `${nConsensus}` }
+        : { label: "regions (derived)", value: `${nConsensus}` },
+    ],
     true,
+    realCmr
+      ? {
+          caption: `${realCmr.votes.length} comparison windows vote on how to line the marks up.`,
+          why:
+            realCmr.kind === "areal"
+              ? "When they converge on one shift and twist, that agreement — not raw similarity — is the evidence."
+              : "When they converge on one alignment, that agreement — not raw similarity — is the evidence.",
+        }
+      : {
+          caption: "Comparison windows vote on how to line the marks up — drawn here as a schematic.",
+          why: "The live API does not expose per-window votes for uploads, so this scatter illustrates the mechanism. The region count and verdict are derived from the real report.",
+        },
   );
 
   if (regionsA.length > 0) {
@@ -478,6 +517,7 @@ function makeRun(input: RunInput): StudioRun {
   const previews = report.previews;
   let gridA: number[][];
   let gridB: number[][];
+  let ridgedFromSignature = false;
   if (input.rawA && input.rawB) {
     gridA = center(input.rawA);
     gridB = center(input.rawB);
@@ -488,6 +528,7 @@ function makeRun(input: RunInput): StudioRun {
     const s = hashSeed(input.id);
     gridA = ridgeFromSignature(signatures.a, 60, 48, s);
     gridB = ridgeFromSignature(signatures.b, 60, 48, s + 1);
+    ridgedFromSignature = true;
   } else {
     gridA = [[0, 0], [0, 0]];
     gridB = [[0, 0], [0, 0]];
@@ -501,6 +542,7 @@ function makeRun(input: RunInput): StudioRun {
     ...input,
     gridA,
     gridB,
+    ridgedFromSignature,
     rawFormA,
     rawFormB,
     bandA: input.bandA ? center(input.bandA) : highpass(gridA),

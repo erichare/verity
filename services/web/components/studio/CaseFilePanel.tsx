@@ -1,7 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { getScorerConfig } from "@/lib/stepApi";
 import type { Stage, StudioRun } from "@/lib/studio";
+
+// The deployed engine's scorer-config hash, fetched once (best-effort — null on failure).
+// Uploads score against the live engine, so their recipe must show THIS hash, not the baked
+// tour's; on the tour a differing live hash is surfaced as config drift.
+let liveHashPromise: Promise<string | null> | null = null;
+function fetchLiveHash(): Promise<string | null> {
+  liveHashPromise ??= getScorerConfig().then((c) => c?.config_hash ?? null);
+  return liveHashPromise;
+}
 
 /**
  * The reading panel beside the stage: the examiner-voice caption for the current step, its
@@ -18,6 +28,23 @@ export function CaseFilePanel({
   total: number;
 }) {
   const [recipeOpen, setRecipeOpen] = useState(false);
+  const [liveHash, setLiveHash] = useState<string | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    fetchLiveHash().then((h) => {
+      if (alive) setLiveHash(h);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  // Uploads: the live engine's hash (fall back to the baked one if the fetch failed).
+  // Tour: always the baked hash the numbers were generated under, plus a drift note.
+  const isUpload = run.provenance === "upload";
+  const shownHash = isUpload && liveHash ? liveHash : run.configHash;
+  const drifted = !isUpload && liveHash != null && liveHash !== run.configHash;
 
   return (
     <aside className="flex h-full w-full flex-col gap-4 overflow-y-auto p-5">
@@ -76,8 +103,8 @@ export function CaseFilePanel({
         {recipeOpen && (
           <div className="mt-2 space-y-1 font-mono text-[10px] leading-relaxed text-muted">
             <p>
-              scorer-config{" "}
-              <span className="text-foreground/80">{run.configHash.slice(0, 12)}…</span>
+              scorer-config <span className="text-foreground/80">{shownHash.slice(0, 12)}…</span>
+              {isUpload && liveHash && <span className="text-muted/70"> (live engine)</span>}
             </p>
             <p>
               reference <span className="text-foreground/80">{run.report.reference.name}</span>
@@ -86,6 +113,12 @@ export function CaseFilePanel({
               Every frame derives from this deterministic configuration.
             </p>
           </div>
+        )}
+        {drifted && (
+          <p className="mt-2 font-mono text-[10px] leading-relaxed text-oxblood">
+            config drift: the live engine runs {liveHash.slice(0, 12)}… — this tour was baked
+            under {run.configHash.slice(0, 12)}….
+          </p>
         )}
       </div>
     </aside>
