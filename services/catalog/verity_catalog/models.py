@@ -25,6 +25,10 @@ from sqlmodel import Field, Relationship, SQLModel, UniqueConstraint
 MODALITIES = ("x3p_3d", "png_2d", "profile_1d")
 MARK_TYPES = ("breech_face", "firing_pin", "ejector", "aperture_shear", "full_headstamp")
 TWIST = ("left", "right")
+# Known provenance sources (``Study.source`` / ``Scan.source``). The API's
+# ``source`` facet documents itself from this tuple — extend it when a new
+# ingest path lands so the docs can't drift from the data.
+SOURCES = ("nbtrd", "figshare", "tmarks", "csafe-isu")
 
 
 def _utcnow() -> datetime:

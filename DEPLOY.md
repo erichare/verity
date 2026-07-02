@@ -21,10 +21,10 @@ then point the web app at them.
 > - API → Railway (project `verity-api`): **https://api.verity.codes**
 >   (underlying service domain: `verity-api-production-b4c4.up.railway.app`)
 > - Data API → Railway (same project, service `verity-data`):
->   **https://verity-data-production.up.railway.app** — the intended public
->   domain **https://data.verity.codes** is **BROKEN as of 2026-07-01**
->   (Cloudflare proxies it to Vercel, which 404s); see "Custom domain" in
->   section 3 for the diagnosis and re-wiring steps.
+>   **https://data.verity.codes** — live (underlying service domain:
+>   `verity-data-production.up.railway.app`). Deploys are **manual**: run
+>   `./services/catalog/deploy-railway.sh`; merging to `main` does **not**
+>   auto-deploy this service (see section 3).
 
 > **DNS note (2026-07-01):** the `verity.codes` zone is now served through
 > **Cloudflare** (every host returns `server: cloudflare`) — DNS records are
@@ -193,6 +193,10 @@ every run and is therefore never linked, so the script explicitly runs
 Railway project. `RAILWAY_SERVICE` / `RAILWAY_PROJECT_ID` env vars override the
 defaults.
 
+Deploys are **manual**: this service is not wired to auto-deploy on pushes or
+merges to `main`, so after any merge that touches `services/catalog`, re-run
+the script above to publish the change.
+
 The catalog `railway.json` health-checks `/healthz`; the image binds `$PORT`
 (default 8001).
 
@@ -210,9 +214,10 @@ Required:
 Optional:
 
 - `VERITY_CATALOG_PUBLIC_URL` — the public base URL baked into replication-kit
-  submission instructions. Defaults to `https://data.verity.codes`; until that
-  domain is wired, set it to the live service URL
-  (`https://verity-data-production.up.railway.app`) so downloaded kits are
+  submission instructions. Defaults to `https://data.verity.codes` (live), so it
+  normally needs no override; set it only if the public domain ever stops
+  answering (e.g. to the underlying
+  `https://verity-data-production.up.railway.app`) so downloaded kits stay
   followable.
 - `VERITY_BENCHMARK_SUBMIT_TOKEN` — when set, submissions must carry it in
   `X-Benchmark-Token` (a soft close valve).
@@ -253,28 +258,35 @@ uv run --extra postgres verity-catalog load-benchmark benchmarks --to "$POOLER"
 uv run --extra s3 verity-catalog sync-blobs --to s3
 ```
 
-> **Status note (verified 2026-06-13):** the blob store is **not yet synced in prod** —
-> step 4 is outstanding, so `/scans/{id}/x3p` still returns 404 there (metadata serves;
-> bytes do not). This is the one remaining benchmark-deploy gap.
+> **Status note (2026-07-02):** the prod blob store is **partially synced** —
+> `/healthz?count=true` reports 1181 blobs for 1780 scans (the `tmarks` and
+> `csafe-isu` blobs are outstanding), so `/scans/{id}/x3p` returns 404 for those
+> scans (metadata serves; bytes do not). The API reports the gap per scan via
+> `blob_available` (and `/scans?blob_available=false` lists it); re-run step 4
+> to close it.
 
 Note `migrate-db` is the *row copy* (data), distinct from the Alembic *schema*
 migrations in step 1 — run Alembic first and pass `--no-create-schema` so the
 schema is exactly what the migrations (and their RLS policies) define.
 
-### Custom domain (`data.verity.codes` — **BROKEN as of 2026-07-01**)
+### Custom domain (`data.verity.codes` — **live**)
 
-**Diagnosis (2026-07-01):** `https://data.verity.codes/healthz` answers **404**
-with `x-vercel-error: DEPLOYMENT_NOT_FOUND`. The `verity.codes` DNS zone is now
-served through **Cloudflare** (all hosts return `server: cloudflare`), and the
-`data` record resolves to Cloudflare-proxied A records that forward to
-**Vercel** — which has no deployment for that host. The Railway service itself
-is healthy:
+The domain is wired and answering: Railway holds `data.verity.codes` as the
+custom domain on the `verity-data` service (target port **8001**), and the
+Cloudflare `data` record is a **DNS-only (grey cloud)** CNAME to the Railway
+target, so Railway terminates TLS with its own certificate.
 
 ```bash
-curl https://verity-data-production.up.railway.app/healthz
+curl https://data.verity.codes/healthz
 # 200 — {"success":true,"data":{"status":"ok","database":"postgresql+psycopg",
-#        "store_backend":"s3","store_count":1181,"scan_count":1780},"error":null,…}
+#        "store_backend":"s3",…,"scan_count":1780},"error":null,…}
 ```
+
+If it ever breaks again, the known failure mode (seen 2026-07-01, since fixed)
+is the Cloudflare `data` record flipping to **proxied** (orange cloud) A
+records that forward to Vercel — `https://data.verity.codes/healthz` then
+answers 404 with `x-vercel-error: DEPLOYMENT_NOT_FOUND` while the underlying
+`https://verity-data-production.up.railway.app/healthz` stays healthy.
 
 **Re-wiring steps** (all **Eric-only** — Railway + Cloudflare dashboard access):
 

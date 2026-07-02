@@ -12,6 +12,12 @@ from urllib.parse import urlsplit
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from ..models import SOURCES
+
+# The self-documenting facet description — derived from models.SOURCES so the
+# OpenAPI docs can't drift from the sources actually ingested.
+SOURCE_FACET_DOC = f"Provenance source: {' | '.join(repr(s) for s in SOURCES)}"
+
 
 class _Read(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -71,6 +77,7 @@ class ScanRead(_Read):
     id: int
     land_id: int | None = None
     mark_id: int | None = None
+    toolmark_id: int | None = None
     instrument_id: int | None = None
     modality: str
     magnification: str | None = None
@@ -83,6 +90,14 @@ class ScanRead(_Read):
     source: str
     source_ref: str
     fetched_at: datetime
+    blob_available: bool = Field(
+        default=False,
+        description=(
+            "Whether this scan's content-addressed blob is currently present in "
+            "the public store. When false, the catalog serves the metadata only "
+            "and `GET /scans/{id}/x3p` returns 404 until the blob is synced."
+        ),
+    )
 
 
 class ScanFilter(BaseModel):
@@ -91,9 +106,15 @@ class ScanFilter(BaseModel):
 
     caliber: str | None = Field(None, description="Firearm caliber, e.g. '9mm Luger'")
     n_lands: int | None = Field(None, description="Number of lands on the firearm")
-    source: str | None = Field(None, description="Provenance source, e.g. 'nbtrd' | 'figshare'")
-    modality: str | None = Field(None, description="'x3p_3d' | 'png_2d'")
-    study_id: int | None = Field(None, description="Restrict to one study")
+    source: str | None = Field(None, description=SOURCE_FACET_DOC)
+    modality: str | None = Field(None, description="'x3p_3d' | 'png_2d' | 'profile_1d'")
+    study_id: int | None = Field(
+        None,
+        description=(
+            "Restrict to one study — covers bullet-land, cartridge-mark, and "
+            "toolmark scans alike"
+        ),
+    )
     min_resolution: float | None = Field(
         None, description="Minimum lateral_resolution_x in µm (inclusive)"
     )
@@ -109,7 +130,15 @@ class DatasetSummary(BaseModel):
     title: str | None = None
     source: str
     external_id: str
-    n_files: int
+    n_files: int = Field(
+        description=(
+            "Files in the dataset: the manifest's static file list when it has "
+            "one, else the scans ingested into the catalog for its study."
+        )
+    )
+    n_resolved: int = Field(
+        description="How many of those files are pinned in the catalog (scan id + content hash)."
+    )
 
 
 class PinnedScan(BaseModel):
@@ -124,10 +153,21 @@ class PinnedScan(BaseModel):
 
 
 class DatasetDetail(DatasetSummary):
-    """A resolved dataset: the pinned scan list with content hashes pulled from the
-    catalog by matching ``Scan.source_ref`` to the manifest file URLs."""
+    """A resolved dataset: the pinned scan list with content hashes. ``resolution``
+    says how the list was pinned (see the field description)."""
 
-    n_resolved: int
+    resolution: str = Field(
+        description=(
+            "'manifest' — the recipe's static file URLs matched to Scan.source_ref; "
+            "'catalog' — the recipe discovers its files at ingest time, so the "
+            "entries are the study's ingested scans; 'pending' — a "
+            "discover-at-ingest recipe with nothing ingested yet (empty list, "
+            "honestly flagged rather than silently rendered empty)."
+        )
+    )
+    note: str | None = Field(
+        None, description="Human-readable explanation for non-'manifest' resolutions."
+    )
     files: list[PinnedScan]
 
 
