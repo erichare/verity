@@ -12,6 +12,7 @@ dependencies = [
     "mcp>=1.8",
     "verity",
     "verity-x3p",
+    "sentry-sdk[fastapi]>=2",
 ]
 
 [project.optional-dependencies]
