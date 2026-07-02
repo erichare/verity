@@ -8,6 +8,7 @@ repository.workspace = true
 authors.workspace = true
 keywords = ["forensics", "x3p", "metrology", "topography", "iso25178"]
 categories = ["science", "parser-implementations"]
+readme = "README.md"
 
 [dependencies]
 ndarray.workspace = true
