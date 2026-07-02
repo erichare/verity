@@ -41,8 +41,9 @@ def _report() -> dict:
             "scorer": "bullet-contrast",
             "input_hashes": {"mark_a": ["a" * 64], "mark_b": ["b" * 64]},
         },
-        "scope_note": "This is a calibrated weight of evidence on a named reference; "
-        "it is not a claim about the error rate of striated examination.",
+        "scope_note": "This is a calibrated weight of evidence on a named reference. "
+        "It is not a verdict: it is one input to an examiner's judgment, alongside "
+        "case context. It is not a claim about the error rate of striated examination.",
         "previews": {"a": grid, "b": grid},
     }
 

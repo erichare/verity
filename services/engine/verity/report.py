@@ -146,8 +146,9 @@ def build_comparison_report(
     }
     scope_note = (
         f"This is a calibrated weight of evidence on the {reference_name} reference "
-        f"population; it is not a claim about the error rate of {domain} examination, "
-        "which remains unknown."
+        "population. It is not a verdict: it is one input to an examiner's judgment, "
+        f"alongside case context. It is not a claim about the error rate of {domain} "
+        "examination, which remains unknown."
     )
     if lr_bound_hit:
         scope_note += (

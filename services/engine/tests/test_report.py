@@ -40,6 +40,7 @@ def test_report_same_source_score():
     assert "same source" in rep.verbal
     assert rep.reference["name"] == "Hamby-252" and rep.reference["auc"] > 0.9
     assert rep.lr_bound_log10 is not None  # ELUB bound applied
+    assert "It is not a verdict" in rep.scope_note
     assert "not a claim about the error rate" in rep.scope_note
 
 
