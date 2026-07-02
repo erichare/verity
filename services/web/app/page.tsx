@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { compareMarks, detectDomain, getDomains, type Detection } from "@/lib/api";
 import type { CompareResponse } from "@/lib/types";
+import { FilePick } from "@/components/FilePick";
 import { Reveal } from "@/components/Reveal";
 import { StatBand } from "@/components/home/StatBand";
 import { AppNav } from "@/components/app/AppNav";
@@ -14,40 +15,6 @@ const DOMAIN_LABELS: Record<string, string> = {
   striated: "Striated — bullet land(s)",
   toolmark: "Toolmark — striated (screwdriver, pry…)",
 };
-
-function FilePick({
-  label,
-  files,
-  onPick,
-  multiple,
-}: {
-  label: string;
-  files: File[];
-  onPick: (f: File[]) => void;
-  multiple?: boolean;
-}) {
-  const summary =
-    files.length === 0
-      ? multiple
-        ? "Choose .x3p land scans…"
-        : "Choose an .x3p scan…"
-      : files.length === 1
-        ? files[0].name
-        : `${files.length} scans selected`;
-  return (
-    <label className="group flex cursor-pointer flex-col gap-1.5 rounded-xl border border-dashed border-border bg-foreground/[0.02] p-4 text-sm transition hover:border-accent/60 hover:bg-foreground/[0.05]">
-      <span className="font-medium text-foreground">{label}</span>
-      <span className="truncate text-muted group-hover:text-foreground/80">{summary}</span>
-      <input
-        type="file"
-        accept=".x3p"
-        multiple={multiple}
-        className="hidden"
-        onChange={(e) => onPick(Array.from(e.target.files ?? []))}
-      />
-    </label>
-  );
-}
 
 export default function Home() {
   const [domains, setDomains] = useState<string[]>([]);
@@ -202,8 +169,11 @@ export default function Home() {
               </p>
             </div>
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium text-foreground/80">Mark type</label>
+              <label htmlFor="upload-mark-type" className="text-sm font-medium text-foreground/80">
+                Mark type
+              </label>
               <select
+                id="upload-mark-type"
                 value={domain}
                 onChange={(e) => {
                   setDomain(e.target.value);
@@ -213,7 +183,7 @@ export default function Home() {
                   setMarkB([]);
                   setResult(null);
                 }}
-                className="w-full rounded-lg border border-border bg-background/60 px-3 py-2 text-sm text-foreground outline-none focus:border-accent/60"
+                className="w-full rounded-lg border border-border bg-background/60 px-3 py-2 text-sm text-foreground outline-none focus:border-accent/60 focus-visible:ring-2 focus-visible:ring-accent"
               >
                 {shownDomains.map((d) => (
                   <option key={d} value={d}>
