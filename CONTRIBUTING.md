@@ -23,6 +23,7 @@ All participation is governed by our [Code of Conduct](CODE_OF_CONDUCT.md).
 | [`services/catalog`](services/catalog) | Python (uv) | Data catalog + content-addressed store + REST data API. |
 | [`services/mcp`](services/mcp) | Python (uv) | MCP server exposing the comparison API as tools. |
 | [`services/web`](services/web) | Next.js (pnpm) | verity.codes / docs.verity.codes / app.verity.codes. |
+| [`clients/`](clients) | Python / R | Thin API clients + the content-handle reproducibility contract. |
 
 ## Prerequisites
 
