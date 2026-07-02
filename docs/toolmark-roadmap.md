@@ -26,7 +26,7 @@ reduced per modality. Adding a mark family is *data + a registry entry*, not new
 
 | Mark family | Geometry → reduction | Data status | Effort |
 |---|---|---|---|
-| **Cartridge breech face (Weller)** | impressed → CMR-2D | **Available now** — `CSAFE-ISU/cartridgeCaseScans/wellerMasked`: 95 scans, **11 consecutively-manufactured Ruger P95 slides**, CC-BY, masks included. A *second, independent* impressed study. | **Low** (ingest + 2nd reference) |
+| **Cartridge breech face (Weller)** | impressed → CMR-2D | **Available now** — `CSAFE-ISU/cartridgeCaseScans/wellerMasked`: 95 scans across **11 slide folders (TW01–TW11)** — the underlying study (Weller et al. 2012) describes ten consecutively-manufactured **Ruger P95** slides — CC-BY, masks included. A *second, independent* impressed study. | **Low** (ingest + 2nd reference) |
 | **Firing-pin impressions** | impressed → CMR-2D | **Needs segmentation.** The Fadul/Weller primer scans *contain* the firing-pin crater, but the FiX3P masks annotate the **breech face** and exclude the crater. Source: extract the central firing-pin ROI from the same scans, or crawl the NBTRD firing-pin measurements (NRBTD GUIDs are in the repo MANIFEST). | **Medium** (ROI extraction/segmentation + validation) |
 | **Ejector / aperture-shear marks** | striated → CMR-1D | Schema ready; needs a marked dataset. Present on many NBTRD cartridge studies. | **Medium** (sourcing + segmentation) |
 | **Non-firearm tool striae** (screwdrivers — shipped; pliers, bolt/wire cutters, pry bars, chisels) | striated → CMR-1D | tmaRks screwdriver set is shipped. Other tool classes need a public consecutively-made set (ameslab-style; ameslab itself is GPL — not redistributable from the MIT catalog). | **Medium** (license-clean data) |
@@ -35,9 +35,13 @@ reduced per modality. Adding a mark family is *data + a registry entry*, not new
 ## Recommended sequence
 
 1. **Weller breech faces — the immediate, real next dataset.** It is available now under a
-   clean license and turns the single-study Fadul impressed result into a **two-study,
-   cross-instrument** generalization claim (Glock slides → Ruger slides), exactly the
-   independent-validation move a forensic statistician asks for. *Caveat:* `wellerMasked`
+   clean license and turns the single-study Fadul impressed result into a **two-study
+   external-validation** claim — an independent production run of Ruger P95 slides,
+   independently fired and scanned by a different lab (*both* studies used Ruger P95
+   slides and NanoFocus µsurf confocals, so this is cross-study, not cross-manufacturer
+   or cross-instrument) — exactly the independent-validation move a forensic statistician
+   asks for. Protocol pre-registered in [`weller-preregistration.md`](weller-preregistration.md);
+   the OSF timestamp must precede any ingest. *Caveat:* `wellerMasked`
    is nested one sub-folder per firearm (`TW01…TW11`), and the `github` harvester
    (`harvest/github.py`) lists a single directory — so this needs a small nested-directory
    harvest pass (or 11 manifest entries) before ingest. No new science.
