@@ -22,7 +22,7 @@ const PAGE = 25;
 const MARK_FILTERS: { value: MarkClass; label: string }[] = [
   { value: "all", label: "All marks" },
   { value: "bullet", label: "Bullet lands" },
-  { value: "cartridge", label: "Cartridge breech faces" },
+  { value: "cartridge", label: "Cartridge marks" },
   { value: "toolmark", label: "Tool marks" },
 ];
 
@@ -75,9 +75,10 @@ export default function CatalogPage() {
           </h1>
           <p className="mt-5 text-lg leading-relaxed text-foreground/80">
             The public benchmark data Verity is validated against &mdash; bullet lands, cartridge
-            breech faces, and screwdriver tool marks, normalized into one queryable catalog where
-            every scan carries its SHA-256 content hash and a link back to its source. This is a
-            live, read-only view of the hosted data.
+            breech faces, and screwdriver tool marks &mdash; plus additional hosted reference data
+            (the multi-instrument virtual kits) that backs no validation claim. Everything is
+            normalized into one queryable catalog where every scan carries its SHA-256 content hash
+            and a link back to its source. This is a live, read-only view of the hosted data.
           </p>
         </section>
 
@@ -254,8 +255,10 @@ export default function CatalogPage() {
         </div>
 
         <p className="mt-10 max-w-3xl text-xs leading-relaxed text-muted">
-          Mirrored read-only from three open sources: NIST NBTRD scans (U.S. public domain),
-          CSAFE-ISU cartridge-case scans (CC BY 4.0), and tmaRks screwdriver toolmarks (MIT).
+          Mirrored read-only from four open sources: NIST NBTRD scans (U.S. public domain; cite
+          NIST/NBTRD), CSAFE-ISU cartridge-case scans (github.com/CSAFE-ISU/cartridgeCaseScans,
+          CC BY 4.0), tmaRks screwdriver toolmarks (github.com/heike/tmaRks, MIT), and the CSAFE
+          multi-instrument virtual kits (figshare, DOI 10.25380/iastate.30854414, CC BY 4.0).
           Content hashes pin each scan byte-for-byte; the same catalog powers Verity&rsquo;s
           reproducible validation. X3P blob downloads are served separately and are not enabled
           on this public view.

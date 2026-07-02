@@ -63,8 +63,8 @@ export default function ReferencesPage() {
           <p className="mt-5 max-w-2xl text-lg leading-relaxed text-foreground/80">
             Verity stands on a large body of public, peer-reviewed forensic-statistics work. These are
             the methods it builds on, the field reviews that motivated it, the open datasets and tooling
-            it is validated against, and the statistics it borrows. Every claim on this site traces back
-            to one of these.
+            it is validated against, and the statistics it borrows. Every scientific claim on this site
+            traces to one of these or to the number registry in the repository.
           </p>
         </section>
 

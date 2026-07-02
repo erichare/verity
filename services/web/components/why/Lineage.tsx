@@ -32,14 +32,14 @@ const PILLARS: Pillar[] = [
     title: "Congruent Matching Cells",
     body: "The cell-counting idea at Verity's core is Song's CMC. Verity generalizes it to Congruent Matching Regions so one pipeline spans striated and impressed marks, rather than a bespoke method per mark type.",
     cite: {
-      label: "Song (2013); Song et al. (2018)",
+      label: "Song (2015); Song et al. (2018)",
       href: "https://doi.org/10.1016/j.forsciint.2017.12.013",
     },
   },
   {
     tag: "The evidence",
     title: "Public benchmark data",
-    body: "Verity is validated against the data the community built and shares — Hamby 252/173 bullets, Fadul consecutively-manufactured cartridge cases, and screwdriver toolmarks — sourced through the open NIST NBTRD.",
+    body: "Verity is validated against the data the community built and shares — Hamby 252/173 bullets from the open NIST NBTRD, Fadul consecutively-manufactured cartridge cases from CSAFE-ISU's open scan repository, and screwdriver toolmarks from the open tmaRks dataset.",
     cite: {
       label: "NIST NBTRD; Hamby (2009); Fadul (2011)",
       href: "https://tsapps.nist.gov/NRBTD/",
