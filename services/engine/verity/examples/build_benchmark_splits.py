@@ -285,6 +285,66 @@ def _toolmark_inputs() -> SplitInputs:
 
 
 # --------------------------------------------------------------------------- #
+# Cartridge cases v2 — Weller external-validation pairs, from the committed
+# one-shot driver artifacts (docs/weller-preregistration.md §5.3). The scores
+# are READ from the frozen run, never recomputed here — there is no reference
+# ``.npz`` for this split by design, so :func:`build_split` takes them directly.
+# --------------------------------------------------------------------------- #
+_WELLER_PAIRS_CSV = _ROOT / "docs/whitepaper/data/weller_external_pairs.csv.gz"
+_WELLER_JSON = _ROOT / "docs/whitepaper/data/weller_external.json"
+
+
+def _weller_inputs(
+    pairs_csv: Path = _WELLER_PAIRS_CSV, artifact_json: Path = _WELLER_JSON
+) -> tuple[SplitInputs, np.ndarray]:
+    """``cartridge-v2`` (Weller) inputs plus the positionally-aligned frozen
+    CMR-2D scores, read from the committed one-shot artifacts
+    (``validate_weller_frozen``). Mirrors :func:`_cartridge_inputs`, sourcing
+    marks/pairs/scores from the driver's outputs instead of a reference npz."""
+    if not (pairs_csv.is_file() and artifact_json.is_file()):
+        raise SystemExit(
+            "Weller one-shot artifacts missing — run verity-validate-weller first "
+            "(docs/weller-preregistration.md §5.1 precedes §5.3)"
+        )
+    artifact = json.loads(artifact_json.read_text())
+    scans = artifact.get("scans", [])
+    pairs: list[BenchmarkPair] = []
+    clusters: list[str] = []
+    scores: list[float] = []
+    with gzip.open(pairs_csv, "rt", newline="") as fh:
+        for row in csv.DictReader(fh):
+            pairs.append(
+                make_pair(row["hash_a"], row["hash_b"], int(row["label"]),
+                          row["source_a"], row["source_b"])
+            )
+            clusters.append("|".join(sorted((row["source_a"], row["source_b"]))))
+            scores.append(float(row["score"]))
+    marks = tuple(
+        Mark(hash=s["content_hash"], source=s["source"], label=s["name"],
+             scan_hashes=(s["content_hash"],))
+        for s in scans
+    )
+    inputs = SplitInputs(
+        name="cartridge-v2",
+        title="Cartridge breech faces (Weller, 11 slide directories; external one-shot)",
+        modality="impressed",
+        score_kind="cmr-2d",
+        reference_npz="",  # external validation — scores come from the frozen driver run
+        marks=marks,
+        pairs=tuple(pairs),
+        npz_clusters=tuple(clusters),
+        datasets=[
+            {
+                "external_id": "weller-cartridge-cases",
+                "tag": "Weller-2012",
+                "source": "CSAFE-ISU/cartridgeCaseScans (wellerMasked, CC-BY 4.0)",
+            }
+        ],
+    )
+    return inputs, np.asarray(scores, dtype=np.float64)
+
+
+# --------------------------------------------------------------------------- #
 # Alignment with the committed reference + dedup + freeze + write.
 # --------------------------------------------------------------------------- #
 def _aligned_scores(inputs: SplitInputs) -> np.ndarray:
@@ -345,8 +405,19 @@ def _fold_membership(pairs: tuple[BenchmarkPair, ...], folds: tuple[FrozenFold, 
     return membership
 
 
-def build_split(inputs: SplitInputs, out_root: Path) -> dict:
-    scores = _aligned_scores(inputs)
+def build_split(inputs: SplitInputs, out_root: Path, *, scores: np.ndarray | None = None) -> dict:
+    """Freeze one split. ``scores=None`` (every npz-backed split) adopts the
+    committed reference's scores after positional alignment; an explicit array
+    (``cartridge-v2``, whose scores come from the frozen Weller driver run)
+    skips the npz alignment but must still match the pair list positionally."""
+    if scores is None:
+        scores = _aligned_scores(inputs)
+    else:
+        scores = np.asarray(scores, dtype=np.float64)
+        if len(scores) != len(inputs.pairs):
+            raise SystemExit(
+                f"{inputs.name}: {len(scores)} supplied scores for {len(inputs.pairs)} pairs"
+            )
     pairs, scores, n_dup = _dedupe(inputs.pairs, scores)
     folds = freeze_folds(pairs)
     shash = split_hash(pairs, folds)
@@ -406,7 +477,8 @@ def build_split(inputs: SplitInputs, out_root: Path) -> dict:
     )
     (out / "verity_metrics.json").write_text(json.dumps(metrics, indent=1) + "\n")
 
-    ref_prov = load_reference(_REF_DIR / inputs.reference_npz).provenance or {}
+    ref_path = _REF_DIR / inputs.reference_npz if inputs.reference_npz else None
+    ref_prov = (load_reference(ref_path).provenance or {}) if ref_path else {}
     labels = np.array([p.label for p in pairs])
     provenance = {
         "format_version": 1,

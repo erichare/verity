@@ -1,0 +1,57 @@
+# Weller (2012) — 10 consecutively-manufactured Ruger P95 slides (cartridge cases).
+#
+# Source: github.com/CSAFE-ISU/cartridgeCaseScans, directory `wellerMasked`,
+# published as plain X3P files (with FiX3P breech-face masks) served raw from
+# GitHub (raw.githubusercontent.com). Licence: CC-BY 4.0.
+#
+# This is the EXTERNAL VALIDATION set of the pre-registered one-shot study
+# (docs/weller-preregistration.md, OSF osf.io/prjs9): the frozen, Fadul-calibrated
+# impressed-mark pipeline is applied to these scans with zero refitting. Per the
+# registered integrity claim (§3.4), no wellerMasked scan is accessed before the
+# registered ingest — everything in this manifest is public repository METADATA
+# (directory listing, file names/counts, README).
+#
+# Layout: 95 breech-face scans in 11 slide directories TW01..TW11 (the repo holds
+# eleven directories while the study title describes ten consecutively
+# manufactured slides — declared a priori in the pre-registration §3.1; each
+# directory is one distinct source regardless). `recursive: true` walks those
+# subdirectories in a single git-trees API call, and each harvested name keeps
+# its slide directory ("TW01/TW01-01.x3p"). Ingest then labels the SOURCE from
+# the directory (§4.2): Firearm(TW01) -> CartridgeCase -> Mark(breech_face) ->
+# Scan. Files not attributable to exactly one slide directory are skipped and
+# counted (stats: skipped_no_match), mechanically reporting exclusion rule 2 of
+# §5.5; identical-content duplicates dedup by content hash (rule 3).
+#
+# Reproducible from scratch: `verity-catalog ingest weller-cartridge-cases`.
+# One API call lists the tree; the downloads hit the CDN (no auth token needed).
+# Idempotent — re-run to resume.
+name: weller-cartridge-cases
+title: "Weller (2012) — consecutively-manufactured slides (cartridge cases)"
+
+entity: cartridge
+mark_type: breech_face
+
+study:
+  source: csafe-isu
+  external_id: weller-cartridge-cases
+  title: "Weller (2012) — 10 consecutively-manufactured Ruger P95 slides (cartridge cases)"
+  creator: "CSAFE-ISU / Weller et al."
+  references: >-
+    Weller, Zheng, Thompson & Tulleners (2012), Confocal microscopy analysis of
+    breech face marks on fired cartridge cases from 10 consecutively manufactured
+    pistol slides, Journal of Forensic Sciences 57: 912-917;
+    CSAFE-ISU/cartridgeCaseScans (CC-BY 4.0)
+  consecutively_manufactured: true
+  nist_measurement: false
+  persistence: false
+
+firearm_defaults:
+  brand: Ruger
+  model: P95
+
+source:
+  kind: github
+  repo: CSAFE-ISU/cartridgeCaseScans
+  ref: main
+  path: wellerMasked
+  recursive: true

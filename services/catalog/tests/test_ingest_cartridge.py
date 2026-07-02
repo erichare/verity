@@ -114,6 +114,80 @@ def test_cartridge_skips_questioned_and_dedups(session, tmp_path):
     assert len(session.exec(select(models.Mark)).all()) == 2
 
 
+def test_cartridge_directory_labeling_builds_hierarchy(session, tmp_path):
+    """Weller-style recursive harvests: the slide DIRECTORY is the source
+    (pre-registration §4.2), taking precedence over the {slide}-{case} filename
+    regex — which would otherwise mislabel every ``TWxx-NN.x3p`` name."""
+    store = LocalBlobStore(tmp_path / "blobs")
+    manifest = load_manifest("weller-cartridge-cases")
+    names = ["TW01/TW01-01.x3p", "TW01/TW01-02.x3p", "TW02/TW02-01.x3p"]
+    blobs = {n: _x3p_bytes(float(i)) for i, n in enumerate(names)}
+    src = FakeSource(_files(names), lambda rf: blobs[rf.name])
+
+    stats = ingest_manifest(session, store, manifest, source=src)
+
+    assert stats == {"files": 3, "ingested": 3, "already_present": 0, "skipped_no_match": 0}
+    # SOURCE identity is the TW directory: 2 firearms, named exactly by directory
+    firearms = session.exec(select(models.Firearm)).all()
+    assert sorted(f.external_id for f in firearms) == ["TW01", "TW02"]
+    # ...NOT the filename-regex labels ("TW01-01.x3p" matches the {slide}-{case}
+    # regex as slide 1 — directory precedence must win)
+    assert not any(f.external_id.startswith("Slide") for f in firearms)
+    assert all(f.brand == "Ruger" and f.model == "P95" for f in firearms)
+    assert len(session.exec(select(models.CartridgeCase)).all()) == 3
+    marks = session.exec(select(models.Mark)).all()
+    assert len(marks) == 3
+    assert all(mk.mark_type == "breech_face" for mk in marks)
+    scans = session.exec(select(models.Scan)).all()
+    assert len(scans) == 3
+    # the scan keeps its directory-relative filename and resolves to its slide
+    s = next(s for s in scans if s.filename == "TW01/TW01-02.x3p")
+    assert s.mark.cartridge_case.firearm.external_id == "TW01"
+    assert s.mark.cartridge_case.external_id == "TW01-02"
+    assert s.mark.cartridge_case.label == "TW01-02"
+    assert s.mark.external_id == "TW01-02-breech_face"
+
+
+def test_cartridge_directory_labeling_skips_unattributable(session, tmp_path):
+    """A scan not attributable to EXACTLY ONE slide directory is skipped and
+    counted (pre-registration §5.5 rule 2) — never guessed at."""
+    store = LocalBlobStore(tmp_path / "blobs")
+    manifest = load_manifest("weller-cartridge-cases")
+    names = [
+        "TW01/TW01-01.x3p",  # attributable: exactly one slide directory
+        "TW01/nested/TW01-99.x3p",  # two directory components -> unattributable
+        "/TW03-01.x3p",  # empty directory component -> unattributable
+        "stray.x3p",  # flat, no {slide}-{case} match -> unattributable
+    ]
+    blobs = {n: _x3p_bytes(float(i)) for i, n in enumerate(names)}
+    src = FakeSource(_files(names), lambda rf: blobs[rf.name])
+
+    stats = ingest_manifest(session, store, manifest, source=src)
+
+    assert stats == {"files": 4, "ingested": 1, "already_present": 0, "skipped_no_match": 3}
+    firearms = session.exec(select(models.Firearm)).all()
+    assert [f.external_id for f in firearms] == ["TW01"]
+    assert len(session.exec(select(models.Scan)).all()) == 1
+
+
+def test_cartridge_directory_labeling_dedups_identical_content(session, tmp_path):
+    """Content-hash dedup (pre-registration §5.5 rule 3) also holds for
+    directory-labeled scans: one blob, one Scan row, first occurrence kept."""
+    store = LocalBlobStore(tmp_path / "blobs")
+    manifest = load_manifest("weller-cartridge-cases")
+    names = ["TW01/TW01-01.x3p", "TW02/TW02-01.x3p"]
+    src = FakeSource(_files(names), lambda rf: _x3p_bytes(0.0))  # identical bytes
+
+    stats = ingest_manifest(session, store, manifest, source=src)
+
+    assert stats["files"] == 2 and stats["ingested"] == 2
+    assert len(session.exec(select(models.Scan)).all()) == 1
+    assert store.count() == 1
+    # both slides' cases + marks still exist (labeling is independent of dedup)
+    assert len(session.exec(select(models.Firearm)).all()) == 2
+    assert len(session.exec(select(models.Mark)).all()) == 2
+
+
 def test_cartridge_ingest_is_idempotent(session, tmp_path):
     store = LocalBlobStore(tmp_path / "blobs")
     manifest = load_manifest("fadul-cartridge-cases")
