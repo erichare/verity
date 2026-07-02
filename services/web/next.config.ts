@@ -9,7 +9,7 @@ const DOCS_SEGMENTS = [
   "catalog",
   "references",
   "docs",
-  "partnership",
+  "lineage",
 ];
 
 const nextConfig: NextConfig = {
@@ -34,6 +34,21 @@ const nextConfig: NextConfig = {
         source: "/studio/:path*",
         has: [{ type: "host", value: "verity.codes" }],
         destination: "https://app.verity.codes/:path*",
+        permanent: true,
+      },
+      // The old CSAFE "partnership" page is now the scientific-lineage page. On the
+      // app host, jump straight to the docs host in one hop; everywhere else (the
+      // docs host, local dev) a relative redirect keeps the current host, and the
+      // proxy/segment rules take it from there.
+      {
+        source: "/partnership",
+        has: [{ type: "host", value: "verity.codes" }],
+        destination: "https://docs.verity.codes/lineage",
+        permanent: true,
+      },
+      {
+        source: "/partnership",
+        destination: "/lineage",
         permanent: true,
       },
       // Moved content: verity.codes/<seg>(/...) -> docs.verity.codes/<seg>(/...).
