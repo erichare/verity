@@ -72,7 +72,7 @@ A likelihood ratio with its verbal equivalent and a **credible interval** (a clu
 |---|---|---|---|
 | Bullet lands (striated) | `bullets-v1` | 0.205 ± 0.125 | 0.979 |
 | Cartridge breech faces (impressed) | `cartridge-v1` | 0.398 ± 0.202[^cart] | 0.922 |
-| Screwdriver toolmarks (striated) | `toolmark-v1` | 0.330 ± 0.047 | 0.944 |
+| Screwdriver toolmarks (striated) | `toolmark-v1` | 0.330 ± 0.047 | 0.943 |
 
 These characterize **weight of evidence on the named references**, not field error rates.
 

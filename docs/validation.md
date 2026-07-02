@@ -80,7 +80,7 @@ The frozen open benchmark is the primary quote for both (fold mean, from
 | Mark family | Frozen split | Cllr | AUC |
 |---|---|---|---|
 | Cartridge breech faces (Fadul, impressed) | `cartridge-v1` | 0.398 ± 0.202 | 0.922 (0.941 pooled) |
-| Screwdriver toolmarks (tmaRks, striated) | `toolmark-v1` | 0.330 ± 0.047 | 0.944 |
+| Screwdriver toolmarks (tmaRks, striated) | `toolmark-v1` | 0.330 ± 0.047 | 0.943 |
 
 **The cartridge cross-protocol gap, explained.** The internal source-disjoint
 (cmr_table) protocol reads AUC **0.991** for cartridge — quoted here only after the
