@@ -1,6 +1,6 @@
 Package: verityx3p
 Title: Native X3P (ISO 25178-72) Reader and Writer
-Version: 0.1.0
+Version: 0.2.0
 Authors@R:
     person("Eric", "Hare", , "ericrhare@gmail.com", role = c("aut", "cre"))
 Description: Read and write X3P (ISO 25178-72) 3D surface-topography files via

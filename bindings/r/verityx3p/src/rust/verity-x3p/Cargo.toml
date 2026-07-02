@@ -3,7 +3,7 @@
 [package]
 name = "verity-x3p"
 description = "Native reader/writer for the X3P (ISO 25178-72 / ISO 5436-2) 3D surface topography format."
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/erichare/verity"

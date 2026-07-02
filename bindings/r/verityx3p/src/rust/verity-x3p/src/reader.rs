@@ -1,9 +1,9 @@
 //! Reading X3P files into a [`Surface`].
 
+use crate::checksum::md5_hex;
 use crate::error::{Result, X3pError};
 use crate::model::{DataType, Surface};
 use crate::xml::{self, ParsedMeta};
-use md5::{Digest, Md5};
 use ndarray::Array2;
 use std::io::{Cursor, Read, Seek};
 use std::path::Path;
@@ -79,16 +79,6 @@ fn extract_members<R: Read + Seek>(reader: R) -> Result<Members> {
     })
 }
 
-/// Upper-case MD5 hex digest of `bytes`.
-fn md5_hex(bytes: &[u8]) -> String {
-    let digest = Md5::digest(bytes);
-    let mut s = String::with_capacity(32);
-    for byte in digest {
-        s.push_str(&format!("{byte:02X}"));
-    }
-    s
-}
-
 /// Decode the binary Z stream into a row-major `(ny, nx)` height matrix.
 ///
 /// The stream is X-fastest, so the natural C-order fill of an `(ny, nx)` array
@@ -123,6 +113,9 @@ fn decode_z(bytes: &[u8], meta: &ParsedMeta) -> Result<(Array2<f64>, Array2<bool
 
     for i in 0..n {
         let p = i * bs;
+        // The `try_into().unwrap()` is sound: the length check above guarantees
+        // `bytes.len() >= n * bs`, so `bytes[p..p+bs]` is always in-bounds and
+        // exactly `bs` long for every `i < n`.
         let v = match dtype {
             DataType::F32 => f32::from_le_bytes(bytes[p..p + 4].try_into().unwrap()) as f64,
             DataType::F64 => f64::from_le_bytes(bytes[p..p + 8].try_into().unwrap()),
@@ -158,7 +151,7 @@ fn read_x3p_reader<R: Read + Seek>(reader: R, opts: &ReadOptions) -> Result<Surf
 
     if opts.verify_checksums {
         if let Some(expected) = &meta.md5_point_data {
-            let actual = md5_hex(&members.data_bin);
+            let actual = md5_hex(&members.data_bin, true);
             if &actual != expected {
                 return Err(X3pError::Checksum {
                     what: "bindata/data.bin".to_string(),
