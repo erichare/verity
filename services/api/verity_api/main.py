@@ -699,7 +699,8 @@ _COMPARE_EXAMPLE = {
         "input_hashes": {"mark_a": ["<sha256>"], "mark_b": ["<sha256>"]},
     },
     "scope_note": "This is a calibrated weight of evidence on the pooled bullet-land "
-    "reference population; it is not a claim about the error rate of "
+    "reference population. It is not a verdict: it is one input to an examiner's "
+    "judgment, alongside case context. It is not a claim about the error rate of "
     "striated examination, which remains unknown.",
     "previews": {"a": "[[…]] downsampled height grids", "b": "[[…]]"},
 }

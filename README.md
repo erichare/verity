@@ -77,7 +77,7 @@ the data can support, and the **region-level attribution** that drove the score.
   "reference": { "name": "pooled bullet-land", "n_km": 146, "n_knm": 1755,
                  "auc": 0.984, "cllr": 0.193, "cllr_min": 0.168 },
   "attribution": [ /* the matched regions — the explanation */ ],
-  "scope_note": "Not a claim about the error rate of examination, which remains unknown."
+  "scope_note": "Not a verdict: one input to an examiner's judgment, alongside case context. Not a claim about the error rate of examination, which remains unknown."
 }
 ```
 
