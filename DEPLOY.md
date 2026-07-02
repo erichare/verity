@@ -22,8 +22,16 @@ then point the web app at them.
 >   (underlying service domain: `verity-api-production-b4c4.up.railway.app`)
 > - Data API → Railway (same project, service `verity-data`):
 >   **https://verity-data-production.up.railway.app** — the intended public
->   domain **https://data.verity.codes** is not wired yet (DNS still points at
->   Vercel); see "Custom domain" in section 3.
+>   domain **https://data.verity.codes** is **BROKEN as of 2026-07-01**
+>   (Cloudflare proxies it to Vercel, which 404s); see "Custom domain" in
+>   section 3 for the diagnosis and re-wiring steps.
+
+> **DNS note (2026-07-01):** the `verity.codes` zone is now served through
+> **Cloudflare** (every host returns `server: cloudflare`) — DNS records are
+> managed in the Cloudflare dashboard, not with `vercel dns`. The `vercel dns
+> add` commands below are the historical record of how records were first
+> created; for any change today, edit the record in Cloudflare, and keep
+> Railway-hosted names **DNS-only (grey cloud)** so Railway can issue TLS.
 
 ## 1. API → Railway (container)
 
@@ -57,9 +65,11 @@ railway variables --set "PORT=8000"   # triggers a redeploy
    curl https://api.verity.codes/health   # {"status":"ok","domains":[...]}
    ```
 
-**CORS:** the image defaults `VERITY_CORS_ORIGINS="*"` (answers any origin). To lock
-it down, set a Railway service variable, e.g.
-`VERITY_CORS_ORIGINS=https://verity.codes`.
+**CORS:** the image defaults to the **localhost dev origins only**
+(`http://localhost:3000,http://127.0.0.1:3000` — see `verity_api/main.py`; the
+Dockerfile deliberately does not bake `"*"`). A deployed front end therefore fails
+every fetch until you set the Railway service variable to the real origins:
+`VERITY_CORS_ORIGINS=https://verity.codes,https://app.verity.codes`.
 
 **Remote MCP endpoint:** the API also serves a hosted MCP server (streamable HTTP) at
 `https://api.verity.codes/mcp` — the same calibrated tools as the stdio server in
@@ -251,27 +261,119 @@ Note `migrate-db` is the *row copy* (data), distinct from the Alembic *schema*
 migrations in step 1 — run Alembic first and pass `--no-create-schema` so the
 schema is exactly what the migrations (and their RLS policies) define.
 
-### Custom domain (`data.verity.codes` — live, verified 2026-06-13)
+### Custom domain (`data.verity.codes` — **BROKEN as of 2026-07-01**)
 
-`https://data.verity.codes/healthz` answers 200 and the benchmark splits/leaderboard
-serve. Steps below are the record of how it was wired (and the recipe if it ever needs redoing):
+**Diagnosis (2026-07-01):** `https://data.verity.codes/healthz` answers **404**
+with `x-vercel-error: DEPLOYMENT_NOT_FOUND`. The `verity.codes` DNS zone is now
+served through **Cloudflare** (all hosts return `server: cloudflare`), and the
+`data` record resolves to Cloudflare-proxied A records that forward to
+**Vercel** — which has no deployment for that host. The Railway service itself
+is healthy:
 
-1. Railway → `verity-data` → **Settings → Networking → Custom Domain** →
-   `data.verity.codes` (target port **8001**). This must be done in the
-   dashboard — the CLI `railway domain` is permission-blocked for this service.
-   Railway returns a CNAME target.
-2. Point DNS at it (the apex is Vercel-managed; the `data` record was repointed
-   from Vercel to the Railway target):
+```bash
+curl https://verity-data-production.up.railway.app/healthz
+# 200 — {"success":true,"data":{"status":"ok","database":"postgresql+psycopg",
+#        "store_backend":"s3","store_count":1181,"scan_count":1780},"error":null,…}
+```
+
+**Re-wiring steps** (all **Eric-only** — Railway + Cloudflare dashboard access):
+
+1. Railway → `verity-data` → **Settings → Networking**: confirm the custom
+   domain `data.verity.codes` still exists (re-add it if not; target port
+   **8001**) and copy the CNAME target Railway shows
+   (`<target>.up.railway.app`). This must be done in the dashboard — the CLI
+   `railway domain` is permission-blocked for this service.
+2. Cloudflare dashboard → `verity.codes` → **DNS**: change the `data` record to
+   a **CNAME** pointing at that Railway target, set to **DNS-only (grey
+   cloud)**. Proxying it (orange cloud) keeps terminating TLS at
+   Cloudflare→Vercel and blocks Railway from issuing its certificate.
+3. Verify once TLS is issued (a few minutes):
    ```bash
-   vercel dns add verity.codes data CNAME <target>.up.railway.app
+   curl https://data.verity.codes/healthz   # 200 + database/store report
    ```
-3. Once TLS is issued and `curl https://data.verity.codes/healthz` answers,
-   update the Vercel env `NEXT_PUBLIC_DATA_API_URL` (or remove it — the web app
-   defaults to `https://data.verity.codes`) and redeploy the web app (push), and
-   drop any interim `VERITY_CATALOG_PUBLIC_URL` override on the Railway service
-   so kits advertise the public domain again.
+4. Then remove any interim `VERITY_CATALOG_PUBLIC_URL` override on the Railway
+   service so downloaded replication kits advertise the public domain again,
+   and check the Vercel env `NEXT_PUBLIC_DATA_API_URL` (or remove it — the web
+   app defaults to `https://data.verity.codes`) and redeploy the web app
+   (push).
 
-## 4. Verify
+## 4. Launch-day production env checklist
+
+Verify **every** row below on Railway before any public launch. Each variable is
+read by the code paths cited; the "failure mode" column is what actually happens
+if it is unset (all cross-checked against the source, 2026-07-01).
+
+### Comparison API (Railway service `verity-api`)
+
+| Variable | Set to | Purpose / failure mode if unset |
+|---|---|---|
+| `VERITY_MCP_ALLOWED_HOSTS` | `api.verity.codes` | Host allow-list for the hosted `/mcp` endpoint. **Unset ⇒ DNS-rebinding protection is disabled entirely** (`verity_api/mcp_server.py` builds `TransportSecuritySettings(enable_dns_rebinding_protection=False)` when the list is empty). Pair with `VERITY_MCP_ALLOWED_ORIGINS` for browser-based MCP clients. |
+| `VERITY_TRUST_PROXY_HEADERS` | `1` | Behind Railway's edge proxy, `request.client.host` is the proxy, so **unset ⇒ the per-IP rate limit collapses into one global bucket** — a single heavy client 429s everyone. When set, the limiter keys on the *rightmost* `X-Forwarded-For` entry (the hop the trusted edge appended; client-supplied entries are ignored). |
+| `VERITY_CORS_ORIGINS` | `https://verity.codes,https://app.verity.codes` | Browser origins allowed to call the API. **Unset ⇒ localhost dev origins only** (`verity_api/main.py`), so both production front ends fail every fetch with a CORS error. |
+| `VERITY_ENSEMBLE_CACHE_DIR` | a mounted-volume path | Warm-restart disk cache for bootstrap calibration ensembles (~3 KB/reference, bit-identical to a cold fit). **Unset ⇒ every restart/deploy refits every reference's ensemble** — minutes of CPU before the first LR is served. |
+| `VERITY_LR_BOOTSTRAP_N` | leave at default `1000` in prod | Bootstrap replicate count; recorded in each comparison's content-addressed recipe, so changing it (correctly) changes reported recipe handles. Lower it only on CI/constrained hosts — not on the public API. |
+| `VERITY_STRICT_REFERENCE` | `1` (recommended) | Scorer-config drift guard **raises at reference load** instead of logging a warning (`verity/decision/scorer_config.py`) — a stale bundled reference can't silently ship a bad LR. |
+| `PORT` | `8000` | Pinned so the app and custom-domain routing agree (section 1). |
+
+### Data API (Railway service `verity-data`)
+
+| Variable | Set to | Purpose / failure mode if unset |
+|---|---|---|
+| `VERITY_CATALOG_DATABASE_URL` | the Supabase **pooler** URL (`postgresql+psycopg://…`, section 3) | **Unset ⇒ falls back to `sqlite:///verity_catalog.db`** (`verity_catalog/config.py`) — an empty, ephemeral in-container database; the catalog serves nothing. |
+| `VERITY_TRUST_PROXY_HEADERS` | `1` | Same collapse as the API: **unset ⇒ benchmark-submission rate limiting becomes one global bucket** (`verity_catalog/api/routers/benchmark.py`). |
+| `VERITY_CATALOG_CORS_ORIGINS` | every browser origin that reads the catalog directly | Code default is `https://verity.codes` only (`verity_catalog/api/app.py`); confirm it covers any other front (e.g. the docs host) that fetches the catalog from the browser. |
+| `VERITY_BENCHMARK_SUBMIT_TOKEN` | decide **before** launch | Submission close valve: when set, leaderboard submissions must carry it in `X-Benchmark-Token` (else 403). **Unset ⇒ submissions are open to anyone**, guarded only by the 5-per-hour-per-IP rate limit (`VERITY_BENCHMARK_RATE_LIMIT`/`VERITY_BENCHMARK_RATE_WINDOW_S`). |
+| Blob-store vars (`VERITY_CATALOG_BLOB_STORE_BACKEND=s3` + bucket/endpoint/keys, section 3) | as wired | **Unset ⇒ `/scans/{id}/x3p` serves no bytes** (metadata-only catalog). |
+| `PORT` | `8001` | Matches the catalog `railway.json` health check + custom-domain target port. |
+
+### External verification (run from any machine)
+
+Rate limit binds to the *real* client, not a spoofable header — repeated
+requests with a **changing spoofed `X-Forwarded-For`** must still trip 429
+(Railway appends the real client IP as the rightmost entry, and the limiter
+keys on that; if each spoof minted a fresh bucket, no 429 would ever appear):
+
+```bash
+# 200 requests, 16 in parallel (must finish inside the 60 s window), each with a
+# DIFFERENT spoofed X-Forwarded-For:
+seq 1 200 | xargs -P 16 -I{} curl -s -o /dev/null -w "%{http_code}\n" \
+  -X POST https://api.verity.codes/detect \
+  -H "X-Forwarded-For: 10.0.0.{}" -F "scan=@/dev/null;filename=empty.x3p" \
+  | sort | uniq -c
+# healthy: 429s appear (default limit: 120 per 60 s, keyed on the real client IP)
+# broken:  no 429 at all — every spoofed header minted its own bucket
+```
+
+CORS preflight answers the production origins (repeat for each origin):
+
+```bash
+curl -s -o /dev/null -D - -X OPTIONS https://api.verity.codes/v1/compare \
+  -H "Origin: https://verity.codes" \
+  -H "Access-Control-Request-Method: POST" | grep -i access-control-allow-origin
+# expect: access-control-allow-origin: https://verity.codes
+```
+
+Health endpoints:
+
+```bash
+curl https://api.verity.codes/health    # {"status":"ok","engine_version":…,"domains":[…]}
+curl https://data.verity.codes/healthz  # envelope with database + store_count/scan_count
+```
+
+## 5. Monitoring
+
+- **Sentry (API):** a parallel PR adds env-gated Sentry to `services/api` — set
+  the Sentry DSN env var on the Railway `verity-api` service to enable it;
+  leaving it unset keeps Sentry fully disabled (no-op).
+- **Railway alerts:** configure alerts on a **429/503 spike** (rate-limit
+  saturation / not-fully-published benchmark splits) and on **p95 `/compare`
+  latency** (the CPU-bound path; a sustained rise usually means the bootstrap
+  ensemble cache is cold or concurrency is saturated).
+- **Health endpoints:** `api.verity.codes` serves **`/health`** (a parallel PR
+  aliases `/healthz` so both answer); the data API serves **`/healthz`**. Point
+  uptime checks at those.
+
+## 6. Verify
 
 Open https://verity.codes, pick a mark type, upload scans (a bullet's lands for
 striated; a breech face for impressed), and Compare. If you see "Failed to fetch,"
