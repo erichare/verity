@@ -132,8 +132,10 @@ const COMPARE_RESPONSE = `{
   "attribution":   [{ "x_frac": 0.0,  "w_frac": 0.167, "corr": 0.91, "…": "…" }],
   "attribution_b": [{ "x_frac": 0.008,"w_frac": 0.167, "corr": 0.91, "…": "…" }],
   "previews": { "a": "[[…]] downsampled height grid", "b": "[[…]]" },
-  "scope_note": "A calibrated weight of evidence on the named reference; not a
-                 claim about the error rate of examination, which remains unknown."
+  "scope_note": "A calibrated weight of evidence on the named reference. Not a
+                 verdict: one input to an examiner's judgment, alongside case
+                 context. Not a claim about the error rate of examination, which
+                 remains unknown."
 }`;
 
 const RECIPE_EXCERPT = `{
@@ -143,6 +145,8 @@ const RECIPE_EXCERPT = `{
   "inputs": { "mark_a": ["8ab45f56…"], "mark_b": ["ed232b90…"] },   // SHA-256 of each scan
   "reference": {
     "name": "Fadul cartridge cases", "scorer_config_hash": "ea4ddd513b57…",
+    // in-sample reference fit, not a validation claim — the frozen public
+    // cartridge benchmark reads AUC 0.922 (fold mean; see /benchmark)
     "diagnostics": { "n_km": 10, "n_knm": 180, "auc": 0.997, "cllr_min": 0.07 }
   },
   "result": { "likelihood_ratio": 10.0, "log10_lr": 1.0, "verbal": "moderate support…" },

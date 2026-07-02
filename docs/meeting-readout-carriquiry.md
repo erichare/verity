@@ -32,8 +32,8 @@ bullet contribution is the calibrated, bounded, deployable LR layer, not a bette
   reference's **in-sample** fit (pooled bullet Cllr 0.193). The honest validation number is
   the **source-disjoint** Cllr (0.186 pooled) — and the two are nearly identical, which is the
   point: low calibration loss. Every public sample is now scope-labeled to say so.
-- *Cartridge AUC cross-protocol gap.* Internal source-disjoint reads AUC 0.991; the frozen
-  benchmark reads 0.922 (fold mean) / 0.941 (pooled). With **only 10 same-source pairs**,
+- *Cartridge AUC cross-protocol gap.* The frozen benchmark reads AUC 0.922 (fold mean) /
+  0.941 (pooled); internal source-disjoint reads 0.991. With **only 10 same-source pairs**,
   per-fold AUC is unstable and the fold rules differ — a small-n artifact, not a contradiction.
   We quote the **frozen benchmark** as primary for cartridge. (Where her input is most valuable.)
 

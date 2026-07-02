@@ -98,6 +98,12 @@ const cmrByModality: Record<string, CmrReduction> = Object.fromEntries(
   cmr.reductions.map((r) => [r.modality, r]),
 );
 
+// Frozen public-benchmark figures for the cartridge reduction (`cartridge-v1`,
+// fold mean — docs/headline-numbers.md). Quoting policy: these lead every public
+// cartridge claim; the internal source-disjoint AUC is quoted only after them,
+// labeled, with the small-n caveat (Fadul has just 10 same-source pairs).
+const CARTRIDGE_FROZEN_BENCHMARK = { cllr: 0.398, cllrSd: 0.202, auc: 0.922 };
+
 function formatLR(lr: number): string {
   const human = (x: number) =>
     x >= 100 ? Math.round(x).toLocaleString("en-US") : x.toFixed(1).replace(/\.0$/, "");
@@ -163,8 +169,8 @@ const MODALITY_PILLS: { key: ModalityKey; pill: string }[] = [
 // concept — congruent matching regions — rendered in its natural geometry: a 1-D
 // aligned-signature view for striated marks, the 2-D breech-face surfaces for the
 // impression. Verdict (LR, verbal) comes from the real example in method-data;
-// the reference's AUC + pair counts come from cmr-validation.json so the card can
-// never contradict the source-disjoint table further down the page.
+// the reference's AUC + pair counts come from cmr-validation.json and are labeled
+// in-sample, so the card stays consistent with the validation table further down.
 function buildPanel(key: ModalityKey, others?: Others): ModalityPanel | null {
   if (key === "bullet") {
     const r = cmrByModality["striated"];
@@ -319,7 +325,7 @@ function ModalitySwap({ others }: { others?: Others }) {
             <p className="max-w-[16rem] text-right text-xs leading-snug text-muted">
               {panel.refName}
               <br />
-              AUC {panel.auc.toFixed(3)} · {panel.nKm.toLocaleString("en-US")} +{" "}
+              in-sample AUC {panel.auc.toFixed(3)} · {panel.nKm.toLocaleString("en-US")} +{" "}
               {panel.nKnm.toLocaleString("en-US")} reference pairs
             </p>
           </div>
@@ -543,8 +549,9 @@ export default function MethodPage() {
               </p>
               <p className="mt-2 text-sm text-foreground/80">{ex.verbal}.</p>
               <p className="mt-4 border-t border-border pt-3 text-xs italic leading-relaxed text-muted">
-                A calibrated weight of evidence on the {ex.reference.name} reference — not a claim about
-                the error rate of examination, which remains unknown.
+                A calibrated weight of evidence on the {ex.reference.name} reference — not a
+                verdict, one input to an examiner&rsquo;s judgment; not a claim about the error
+                rate of examination, which remains unknown.
               </p>
             </div>
           }
@@ -578,8 +585,9 @@ export default function MethodPage() {
             <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-foreground/80">
               The same congruent-matching-regions algorithm, under one scorer config, reduces to the
               field-standard method for each mark — and recovers it. Each figure is the held-out
-              (source-disjoint) weight-of-evidence cost on the named reference, recomputed from the
-              committed calibration data.
+              (source-disjoint) weight-of-evidence cost on the named reference — bullets and
+              toolmarks recomputed from the committed calibration data, cartridge quoted from the
+              frozen public benchmark.
             </p>
           </div>
 
@@ -590,18 +598,44 @@ export default function MethodPage() {
                 <p className="mt-1 text-sm text-foreground/80">
                   recovers <strong className="text-foreground">{r.reduction}</strong>
                 </p>
-                <div className="mt-4 flex items-baseline gap-2">
-                  <span className="font-mono text-3xl font-semibold accent-text">
-                    {r.source_disjoint.cllr.toFixed(2)}
-                  </span>
-                  <span className="text-xs text-muted">
-                    ± {r.source_disjoint.cllr_sd.toFixed(2)} Cllr
-                  </span>
-                </div>
-                <p className="mt-1 text-xs text-muted">
-                  AUC {r.source_disjoint.auc.toFixed(3)} · {r.n_km} same-source pairs ·{" "}
-                  {r.source_disjoint.n_folds} folds
-                </p>
+                {r.modality === "impressed" ? (
+                  // Quoting policy (docs/headline-numbers.md): the frozen public
+                  // benchmark (cartridge-v1) leads every cartridge claim; the internal
+                  // source-disjoint AUC appears only with its protocol label + the
+                  // one-sentence small-n explanation.
+                  <>
+                    <div className="mt-4 flex items-baseline gap-2">
+                      <span className="font-mono text-3xl font-semibold accent-text">
+                        {CARTRIDGE_FROZEN_BENCHMARK.cllr.toFixed(2)}
+                      </span>
+                      <span className="text-xs text-muted">
+                        ± {CARTRIDGE_FROZEN_BENCHMARK.cllrSd.toFixed(2)} Cllr · frozen benchmark
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs text-muted">
+                      frozen-benchmark AUC {CARTRIDGE_FROZEN_BENCHMARK.auc.toFixed(3)} (fold
+                      mean) · internal source-disjoint reads Cllr{" "}
+                      {r.source_disjoint.cllr.toFixed(2)}, AUC{" "}
+                      {r.source_disjoint.auc.toFixed(3)} — with only {r.n_km} same-source
+                      pairs, per-fold AUC is unstable across protocols
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <div className="mt-4 flex items-baseline gap-2">
+                      <span className="font-mono text-3xl font-semibold accent-text">
+                        {r.source_disjoint.cllr.toFixed(2)}
+                      </span>
+                      <span className="text-xs text-muted">
+                        ± {r.source_disjoint.cllr_sd.toFixed(2)} Cllr
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs text-muted">
+                      AUC {r.source_disjoint.auc.toFixed(3)} · {r.n_km} same-source pairs ·{" "}
+                      {r.source_disjoint.n_folds} folds
+                    </p>
+                  </>
+                )}
                 <p className="mt-auto border-t border-border pt-3 text-[11px] leading-snug text-foreground/60">
                   {r.reference}
                   <span className="mt-1 block text-muted">vs. specialist: {r.specialist}</span>

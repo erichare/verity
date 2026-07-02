@@ -62,6 +62,23 @@ calibrated, bounded, deployable LR layer, not a better matcher.
 > say so. `cmcR` (the field specialist) still leads on Fadul; CMR-2D → CMC parity is open
 > roadmap.
 
+### Quoting policy (cartridge)
+
+The rules every public surface (README, web, whitepaper, slides, press) follows for
+cartridge numbers:
+
+1. **The frozen benchmark leads.** Any public cartridge claim quotes the frozen
+   `cartridge-v1` benchmark first — Cllr **0.398 ± 0.202**, AUC **0.922** fold-mean
+   (**0.941** pooled) — because it is the published, externally-reproducible protocol.
+2. **0.991 never appears unlabeled.** The source-disjoint AUC **0.991** may only appear
+   *after* the benchmark figure, with its explicit protocol label
+   (internal source-disjoint / cmr_table) *and* the one-sentence explanation: with only
+   10 same-source pairs, per-fold AUC is unstable across protocols — a small-n artifact,
+   not a contradiction.
+3. **Press-facing materials use bullets-only numbers.** Releases, quotes, and summary
+   decks quote the bullet figures (this table, above) and omit cartridge numbers
+   entirely; cartridge results are referenced qualitatively with a pointer here.
+
 ## Screwdriver toolmarks — striated-toolmark (`toolmark_tmaRks.npz`; tmaRks 56 tool-edges)
 
 `n_km ≈ 3537`, `n_knm ≈ 164k` (benchmark drops a few duplicate/degenerate pairs →
