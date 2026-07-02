@@ -20,6 +20,7 @@ const SECTIONS: NavSection[] = [
   { id: "codec", label: "X3P codec" },
   { id: "catalog", label: "Data catalog" },
   { id: "architecture", label: "Architecture" },
+  { id: "status", label: "Status & roadmap" },
   { id: "reference", label: "Reference" },
 ];
 
@@ -595,6 +596,38 @@ uv run verity-catalog info`}
                 representation produces a <em>score</em>; a transparent, empirically-capped calibration turns
                 that score into the reportable LR. The report is interpretable regardless of how the
                 score was computed — the defense against the black box.
+              </p>
+            </Section>
+
+            <Section id="status" eyebrow="Where things stand" title="Status & roadmap">
+              <p>
+                Verity is a <strong className="text-foreground">research preview</strong> — the engine
+                and API are version 0.1.0. The method, the validation protocols, and the code are open
+                and reproducible, but Verity is <em>not</em> a production forensic system, and its
+                output should not be the basis of a casework or courtroom decision.
+              </p>
+              <p>
+                <strong className="text-foreground">What ships today.</strong> Three calibrated mark
+                types (striated bullet lands, impressed breech faces, striated toolmarks), each scoped
+                to a named reference population; the monotone, empirically-capped LR firewall; the
+                glass-box step API for auditing every intermediate; and the open benchmark with frozen,
+                source-disjoint splits. Every number on this site is labeled with the protocol that
+                produced it.
+              </p>
+              <p>
+                <strong className="text-foreground">What&rsquo;s ahead.</strong> Broader reference
+                populations and cross-instrument validation, external replication through the{" "}
+                <a href="/benchmark" className="text-accent hover:underline">open benchmark</a>,
+                versioned releases of the codec and engine, and independent review. Follow progress on{" "}
+                <a
+                  href="https://github.com/erichare/verity"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-accent hover:underline"
+                >
+                  GitHub
+                </a>
+                .
               </p>
             </Section>
 

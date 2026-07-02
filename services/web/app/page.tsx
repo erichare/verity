@@ -189,6 +189,17 @@ export default function Home() {
               <p className="mt-2 max-w-2xl text-sm text-muted">
                 Have .x3p scans? Compare them live against the deployed engine.
               </p>
+              <p className="mt-1.5 text-xs text-muted">
+                See what you get:{" "}
+                <a
+                  href="/sample-comparison-report.pdf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline decoration-border underline-offset-2 transition hover:text-accent hover:decoration-accent"
+                >
+                  sample comparison report (PDF)
+                </a>
+              </p>
             </div>
             <div className="flex flex-col gap-2">
               <label className="text-sm font-medium text-foreground/80">Mark type</label>
