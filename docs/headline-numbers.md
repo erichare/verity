@@ -115,11 +115,52 @@ cartridge numbers:
 |---|---|---|---|
 | In-sample (cmr_table) | — | 0.289 | 0.964 |
 | Source-disjoint (whitepaper / cmr_table) | 0.328 ± 0.050 | — | 0.957 |
-| **Frozen benchmark `toolmark-v1`** (fold mean) | **0.330 ± 0.047** | 0.309 | 0.944 |
+| **Frozen benchmark `toolmark-v1`** (fold mean) | **0.330 ± 0.047** | 0.309 | 0.943 |
 | Frozen benchmark `toolmark-v1` (pooled) | 0.301 | 0.287 | 0.951 |
 
 **Read this as:** the largest, most stable set (3.5k same-source pairs). Source-disjoint
 (0.328) and frozen benchmark (0.330) agree tightly — the cleanest of the three.
+
+## Head-to-head vs specialist baselines (the /why table)
+
+The docs-site /why page ("Measured against the specialists") quotes per-study
+head-to-head comparisons. The data ships in `services/web/lib/benchmark-data.json`
+(generator `services/engine/verity/examples/build_benchmark_data.py`); specialist
+figures are the measured baselines in `docs/whitepaper/data/baselines.json`. Every
+Verity-side figure carries a scorer label, and all splits are source-disjoint
+(barrel-, slide-, or tool/edge-disjoint; 10 folds, fold means).
+
+| Study (split) | Verity scorer (as labeled) | Verity Cllr | Verity AUC | Specialist | Specialist Cllr | Specialist AUC |
+|---|---|---|---|---|---|---|
+| Hamby-252 (barrel-disjoint) | production CMR-1D `diag_contrast` | 0.113 | 1.000 | `bulletxtrctr` | 0.064 ± 0.015 | ≈1.000 |
+| PGPD Beretta (barrel-disjoint) | production CMR-1D `diag_contrast` | 0.273 | 0.999 | `bulletxtrctr` | 0.171 ± 0.088 | ≈1.000 |
+| Fadul 10-slide (source-disjoint) | deployed CMR-2D — frozen benchmark `cartridge-v1` (fold mean) | 0.398 ± 0.202 | 0.922 | `cmcR` (slide-disjoint) | 0.194 | ≈1.000 |
+| tmaRks 56 tool-edges (edge-disjoint) | deployed CMR-1D — frozen benchmark `toolmark-v1` (fold mean) | 0.330 ± 0.047 | 0.943 | — (no Chumbley run on tmaRks) | — | — |
+| Ames Lab screwdrivers (tool-disjoint) | **naive global 1-D CCF — proof scorer, not deployed** | 0.813 ± 0.191 | 0.807 | Chumbley U (`toolmaRk`) | 0.957 ± 0.050 | 0.608 |
+
+Bullet validation breadth (production `diag_contrast`, barrel-disjoint fold means;
+whitepaper per-study table — no specialist baseline was run on these here):
+
+| Study | Cllr | Cllr_min | AUC |
+|---|---|---|---|
+| Phoenix PD Ruger P-95 (NBTRD) | 0.354 | 0.105 | 0.972 |
+| Hamby-173, full (NBTRD) | 0.338 | 0.158 | 0.971 |
+
+### Quoting policy (head-to-head)
+
+1. **Every Verity-side head-to-head figure carries its scorer label.** An unlabeled
+   "Verity" number means the deployed pipeline under one of the protocols in the
+   sections above — never a proof scorer.
+2. **Ames Lab ≠ tmaRks.** Two toolmark numbers exist and must never be conflated: the
+   deployed CMR-1D on tmaRks (Cllr 0.330 ± 0.047 — the primary toolmark figure) and
+   the naive global 1-D CCF on the 7-tool Ames Lab proof set (0.813). The whitepaper
+   calls Ames Lab a weak benchmark for *any* method; its figures appear only with the
+   proof-scorer label, after the tmaRks figure.
+3. **Cartridge head-to-head follows the cartridge quoting policy above** — the frozen
+   `cartridge-v1` benchmark leads.
+4. **Say plainly that the specialists lead on their home sets** (`bulletxtrctr` on
+   bullets, `cmcR` on Fadul). Verity's contribution is the calibrated, bounded,
+   deployable LR layer, not a better matcher.
 
 ---
 

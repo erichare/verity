@@ -2,10 +2,12 @@ import { Reveal } from "@/components/Reveal";
 
 /**
  * A respectful, non-defensive response to Cuellar et al. (2024). They found that
- * no firearms discipline has a characterized error rate; Verity operationalizes
- * exactly what they identified as missing. Cuellar and co-authors are part of
- * this community (Vanderplas's tooling is a Verity benchmark), so the tone is
- * "they were right, and here is the concrete answer," not rebuttal.
+ * the black-box studies behind firearms identification do not establish its error
+ * rate; Verity operationalizes exactly what they identified as missing. Cuellar
+ * and co-authors are part of this community (Vanderplas co-authored bulletxtrctr,
+ * a Verity benchmark baseline), so the tone is "they were right, and here is the
+ * concrete answer," not rebuttal. The "They found" column stays strictly within
+ * the paper; everything Verity-specific lives in the "Verity" column.
  */
 
 interface Point {
@@ -15,14 +17,14 @@ interface Point {
 
 const POINTS: Point[] = [
   {
-    finding: "No discipline reports a characterized error rate.",
+    finding: "The black-box studies behind firearms identification do not establish a characterized error rate.",
     answer:
       "Verity reports a Cllr — a characterized calibration cost — on a named reference population, instead of an implied universal accuracy.",
   },
   {
-    finding: "Black-box studies don't bound what the evidence can support.",
+    finding: "Inconclusive and missing responses are counted in ways that make the studies look more accurate than they are.",
     answer:
-      "Verity bounds the likelihood ratio to what the reference data can support (an empirical cap, ELUB-inspired) and refuses to extrapolate beyond it.",
+      "Verity never forces a categorical call: it reports a bounded likelihood ratio (an empirical cap on what the reference data can support), so weak evidence reads as a weak LR — not a discarded inconclusive.",
   },
   {
     finding: "Claims of validity outrun the data behind them.",
@@ -78,7 +80,7 @@ export function CuellarResponse() {
         </div>
 
         <p className="mt-6 max-w-3xl text-xs leading-relaxed text-muted">
-          One of the critique&rsquo;s authors maintains <code className="font-mono">bulletxtrctr</code>,
+          One of the critique&rsquo;s authors co-authored <code className="font-mono">bulletxtrctr</code>,
           which Verity benchmarks against — the same community, working toward the same standard of
           honesty. Verity does not claim to characterize the error rate of human examination, which
           remains unknown; it characterizes the cost of <em>its own</em> calibrated number on a stated

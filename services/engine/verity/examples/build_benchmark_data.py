@@ -3,9 +3,9 @@ section: **Verity vs the specialist baselines** (bulletxtrctr, CMC/cmcR, Chumble
 per study, source-disjoint — plus Verity's per-study validation *breadth* across
 additional studies that have no published specialist baseline run here.
 
-Every number comes from the SAME code paths as the proof scripts
+Every computed number comes from the SAME code paths as the proof scripts
 (``verity-firearms-proof`` / ``-cartridge-cmc-proof`` / ``-toolmark-chumbley-proof``)
-and the per-study validator (``verity-validate``), with two deliberate choices:
+and the per-study validator (``verity-validate``), with three deliberate choices:
 
 * **Bullets are scored with the production ``diag_contrast`` statistic** — what the
   live engine and the /method page use — not the legacy ``diag_mean`` baked into
@@ -14,11 +14,18 @@ and the per-study validator (``verity-validate``), with two deliberate choices:
   breadth table.
 * **bulletxtrctr scores are read from the committed cache** (``scores.csv``) rather
   than re-running R — the random forest is the same artifact either way.
+* **The deployed cartridge and toolmark figures are QUOTED from the committed frozen
+  public benchmarks** (``services/catalog/benchmarks/{cartridge,toolmark}-v1``), not
+  recomputed, so /why can never drift from /benchmark, /method, or the registry
+  (``docs/headline-numbers.md``). The Ames Lab row is computed here but is a *proof
+  scorer* (naive global 1-D CCF, not deployed) and is labeled as such.
 
-Honesty note: these are real, mixed results. Verity beats Chumbley on toolmarks,
-matches bulletxtrctr on bullets, and *trails* the CMC specialist on the tiny clean
-Fadul cartridge set. The point of the table is generality + calibration, not a
-clean sweep.
+Honesty note: these are real, mixed results. The trained specialists lead on their
+home sets — bulletxtrctr on bullets, cmcR on Fadul — and the deployed toolmark figure
+is the tmaRks benchmark, not the favorable naive-CCF-vs-Chumbley proof run. The point
+of the table is generality + calibration, not a clean sweep. Every Verity-side figure
+must match a protocol-labeled row in ``docs/headline-numbers.md`` ("Head-to-head vs
+specialist baselines").
 
 Re-run (needs the local catalog + R with bulletxtrctr/cmcR/toolmaRk):
 
@@ -39,12 +46,43 @@ from verity.examples.hamby_validation import barrel_disjoint_folds
 
 _ROOT = Path(__file__).resolve().parents[4]
 _OUT = _ROOT / "services/web/lib/benchmark-data.json"
+_BENCH_DIR = _ROOT / "services/catalog/benchmarks"
 
 # Bullet studies that have a cached bulletxtrctr head-to-head.
 _FIREARM_STUDIES = [
     ("Hamby-252", "c09aaa86-5d60-4acb-9031-46dad2c0ad32"),
     ("PGPD Beretta", "fcafffb1-b96c-49c7-9a9f-b1ec9849f884"),
 ]
+
+# Per-row scorer labels — the Verity side of every head-to-head row is labeled with
+# the scorer/protocol that produced it, matching the registry section
+# "Head-to-head vs specialist baselines" in docs/headline-numbers.md.
+_BULLET_SCORER = "production CMR-1D (diag_contrast)"
+_CARTRIDGE_SCORER = "deployed CMR-2D — frozen benchmark cartridge-v1 (fold mean)"
+_TOOLMARK_SCORER = "deployed CMR-1D — frozen benchmark toolmark-v1 (fold mean)"
+_AMES_SCORER = "global 1-D CCF — proof scorer, not the deployed CMR-1D"
+
+_BULLET_NOTE = (
+    "Same scans, same barrel-disjoint folds, both scorers. The trained specialist "
+    "leads on both sets — expected: Verity's bullet contribution is the calibrated, "
+    "bounded, deployable LR layer, not a better matcher."
+)
+_CARTRIDGE_NOTE = (
+    "Verity quotes the frozen public benchmark cartridge-v1 (fold mean), per the "
+    "cartridge quoting policy in docs/headline-numbers.md; cmcR is the measured "
+    "slide-disjoint specialist baseline on the same 190 Fadul pairs, and it leads "
+    "on this set."
+)
+_TOOLMARK_NOTE = (
+    "Two distinct datasets: the deployed toolmark figure is the frozen tmaRks "
+    "benchmark (toolmark-v1, 56 tool edges). Ames Lab (7 tools, 118 pairs) is a "
+    "small proof set the whitepaper calls a weak benchmark for any method, and its "
+    "Verity-side scorer is the naive global 1-D CCF, not the deployed pipeline; it "
+    "is kept because Chumbley U was run here only on Ames Lab."
+)
+
+# A side with no measured competitor (rendered as em-dashes).
+_NO_BASELINE = {"cllr": None, "cllrMin": None, "auc": None, "nFolds": 0, "overallAuc": None}
 
 
 def _r3(x) -> float | None:
@@ -67,6 +105,26 @@ def _side(scores, labels, folds) -> dict:
     fm = _fold_means(folds)
     fm["overallAuc"] = _r3(roc_auc(scores, labels)) if len(scores) else None
     return fm
+
+
+def _frozen_provenance(split: str) -> dict:
+    """The committed frozen-benchmark provenance for ``split`` (e.g. cartridge-v1)."""
+    return json.loads((_BENCH_DIR / split / "provenance.json").read_text())
+
+
+def _frozen_side(prov: dict) -> dict:
+    """The frozen benchmark's ``verity_baseline`` as a table side — QUOTED from the
+    committed provenance (docs/headline-numbers.md), never recomputed, so the /why
+    table cannot drift from /benchmark. ``cllrSd`` carries the registry-mandated ±."""
+    vb = prov["verity_baseline"]
+    return {
+        "cllr": _r3(vb["cllr"]),
+        "cllrSd": _r3(vb["cllr_std"]),
+        "cllrMin": _r3(vb["cllr_min"]),
+        "auc": _r3(vb["auc"]),
+        "nFolds": int(vb["n_folds"]),
+        "overallAuc": _r3(vb["pooled"]["auc"]),
+    }
 
 
 def _bx_cache(work_dir: Path) -> dict:
@@ -119,6 +177,7 @@ def _firearms(session, store, cdir: Path) -> list[dict]:
         rows.append(
             {
                 "study": name,
+                "verityScorer": _BULLET_SCORER,
                 "nPairs": int(len(y)),
                 "nKm": int(y.sum()) if len(y) else 0,
                 "nKnm": int((y == 0).sum()) if len(y) else 0,
@@ -129,57 +188,91 @@ def _firearms(session, store, cdir: Path) -> list[dict]:
     return rows
 
 
-def _cartridge() -> list[dict]:
+def _cmc_baseline() -> dict:
+    """The measured slide-disjoint cmcR specialist baseline on the Fadul pairs
+    (the naive areal scores from ``_aligned`` are computed but deliberately unused —
+    they are a non-deployed proof scorer and must not be shipped as \"Verity\")."""
     from verity.baselines.cmc import cmc_scores
     from verity.examples.cartridge_cmc_proof import _aligned
     from verity.examples.cartridge_fadul import DEFAULT_CACHE, fetch_fadul, load_marks
 
     masked = fetch_fadul()
     if masked is None:
-        return []
+        return dict(_NO_BASELINE)
     marks = load_marks(masked)
     cmc_rows = cmc_scores(masked, DEFAULT_CACHE)
     if not cmc_rows:
-        return []
-    v, c, y, ga, gb = _aligned(marks, cmc_rows)
+        return dict(_NO_BASELINE)
+    _v, c, y, ga, gb = _aligned(marks, cmc_rows)
     if not len(y):
-        return []
+        return dict(_NO_BASELINE)
+    return _side(c, y, barrel_disjoint_folds(c, y, ga, gb))
+
+
+def _cartridge() -> list[dict]:
+    """Fadul head-to-head: the frozen public benchmark (quoted) vs measured cmcR."""
+    prov = _frozen_provenance("cartridge-v1")
+    counts = prov["counts"]
     return [
         {
             "study": "Fadul 10-slide",
-            "nPairs": int(len(y)),
-            "nKm": int(y.sum()),
-            "nKnm": int((y == 0).sum()),
-            "verity": _side(v, y, barrel_disjoint_folds(v, y, ga, gb)),
-            "baseline": _side(c, y, barrel_disjoint_folds(c, y, ga, gb)),
+            "verityScorer": _CARTRIDGE_SCORER,
+            "nPairs": int(counts["n_pairs"]),
+            "nKm": int(counts["n_km"]),
+            "nKnm": int(counts["n_knm"]),
+            "verity": _frozen_side(prov),
+            "baseline": _cmc_baseline(),
         }
     ]
 
 
-def _toolmark() -> list[dict]:
+def _ames_proof_row() -> dict | None:
+    """The Ames Lab naive-CCF-vs-Chumbley proof run. NOT the deployed pipeline —
+    the Verity side is the global 1-D CCF proof scorer and is labeled as such."""
     from verity.baselines.chumbley import chumbley_scores
     from verity.examples.toolmark_ameslab import DEFAULT_CACHE, export_ameslab, load_ameslab_marks
     from verity.examples.toolmark_chumbley_proof import _aligned_arrays
 
     if not export_ameslab():
-        return []
+        return None
     chumbley = chumbley_scores(DEFAULT_CACHE)
     if not chumbley:
-        return []
+        return None
     marks = load_ameslab_marks()
     v, c, y, ta, tb = _aligned_arrays(marks, chumbley)
     if not len(y):
-        return []
-    return [
+        return None
+    return {
+        "study": "Ames Lab screwdrivers",
+        "verityScorer": _AMES_SCORER,
+        "nPairs": int(len(y)),
+        "nKm": int(y.sum()),
+        "nKnm": int((y == 0).sum()),
+        "verity": _side(v, y, barrel_disjoint_folds(v, y, ta, tb)),
+        "baseline": _side(c, y, barrel_disjoint_folds(c, y, ta, tb)),
+    }
+
+
+def _toolmark() -> list[dict]:
+    """The deployed tmaRks benchmark figure leads (quoted from the frozen
+    provenance; no Chumbley baseline exists on tmaRks here), then the Ames proof row."""
+    prov = _frozen_provenance("toolmark-v1")
+    counts = prov["counts"]
+    rows = [
         {
-            "study": "Ames Lab screwdrivers",
-            "nPairs": int(len(y)),
-            "nKm": int(y.sum()),
-            "nKnm": int((y == 0).sum()),
-            "verity": _side(v, y, barrel_disjoint_folds(v, y, ta, tb)),
-            "baseline": _side(c, y, barrel_disjoint_folds(c, y, ta, tb)),
+            "study": "tmaRks 56 tool-edges",
+            "verityScorer": _TOOLMARK_SCORER,
+            "nPairs": int(counts["n_pairs"]),
+            "nKm": int(counts["n_km"]),
+            "nKnm": int(counts["n_knm"]),
+            "verity": _frozen_side(prov),
+            "baseline": dict(_NO_BASELINE),
         }
     ]
+    ames = _ames_proof_row()
+    if ames is not None:
+        rows.append(ames)
+    return rows
 
 
 def _breadth(session, store) -> list[dict]:
@@ -241,6 +334,7 @@ def main() -> None:
             "domainTag": "striated",
             "baseline": "bulletxtrctr",
             "baselineNote": "random-forest matchscore · Hare et al. 2017",
+            "note": _BULLET_NOTE,
             "studies": firearms,
         },
         {
@@ -248,6 +342,7 @@ def main() -> None:
             "domainTag": "impressed",
             "baseline": "CMC (cmcR)",
             "baselineNote": "Congruent Matching Cells · Song 2013",
+            "note": _CARTRIDGE_NOTE,
             "studies": cartridge,
         },
         {
@@ -255,6 +350,7 @@ def main() -> None:
             "domainTag": "striated",
             "baseline": "Chumbley U",
             "baselineNote": "non-random U-statistic · toolmaRk",
+            "note": _TOOLMARK_NOTE,
             "studies": toolmark,
         },
     ]
