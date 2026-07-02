@@ -147,8 +147,9 @@ export default function WhyPage() {
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-foreground/80">
             A capability table is a claim; this is the measurement — and it is deliberately the hardest
             kind. Each specialist is run on the data it was built for; Verity is held to the{" "}
-            <em>same</em> scans and the <em>same</em> barrel-disjoint split (no firearm appears in both
-            train and test). Every row is scored per dataset and{" "}
+            <em>same</em> scans under a source-disjoint split (no barrel, slide, or tool appears in
+            both train and test), with the exact scorer and protocol labeled on each row. Every row is
+            scored per dataset and{" "}
             <strong className="text-foreground">never pooled across makes</strong>, on two axes:{" "}
             <strong className="text-foreground">AUC</strong> (can it tell same-source from
             different-source apart?) and the forensic{" "}
@@ -161,12 +162,31 @@ export default function WhyPage() {
           <Benchmarks />
           <p className="mt-4 max-w-2xl text-xs leading-relaxed text-muted">
             Higher AUC and lower C<sub>llr</sub> are better; the stronger figure in each pair is
-            highlighted. One Verity pipeline produces every row — no per-dataset re-tuning, no pooling
-            across firearm makes. The cartridge (10 slides) and toolmark (7 tools) sets are
-            deliberately small, hardest-case benchmarks, and the bulletxtrctr random forest was trained
-            on Hamby-family data, so its Hamby figure is near in-sample — the honest comparison is
-            out-of-domain, where an untrained, stable calibration shows its worth. We report the losses
-            alongside the wins on purpose.
+            highlighted. Every row shares Verity&rsquo;s preprocessing-and-calibration pipeline, and
+            the scorer behind each Verity figure is labeled on its row: bullet rows use the production
+            CMR score; the cartridge and tmaRks rows quote the frozen public benchmarks, so they match
+            the{" "}
+            <a href="/benchmark" className="text-accent hover:underline">
+              open benchmark
+            </a>{" "}
+            and{" "}
+            <a href="/method" className="text-accent hover:underline">
+              the method page
+            </a>{" "}
+            exactly; the Ames Lab row is a non-deployed proof scorer kept for the Chumbley comparison.
+            The trained specialists lead on their home sets — bulletxtrctr on bullets, cmcR on Fadul —
+            as expected: Verity&rsquo;s contribution is the calibrated, bounded, deployable LR layer,
+            not a better matcher. We report the losses alongside the wins on purpose; every figure here
+            traces to a protocol-labeled row in the{" "}
+            <a
+              href="https://github.com/erichare/verity/blob/main/docs/headline-numbers.md"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-accent hover:underline"
+            >
+              numbers registry
+            </a>
+            .
           </p>
         </Reveal>
 
@@ -212,6 +232,42 @@ export default function WhyPage() {
         <div className="mt-16">
           <CuellarResponse />
         </div>
+
+        {/* What the courts are asking for — primary citations only; no legal advice. */}
+        <Reveal className="mt-16">
+          <h2 className="font-display text-2xl font-medium text-foreground sm:text-3xl">
+            What the courts are asking for
+          </h2>
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-foreground/80">
+            The same demands now arrive from the bench. Three primary sources frame what a forensic
+            comparison method must show before its conclusions reach a jury:
+          </p>
+        </Reveal>
+        <div className="mt-6 grid gap-5 sm:grid-cols-3">
+          <Gap n="1993" title="Daubert v. Merrell Dow">
+            <em>Daubert v. Merrell Dow Pharmaceuticals</em>, 509 U.S. 579 (1993) made trial judges
+            gatekeepers of expert evidence, weighing testability, peer review, known or potential
+            error rates, and controlling standards.
+          </Gap>
+          <Gap n="2023" title="FRE 702, as amended">
+            Federal Rule of Evidence 702, amended December 1, 2023, makes explicit that the
+            proponent must show it is more likely than not that the testimony reflects a reliable
+            application of reliable methods — and that the expert&rsquo;s opinion stays within what
+            the methodology can support.
+          </Gap>
+          <Gap n="2023" title="Abruquah v. Maryland">
+            In <em>Abruquah v. Maryland</em>, 484 Md. 64 (2023), Maryland&rsquo;s highest court held
+            that a firearms examiner could not testify that crime-scene bullets were fired from a
+            particular gun — the underlying studies did not support an unqualified source
+            identification.
+          </Gap>
+        </div>
+        <p className="mt-4 max-w-2xl text-xs leading-relaxed text-muted">
+          None of this is legal advice, and no court has evaluated Verity itself. It is the standard
+          Verity is engineered against: a calibrated likelihood ratio with a characterized cost
+          (C<sub>llr</sub>) on a named reference population, bounded to what that reference can
+          support — never an unqualified &ldquo;match.&rdquo;
+        </p>
 
         <Reveal className="mt-20 sm:mt-28">
           <div className="glass rounded-2xl p-8 text-center">
