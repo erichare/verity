@@ -3,9 +3,17 @@ import type { MetadataRoute } from "next";
 const APP = "https://verity.codes";
 const DOCS = "https://docs.verity.codes";
 
-// One combined sitemap (served on both hosts) with absolute URLs. /partnership is
-// intentionally omitted — it stays public-but-unlinked.
-const DOCS_PATHS = ["", "/method", "/why", "/benchmark", "/catalog", "/references", "/docs"];
+// One combined sitemap (served on both hosts) with absolute URLs.
+const DOCS_PATHS = [
+  "",
+  "/method",
+  "/why",
+  "/benchmark",
+  "/catalog",
+  "/references",
+  "/docs",
+  "/lineage",
+];
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
