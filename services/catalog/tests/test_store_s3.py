@@ -38,10 +38,16 @@ def s3_store():
     moto = pytest.importorskip("moto")
     import boto3
 
+    from verity_catalog import store_s3
+
+    # Each test recreates the same-named moto bucket, so the module-level
+    # batch-existence cache must not leak listings across tests.
+    store_s3._existing_cache.clear()
     with moto.mock_aws():
         client = boto3.client("s3", region_name="us-east-1")
         client.create_bucket(Bucket="verity-test")
         yield S3BlobStore("verity-test", client=client)
+    store_s3._existing_cache.clear()
 
 
 def test_put_get_roundtrip_and_verifies_hash(s3_store: S3BlobStore):
@@ -81,3 +87,26 @@ def test_probe_raises_on_unreachable_bucket(s3_store: S3BlobStore):
     bad = S3BlobStore("does-not-exist", client=s3_store.client)
     with pytest.raises(ClientError):
         bad.probe()
+
+
+def test_existing_returns_present_subset_from_one_listing(s3_store: S3BlobStore):
+    # The batched form behind blob_available: one bucket listing, not N HEADs.
+    h1 = s3_store.put(b"present one")
+    h2 = s3_store.put(b"present two")
+    missing = "f" * 64
+    assert s3_store.existing({h1, h2, missing}) == {h1, h2}
+    assert s3_store.existing([]) == set()
+
+
+def test_existing_cache_is_append_only_safe(s3_store: S3BlobStore):
+    from verity_catalog import store_s3
+
+    h1 = s3_store.put(b"first blob")
+    assert s3_store.existing({h1}) == {h1}
+    # Within the TTL the cached key set is reused. The store is append-only, so
+    # a cached hash is never *wrong* — a just-added blob is merely invisible
+    # until the TTL lapses (or the cache is dropped, as a fresh process would).
+    h2 = s3_store.put(b"second blob")
+    assert h1 in s3_store.existing({h1, h2})
+    store_s3._existing_cache.clear()
+    assert s3_store.existing({h1, h2}) == {h1, h2}

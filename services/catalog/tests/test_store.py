@@ -33,3 +33,14 @@ def test_get_missing_raises(tmp_path):
     store = LocalBlobStore(tmp_path / "blobs")
     with pytest.raises(KeyError):
         store.get("0" * 64)
+
+
+def test_existing_returns_present_subset(tmp_path):
+    # The batch form behind the API's per-scan blob_available flag.
+    store = LocalBlobStore(tmp_path / "blobs")
+    h1 = store.put(b"present one")
+    h2 = store.put(b"present two")
+    missing = "0" * 64
+    assert store.existing([h1, h2, missing]) == {h1, h2}
+    assert store.existing([missing]) == set()
+    assert store.existing([]) == set()

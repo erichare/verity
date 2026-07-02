@@ -10,6 +10,9 @@ dependency, imported lazily, so the base package stays light.
 
 from __future__ import annotations
 
+import time
+from collections.abc import Iterable
+
 from .store import BlobStore, sha256_hex
 
 
@@ -17,6 +20,15 @@ def blob_key(content_hash: str) -> str:
     """The S3 object key for ``content_hash`` — sharded by the first two hash
     bytes, mirroring ``LocalBlobStore`` exactly so addresses are backend-stable."""
     return f"{content_hash[:2]}/{content_hash[2:4]}/{content_hash}.bin"
+
+
+# Batch-existence cache for :meth:`S3BlobStore.existing`. The store is
+# append-only (content-addressed, write-once), so a cached listing only ever
+# *under*-reports: a cached hash is never wrong, and a just-synced blob shows up
+# within the TTL. Module-level because the API constructs a fresh store per
+# request; keyed per endpoint+bucket.
+_EXISTING_CACHE_TTL_S = 60.0
+_existing_cache: dict[str, tuple[float, frozenset[str]]] = {}
 
 
 class S3BlobStore(BlobStore):
@@ -115,6 +127,34 @@ class S3BlobStore(BlobStore):
             if code in ("NoSuchKey", "404", "NotFound"):
                 return False
             raise
+
+    def existing(self, hashes: Iterable[str]) -> set[str]:
+        """The subset of ``hashes`` present in the bucket, from **one** paginated
+        bucket listing (cached ``_EXISTING_CACHE_TTL_S`` seconds per bucket)
+        rather than a ``HEAD`` round-trip per hash — the batch lookup behind the
+        API's per-scan ``blob_available`` flag."""
+        wanted = set(hashes)
+        if not wanted:
+            return set()
+        return wanted & self._all_hashes()
+
+    def _all_hashes(self) -> frozenset[str]:
+        """Every content hash in the bucket, via the TTL cache (see above)."""
+        cache_key = f"{self.endpoint_url or ''}::{self.bucket}"
+        now = time.monotonic()
+        cached = _existing_cache.get(cache_key)
+        if cached is not None and now - cached[0] < _EXISTING_CACHE_TTL_S:
+            return cached[1]
+        paginator = self.client.get_paginator("list_objects_v2")
+        hashes: set[str] = set()
+        for page in paginator.paginate(Bucket=self.bucket):
+            for obj in page.get("Contents", []):
+                name = obj.get("Key", "").rsplit("/", 1)[-1]
+                if name.endswith(".bin"):
+                    hashes.add(name[: -len(".bin")])
+        result = frozenset(hashes)
+        _existing_cache[cache_key] = (now, result)
+        return result
 
     def count(self) -> int:
         """Number of stored blobs (paginated ``list_objects_v2`` over the bucket).
