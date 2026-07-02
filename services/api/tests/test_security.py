@@ -66,3 +66,39 @@ def test_mcp_endpoint_is_metered(exhausted_budget):
 def test_cheap_gets_are_not_metered(exhausted_budget):
     # Unmetered read endpoints stay open even with the upload budget exhausted.
     assert client.get("/health").status_code == 200
+
+
+def _request_with(headers: dict[str, str], client_host: str = "10.0.0.1"):
+    from fastapi import Request
+
+    return Request(
+        {
+            "type": "http",
+            "method": "POST",
+            "path": "/compare",
+            "query_string": b"",
+            "headers": [(k.lower().encode(), v.encode()) for k, v in headers.items()],
+            "client": (client_host, 12345),
+        }
+    )
+
+
+def test_client_ip_ignores_forged_forwarded_entries(monkeypatch):
+    """With trusted proxy headers on, only the RIGHTMOST X-Forwarded-For entry
+    counts — it is the hop appended by the edge proxy. The leftmost entries are
+    client-supplied, so honoring them would let one client forge fresh
+    rate-limit identities per request."""
+    monkeypatch.setattr(main_mod, "_TRUST_PROXY_HEADERS", True)
+    forged = _request_with({"x-forwarded-for": "6.6.6.6, 7.7.7.7, 203.0.113.9"})
+    assert main_mod._client_ip(forged) == "203.0.113.9"
+
+    single = _request_with({"x-forwarded-for": "203.0.113.9"})
+    assert main_mod._client_ip(single) == "203.0.113.9"
+
+    # A degenerate all-empty header falls back to the socket peer.
+    empty = _request_with({"x-forwarded-for": " , "})
+    assert main_mod._client_ip(empty) == "10.0.0.1"
+
+    monkeypatch.setattr(main_mod, "_TRUST_PROXY_HEADERS", False)
+    untrusted = _request_with({"x-forwarded-for": "6.6.6.6"})
+    assert main_mod._client_ip(untrusted) == "10.0.0.1"
