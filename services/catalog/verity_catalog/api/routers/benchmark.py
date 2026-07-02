@@ -6,7 +6,9 @@
   pairs, folds, provenance, the scorer, and a standalone ``evaluate.py`` whose
   offline output equals the leaderboard scoring.
 * ``GET  /benchmark/splits/{name}/leaderboard`` — submissions ranked by
-  **calibration loss** (Cllr − Cllr_min), the LR-quality axis.
+  **Cllr**, with the calibration loss (Cllr − Cllr_min) highlighted alongside
+  (loss cannot be the sort key: the uninformative LR=1 submission has zero
+  calibration loss).
 * ``POST /benchmark/splits/{name}/submissions`` — submit one LR per frozen
   pair; scored server-side with the same scorer the kit ships. Rate-limited;
   honor-system (the labels are public — this is a replication benchmark, not a
