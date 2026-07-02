@@ -3,12 +3,18 @@ import benchmarkData from "@/lib/benchmark-data.json";
 interface Side {
   auc: number | null;
   cllr: number | null;
+  // Fold-to-fold SD, present when the row quotes a frozen public benchmark whose
+  // registry quoting policy mandates the ± (docs/headline-numbers.md).
+  cllrSd?: number | null;
   cllrMin: number | null;
   overallAuc: number | null;
   nFolds: number;
 }
 interface StudyRow {
   study: string;
+  // Scorer/protocol label for the Verity side of this row — every figure must match
+  // a protocol-labeled registry row ("Head-to-head vs specialist baselines").
+  verityScorer?: string;
   nPairs: number;
   nKm: number;
   nKnm: number;
@@ -20,6 +26,7 @@ interface DomainGroup {
   domainTag: string;
   baseline: string;
   baselineNote: string;
+  note?: string;
   studies: StudyRow[];
 }
 interface BreadthRow {
@@ -59,16 +66,21 @@ function Metric({
   value,
   highlight,
   showBar = false,
+  sd,
 }: {
   value: number | null;
   highlight: boolean;
   showBar?: boolean;
+  sd?: number | null;
 }) {
   return (
     <td className="px-2 py-2.5 text-center align-middle sm:px-3">
       <span className={`font-mono text-sm ${highlight ? "accent-text font-semibold" : "text-foreground/80"}`}>
         {fmt(value)}
       </span>
+      {sd != null && value != null && (
+        <span className="font-mono text-[10px] text-muted"> ±{sd.toFixed(3)}</span>
+      )}
       {showBar && value != null && (
         <span className="mx-auto mt-1 block h-1 w-12 overflow-hidden rounded-full bg-foreground/10">
           <span
@@ -118,17 +130,25 @@ function DomainCard({ g }: { g: DomainGroup }) {
                     <div className="text-[11px] text-muted">
                       {s.nKm} KM · {s.nKnm} KNM
                     </div>
+                    {s.verityScorer && (
+                      <div className="text-[11px] text-muted">Verity = {s.verityScorer}</div>
+                    )}
                   </td>
                   <Metric value={s.verity.auc} highlight={vAuc} showBar />
                   <Metric value={s.baseline.auc} highlight={bAuc} showBar />
-                  <Metric value={s.verity.cllr} highlight={vCllr} />
-                  <Metric value={s.baseline.cllr} highlight={bCllr} />
+                  <Metric value={s.verity.cllr} highlight={vCllr} sd={s.verity.cllrSd} />
+                  <Metric value={s.baseline.cllr} highlight={bCllr} sd={s.baseline.cllrSd} />
                 </tr>
               );
             })}
           </tbody>
         </table>
       </div>
+      {g.note && (
+        <p className="border-t border-border px-4 py-3 text-[11px] leading-relaxed text-muted sm:px-5">
+          {g.note}
+        </p>
+      )}
     </div>
   );
 }
@@ -149,7 +169,8 @@ export function Benchmarks() {
               Validated on further studies
             </h3>
             <p className="text-xs text-muted">
-              Verity, source-disjoint, on bullet studies where no specialist baseline was run here.
+              Verity — production CMR-1D (diag_contrast), barrel-disjoint fold means — on bullet
+              studies where no specialist baseline was run here.
             </p>
           </div>
           <div className="overflow-x-auto">
