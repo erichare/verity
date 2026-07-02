@@ -1,10 +1,12 @@
 # Pre-registration — external validation of the frozen impressed-mark pipeline on the Weller cartridge-case set
 
-> **Status: DRAFT for OSF filing (not yet registered).** This protocol is filed on OSF by
-> E. Hare **before** any `wellerMasked` scan is downloaded, parsed, scored, or ingested by
-> any Verity component. The OSF registration timestamp preceding the first Weller-touching
-> git commit is the integrity claim of this study; §7 defines how to audit it. The result
-> is published **win or lose** (§6).
+> **Status: REGISTERED on OSF, 2026-07-01** (OSF project: <https://osf.io/prjs9>;
+> registration DOI to be recorded here once OSF archiving completes). This protocol was
+> filed by E. Hare **before** any `wellerMasked` scan was downloaded, parsed, scored, or
+> ingested by any Verity component — this commit, recording the registration, precedes
+> the first Weller-touching commit in the git history. The OSF registration timestamp
+> preceding the first Weller-touching git commit is the integrity claim of this study;
+> §7 defines how to audit it. The result is published **win or lose** (§6).
 
 Section numbering follows the OSF Preregistration template (Study Information → Design
 Plan → Sampling Plan → Variables → Analysis Plan) so the text can be pasted
