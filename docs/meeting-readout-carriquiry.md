@@ -20,7 +20,7 @@ Frozen open-benchmark protocol (published, externally reproducible; mean over fo
 |---|---|---|---|
 | Bullet lands (striated) | CMS, 1-D | 0.205 ± 0.125 | 0.979 |
 | Cartridge breech faces (impressed) | CMC, 2-D | 0.398 ± 0.202 | 0.922 |
-| Screwdriver toolmarks (striated) | Chumbley striae, 1-D | 0.330 ± 0.047 | 0.944 |
+| Screwdriver toolmarks (striated) | Chumbley striae, 1-D | 0.330 ± 0.047 | 0.943 |
 
 `Cllr < 1` = informative; lower is better; these are **weight of evidence on the named
 references, not field error rates**. Single best study (Hamby-252 alone, barrel-disjoint)

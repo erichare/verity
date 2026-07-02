@@ -115,7 +115,7 @@ cartridge numbers:
 |---|---|---|---|
 | In-sample (cmr_table) | — | 0.289 | 0.964 |
 | Source-disjoint (whitepaper / cmr_table) | 0.328 ± 0.050 | — | 0.957 |
-| **Frozen benchmark `toolmark-v1`** (fold mean) | **0.330 ± 0.047** | 0.309 | 0.944 |
+| **Frozen benchmark `toolmark-v1`** (fold mean) | **0.330 ± 0.047** | 0.309 | 0.943 |
 | Frozen benchmark `toolmark-v1` (pooled) | 0.301 | 0.287 | 0.951 |
 
 **Read this as:** the largest, most stable set (3.5k same-source pairs). Source-disjoint
