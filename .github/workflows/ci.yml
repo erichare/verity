@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
@@ -55,7 +55,7 @@ jobs:
       run:
         working-directory: services/${{ matrix.service }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       # The services depend on ../engine and ../../bindings/python (PyO3) via
       # [tool.uv.sources], so building the env needs a Rust toolchain.
       - uses: dtolnay/rust-toolchain@stable
@@ -63,7 +63,9 @@ jobs:
         with:
           workspaces: bindings/python
           shared-key: python-${{ matrix.service }}
-      - uses: astral-sh/setup-uv@v6
+      # setup-uv v8+ publishes no floating major/minor tags (supply-chain
+      # hardening), so the exact release must be pinned.
+      - uses: astral-sh/setup-uv@v8.2.0
         with:
           python-version: "3.12"
       - name: ruff
@@ -74,7 +76,7 @@ jobs:
       # when the bundled references change.
       - name: restore bootstrap-ensemble cache
         if: matrix.service == 'api'
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ${{ github.workspace }}/.verity-ensemble-cache
           key: verity-ensembles-${{ hashFiles('services/api/verity_api/references/**') }}-n150
@@ -101,13 +103,13 @@ jobs:
       run:
         working-directory: bindings/python
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: bindings/python
           shared-key: bindings-python
-      - uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@v8.2.0
         with:
           python-version: "3.12"
       - name: pytest
@@ -121,11 +123,11 @@ jobs:
       run:
         working-directory: services/web
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
         with:
           version: 10
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: pnpm
@@ -142,13 +144,13 @@ jobs:
     # Report-only for now: surfaces dependency CVEs and SAST findings without failing the
     # board. Triage the first run, then drop continue-on-error to make these blocking.
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - uses: taiki-e/install-action@v2
         with:
           tool: cargo-audit
-      - uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@v8.2.0
         with:
           python-version: "3.12"
       - name: cargo audit (Rust dependency CVEs)
