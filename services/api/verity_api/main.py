@@ -236,7 +236,13 @@ def _client_ip(request: Request) -> str:
     if _TRUST_PROXY_HEADERS:
         fwd = request.headers.get("x-forwarded-for")
         if fwd:
-            return fwd.split(",")[0].strip()
+            # Rightmost entry only: that is the hop the trusted edge proxy
+            # (Railway) appended. Earlier entries arrive verbatim from the
+            # client and are trivially forgeable — taking the first one would
+            # let a single client mint fresh rate-limit buckets per request.
+            last = fwd.split(",")[-1].strip()
+            if last:
+                return last
     return request.client.host if request.client else "anonymous"
 
 
