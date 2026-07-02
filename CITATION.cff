@@ -1,0 +1,28 @@
+cff-version: 1.2.0
+message: "If you use Verity, please cite it as below."
+title: "Verity: an open, domain-general engine for forensic surface comparison"
+type: software
+authors:
+  - family-names: Hare
+    given-names: Eric
+version: 0.2.0
+date-released: 2026-07-02
+license:
+  - MIT
+  - Apache-2.0
+repository-code: "https://github.com/erichare/verity"
+url: "https://verity.codes"
+keywords:
+  - forensic science
+  - likelihood ratio
+  - surface metrology
+  - X3P
+  - firearms and toolmarks
+preferred-citation:
+  type: report
+  title: "Verity: a transparent, calibrated likelihood ratio for forensic surface comparison"
+  authors:
+    - family-names: Hare
+      given-names: Eric
+  year: 2026
+  url: "https://github.com/erichare/verity/blob/main/docs/whitepaper/verity-whitepaper.pdf"
