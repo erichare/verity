@@ -76,12 +76,12 @@ export const REFERENCES: Reference[] = [
       "The CSAFE/Iowa State automatic bullet-matching method Verity generalizes and deploys.",
   },
   {
-    id: "song-2013",
+    id: "song-2015",
     authors: "Song, J.",
-    year: 2013,
+    year: 2015,
     title:
       "Proposed congruent matching cells (CMC) method for ballistic identification and error rate estimation",
-    venue: "AFTE Journal 45(2), 184–194 · NIST",
+    venue: "AFTE Journal 47(3), 177–185 · NIST",
     group: "foundational",
     url: "https://www.nist.gov/publications/proposed-congruent-matching-cells-cmc-method-ballistic-identifications-and-evidence",
     relevance:
@@ -145,7 +145,7 @@ export const REFERENCES: Reference[] = [
     group: "standards",
     url: "https://doi.org/10.1093/lpr/mgae015",
     relevance:
-      "Found that no firearms discipline has a characterized error rate — the gap Verity answers with a named, bounded Cllr.",
+      "Found that no firearms discipline has a characterized error rate — a gap Verity answers with a calibrated weight of evidence on declared references, not a field error rate.",
   },
   {
     id: "hamby-2009",
@@ -165,7 +165,7 @@ export const REFERENCES: Reference[] = [
     year: 2011,
     title:
       "An empirical study to improve the scientific foundation of forensic firearm and tool mark identification utilizing 10 consecutively manufactured slides",
-    venue: "AFTE Journal 43(3) · NIJ Award 2009-DN-BX-K230",
+    venue: "NIJ Grant Final Report NCJ 237960 · Award 2009-DN-BX-K230",
     group: "standards",
     url: "https://www.ojp.gov/ncjrs/virtual-library/abstracts/empirical-study-improve-scientific-foundation-forensic-firearm-and",
     relevance:
@@ -175,7 +175,7 @@ export const REFERENCES: Reference[] = [
   // ── Datasets & tooling ────────────────────────────────────────────────
   {
     id: "nbtrd-2020",
-    authors: "Zheng, X., Soons, J., Vorburger, T. V. et al. (NIST)",
+    authors: "Zheng, X., Soons, J., Thompson, R., Singh, S. & Constantin, C. (NIST)",
     year: 2020,
     title: "NIST Ballistics Toolmark Research Database",
     venue: "Journal of Research of NIST 125, 125004 · tsapps.nist.gov/NRBTD",
@@ -205,6 +205,28 @@ export const REFERENCES: Reference[] = [
     url: "https://doi.org/10.1016/j.forsciint.2020.110167",
     relevance:
       "The automatic bullet-analysis pipeline (bulletxtrctr) Verity benchmarks its bullet-land scores against.",
+  },
+  {
+    id: "cartridgecasescans-2022",
+    authors: "Zemmels, J., VanderPlas, S. & Hofmann, H. (CSAFE-ISU)",
+    year: 2022,
+    title: "cartridgeCaseScans: masked consecutively-manufactured cartridge-case scans",
+    venue: "GitHub repository (CC BY 4.0)",
+    group: "datasets",
+    url: "https://github.com/CSAFE-ISU/cartridgeCaseScans",
+    relevance:
+      "The open scan repository the Fadul breech-face set is mirrored from — the data behind Verity's deployed impressed-mark reference.",
+  },
+  {
+    id: "tmarks-2022",
+    authors: "Hofmann, H. & Cuellar, M.",
+    year: 2022,
+    title: "tmaRks: compare screwdriver marks",
+    venue: "GitHub repository (MIT)",
+    group: "datasets",
+    url: "https://github.com/heike/tmaRks",
+    relevance:
+      "The consecutively-manufactured slotted-screwdriver toolmark profiles Verity's striated-toolmark validation is built on.",
   },
 
   // ── Statistics ────────────────────────────────────────────────────────

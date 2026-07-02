@@ -39,7 +39,7 @@ const PILLARS: Pillar[] = [
     body: "The cell-counting idea at Verity's core is Song's Congruent Matching Cells, developed at NIST for cartridge-case breech faces. Verity generalizes it to Congruent Matching Regions so one pipeline spans striated and impressed marks, rather than a bespoke method per mark type.",
     cites: [
       {
-        label: "Song (2013), NIST",
+        label: "Song (2015), NIST",
         href: "https://www.nist.gov/publications/proposed-congruent-matching-cells-cmc-method-ballistic-identifications-and-evidence",
       },
       {
@@ -51,7 +51,7 @@ const PILLARS: Pillar[] = [
   {
     tag: "The evidence",
     title: "The open-data ecosystem",
-    body: "Verity is validated against the public benchmark data the research community built and shares — the Hamby 10-barrel bullet sets, the Fadul consecutively-manufactured cartridge cases, and screwdriver toolmarks, sourced through the open NIST NBTRD — and its native X3P codec is interoperable with the community's x3ptools reader.",
+    body: "Verity is validated against the public benchmark data the research community built and shares — the Hamby 10-barrel bullet sets from the open NIST NBTRD, the Fadul consecutively-manufactured cartridge cases from CSAFE-ISU's open cartridgeCaseScans repository, and screwdriver toolmarks from the open tmaRks dataset — and its native X3P codec is interoperable with the community's x3ptools reader.",
     cites: [
       {
         label: "NIST NBTRD",

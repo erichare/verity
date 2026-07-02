@@ -43,6 +43,7 @@ const MARK_TYPE_LABELS: Record<string, string> = {
   breech_face: "Cartridge breech face",
   firing_pin: "Cartridge firing pin",
   ejector: "Cartridge ejector",
+  full_headstamp: "Cartridge full headstamp",
   aperture_shear: "Aperture shear",
 };
 
@@ -58,6 +59,7 @@ const SOURCE_LABELS: Record<string, string> = {
   nbtrd: "NBTRD",
   "csafe-isu": "CSAFE-ISU",
   tmarks: "tmaRks",
+  figshare: "Figshare",
 };
 
 /** The display label for a scan's source repository (e.g. NBTRD, CSAFE-ISU). */
