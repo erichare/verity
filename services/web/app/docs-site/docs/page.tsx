@@ -16,6 +16,7 @@ const SECTIONS: NavSection[] = [
   { id: "quickstart", label: "Quickstart" },
   { id: "concepts", label: "Core concepts" },
   { id: "api", label: "REST API" },
+  { id: "mcp", label: "MCP server" },
   { id: "reproducibility", label: "Reproducibility" },
   { id: "codec", label: "X3P codec" },
   { id: "catalog", label: "Data catalog" },
@@ -253,9 +254,10 @@ export default function DocsPage() {
                 <em>impressed</em> marks (cartridge breech faces).
               </p>
               <p>
-                There are three ways in: the hosted <strong className="text-foreground">web app</strong>{" "}
+                There are four ways in: the hosted <strong className="text-foreground">web app</strong>{" "}
                 at <a href="https://verity.codes" className="text-accent hover:underline">verity.codes</a>, the{" "}
-                <strong className="text-foreground">REST API</strong> below, and the{" "}
+                <strong className="text-foreground">REST API</strong> below, the{" "}
+                <strong className="text-foreground">MCP server</strong> for AI agents, and the{" "}
                 <strong className="text-foreground">open-source</strong> Rust/Python/R libraries. The
                 decision always stays behind a glass-box statistical firewall — the representation
                 only produces a score; the reportable LR is a monotone, bounded transform of it.
@@ -272,8 +274,9 @@ export default function DocsPage() {
               <CodeTabs tabs={QUICKSTART_TABS} />
               <p className="text-xs text-muted">
                 No <code className="font-mono">.x3p</code> files handy? The web app&rsquo;s{" "}
-                <a href="https://verity.codes/#compare" className="text-accent hover:underline">Compare tool</a> has a
-                &ldquo;Load a sample&rdquo; button that runs a real comparison.
+                <a href="https://verity.codes/#compare" className="text-accent hover:underline">Compare workspace</a>{" "}
+                lets you pick two real specimens from a curated gallery — bullets, cartridge cases, or
+                toolmarks — and runs a real, precomputed comparison, no file of your own needed.
               </p>
             </Section>
 
@@ -366,7 +369,7 @@ export default function DocsPage() {
                 </Endpoint>
                 <CodeBlock
                   label="200 OK"
-                  code={`{ "status": "ok", "engine_version": "0.1.0", "domains": ["impressed", "striated", "toolmark"] }`}
+                  code={`{ "status": "ok", "engine_version": "0.1.0", "domains": ["impressed", "striated", "toolmark"], "rate_limiter": { "tracked_ips": 5 } }`}
                 />
 
                 <Endpoint method="POST" path="/detect">
@@ -388,6 +391,20 @@ export default function DocsPage() {
                   <code className="font-mono text-xs">mark_b</code> file fields. For striated bullets,
                   send every land scan of each bullet; for impressed, one breech-face scan per mark;
                   for toolmark, one striated profile scan per mark.
+                </Endpoint>
+
+                <Endpoint method="POST" path="/v1/compare/report.pdf">
+                  The same comparison, returned as a{" "}
+                  <strong className="text-foreground">court-ready PDF</strong>: the calibrated LR with
+                  its credible interval and verbal weight, the named-scope statement, the reference and
+                  its cost, the method version, the SHA-256 provenance of every input scan, and the
+                  attribution overlay.
+                </Endpoint>
+
+                <Endpoint method="POST" path="/v1/scope">
+                  Applicability-domain check for one scan — whether it falls inside the validated
+                  domain (resolution, mark type, coverage, signal). The basis for refusing an
+                  out-of-domain LR rather than returning a junk number.
                 </Endpoint>
               </div>
 
@@ -425,6 +442,36 @@ export default function DocsPage() {
                 <code className="font-mono text-xs">VERITY_CORS_ORIGINS</code>). Errors return a JSON{" "}
                 <code className="font-mono text-xs">detail</code> with a 400 status for bad uploads or
                 an uncalibrated domain.
+              </p>
+            </Section>
+
+            <Section id="mcp" eyebrow="For agents" title="MCP server">
+              <p>
+                Verity ships a <strong className="text-foreground">Model Context Protocol</strong>{" "}
+                server (&ldquo;verity&rdquo;) so AI agents can drive the same calibrated engine as the
+                REST API — behind the same glass-box firewall and the same scope-note guarantees.
+              </p>
+              <div className="space-y-3">
+                <Endpoint method="POST" path="/mcp">
+                  Hosted remote server (streamable HTTP) at{" "}
+                  <code className="font-mono text-xs text-foreground">{`${API_BASE}/mcp`}</code> —
+                  scans go in as base64, no local install.
+                </Endpoint>
+              </div>
+              <p>Or run it locally over stdio against any API base:</p>
+              <CodeBlock
+                label="stdio"
+                code={`uv run --directory services/mcp verity-mcp   # env VERITY_API_URL`}
+              />
+              <p>
+                Six tools — <code className="font-mono text-xs">compare_marks</code>,{" "}
+                <code className="font-mono text-xs">detect_mark_type</code>,{" "}
+                <code className="font-mono text-xs">calibrate_score</code>,{" "}
+                <code className="font-mono text-xs">list_references</code>,{" "}
+                <code className="font-mono text-xs">scorer_config</code>, and{" "}
+                <code className="font-mono text-xs">service_health</code> — carry the same calibration
+                firewall and scope-note guarantees as the HTTP API. A Claude Desktop bundle builds from{" "}
+                <code className="font-mono text-xs">services/mcp/build_mcpb.sh</code>.
               </p>
             </Section>
 
@@ -516,9 +563,12 @@ export default function DocsPage() {
               </p>
               <CodeTabs tabs={CODEC_TABS} />
               <p className="text-xs text-muted">
-                Install: Python builds with <code className="font-mono text-xs">maturin develop</code>{" "}
-                (PyPI wheels to follow); R via <code className="font-mono text-xs">R CMD INSTALL bindings/r/verityx3p</code>.
-                Both require a Rust toolchain today. TypeScript / Swift / Java bindings are planned.
+                Install: <code className="font-mono text-xs">pip install verity-x3p</code>{" "}
+                (PyPI, abi3 wheels, Python 3.9+) or{" "}
+                <code className="font-mono text-xs">cargo add verity-x3p</code> (crates.io) — both
+                v0.2.0. The R binding isn&rsquo;t on CRAN:{" "}
+                <code className="font-mono text-xs">R CMD INSTALL bindings/r/verityx3p</code> from a
+                clone, which needs a Rust toolchain. TypeScript / Swift / Java bindings are planned.
               </p>
             </Section>
 
@@ -588,6 +638,11 @@ uv run verity-catalog info`}
                       <td className="px-4 py-3">Next.js</td>
                       <td className="px-4 py-3">This site and the interactive comparison UI.</td>
                     </tr>
+                    <tr className="border-t border-border">
+                      <td className="px-4 py-3 font-mono text-xs">services/mcp</td>
+                      <td className="px-4 py-3">Python</td>
+                      <td className="px-4 py-3">MCP server (&ldquo;verity&rdquo;) — local stdio plus the hosted endpoint at api.verity.codes/mcp.</td>
+                    </tr>
                   </tbody>
                 </table>
               </div>
@@ -611,14 +666,15 @@ uv run verity-catalog info`}
                 types (striated bullet lands, impressed breech faces, striated toolmarks), each scoped
                 to a named reference population; the monotone, empirically-capped LR firewall; the
                 glass-box step API for auditing every intermediate; and the open benchmark with frozen,
-                source-disjoint splits. Every number on this site is labeled with the protocol that
-                produced it.
+                source-disjoint splits. The <code className="font-mono text-xs">verity-x3p</code> codec is
+                published at v0.2.0 on crates.io and PyPI. Every number on this site is labeled with the
+                protocol that produced it.
               </p>
               <p>
                 <strong className="text-foreground">What&rsquo;s ahead.</strong> Broader reference
                 populations and cross-instrument validation, external replication through the{" "}
                 <a href="/benchmark" className="text-accent hover:underline">open benchmark</a>,
-                versioned releases of the codec and engine, and independent review. Follow progress on{" "}
+                versioned releases of the engine, and independent review. Follow progress on{" "}
                 <a
                   href="https://github.com/erichare/verity"
                   target="_blank"
@@ -626,6 +682,28 @@ uv run verity-catalog info`}
                   className="text-accent hover:underline"
                 >
                   GitHub
+                </a>
+                .
+              </p>
+              <p>
+                <strong className="text-foreground">The next external test is pre-registered.</strong>{" "}
+                The one-shot validation on untouched data is{" "}
+                <a
+                  href="https://osf.io/prjs9"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-accent hover:underline"
+                >
+                  pre-registered on OSF
+                </a>{" "}
+                (filed 2026-07-01) — a frozen protocol, published win or lose; result pending. Protocol:{" "}
+                <a
+                  href="https://github.com/erichare/verity/blob/main/docs/weller-preregistration.md"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-accent hover:underline"
+                >
+                  docs/weller-preregistration.md ↗
                 </a>
                 .
               </p>
@@ -639,7 +717,7 @@ uv run verity-catalog info`}
                   ["How the method works", "/method"],
                   ["Why Verity exists", "/why"],
                   ["CMR write-up", "https://github.com/erichare/verity/blob/main/docs/congruent-matching-regions.md"],
-                  ["Try a comparison", "/#compare"],
+                  ["Try a comparison", "https://verity.codes/#compare"],
                 ].map(([label, href]) => (
                   <li key={label}>
                     <a
@@ -654,6 +732,30 @@ uv run verity-catalog info`}
                   </li>
                 ))}
               </ul>
+              <div className="mt-6 rounded-xl border border-border bg-foreground/[0.02] p-4">
+                <p className="text-sm font-medium text-foreground">Cite Verity</p>
+                <p className="mt-1 text-xs leading-relaxed text-muted">
+                  Use GitHub&rsquo;s <em>&ldquo;Cite this repository&rdquo;</em> button, backed by{" "}
+                  <a
+                    href="https://github.com/erichare/verity/blob/main/CITATION.cff"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-accent hover:underline"
+                  >
+                    CITATION.cff
+                  </a>
+                  . The preferred citation is the{" "}
+                  <a
+                    href="https://github.com/erichare/verity/blob/main/docs/whitepaper/verity-whitepaper.pdf"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-accent hover:underline"
+                  >
+                    Verity whitepaper
+                  </a>
+                  .
+                </p>
+              </div>
               <p className="pt-4 text-xs leading-relaxed text-muted">
                 Licensed MIT / Apache-2.0. Verity reports a calibrated weight of evidence; it never
                 makes the decision, and makes no claim about the error rate of forensic examination,

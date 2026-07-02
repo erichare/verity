@@ -1,6 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
+
+// Cloudflare Scrape Shield "email obfuscation" rewrites anything that looks like an address
+// (e.g. the curl arg `scan=@mark.x3p`) into an obfuscated /cdn-cgi/ email-protection link in the
+// server-rendered HTML — corrupting code samples for crawlers and no-JS readers. Rendering the
+// `=@` adjacency as separate nodes (an isolated `@`) keeps the visible text and the clipboard
+// payload byte-identical while defeating the edge scanner. Do NOT rejoin these into one string.
+function renderCodeSafely(code: string): ReactNode {
+  if (!code.includes("=@")) return code;
+  const nodes: ReactNode[] = [];
+  code.split("=@").forEach((segment, i) => {
+    if (i > 0) {
+      nodes.push("=");
+      nodes.push(<span key={`at-${i}`}>@</span>);
+    }
+    nodes.push(segment);
+  });
+  return nodes;
+}
 
 /** A copy-to-clipboard code block, styled to match the site (mono, glass, hairline). */
 export function CodeBlock({
@@ -42,7 +60,7 @@ export function CodeBlock({
         {copied ? "Copied ✓" : "Copy"}
       </button>
       <pre className="overflow-x-auto p-4 text-[13px] leading-relaxed">
-        <code className="font-mono text-foreground/90">{code}</code>
+        <code className="font-mono text-foreground/90">{renderCodeSafely(code)}</code>
       </pre>
     </div>
   );
