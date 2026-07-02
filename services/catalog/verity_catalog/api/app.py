@@ -23,18 +23,30 @@ from .routers import benchmark, bullets, datasets, firearms, meta, scans, studie
 
 _DESCRIPTION = """\
 **Verity data catalog** — a faceted, reproducible REST API over a normalized
-catalog of public-domain forensic surface scans (NBTRD / Figshare), each pinned by
-its **SHA-256 content hash**.
+catalog of openly licensed forensic surface scans, each pinned by its **SHA-256
+content hash**.
 
 Browse the containment hierarchy (`/studies` → `/firearms` →
-`/bullets/{id}/lands` → `/scans`), filter scans by caliber, land count, source,
-modality, and resolution, and download the exact X3P bytes
-(`/scans/{id}/x3p`, `ETag` = content hash). `/datasets/{name}` resolves a named
-manifest to a **pinned scan list with content hashes** — the reproducible dataset
-the validation harness consumes.
+`/bullets/{id}/lands` + `/cartridge-cases/{id}/marks` → `/scans`), filter scans
+by caliber, land count, source, modality, and resolution, and download the exact
+X3P bytes (`/scans/{id}/x3p`, `ETag` = content hash). Blobs sync to the public
+store in batches, so each scan reports `blob_available` — whether its bytes are
+downloadable right now — and `/scans` takes a `blob_available` filter; metadata
+is always served. `/datasets/{name}` resolves a named manifest to a **pinned
+scan list with content hashes** — the reproducible dataset the validation
+harness consumes.
 
-Every response uses the uniform envelope `{success, data, error, meta}`. The data
-is U.S. Government work in the public domain; please cite NIST/NBTRD.
+Every response uses the uniform envelope `{success, data, error, meta}`.
+
+**Licensing is per source** (the `source` field on studies and scans says which
+applies):
+
+- `nbtrd` — NIST Ballistics Toolmark Research Database scans: U.S. Government
+  work in the public domain; please cite NIST/NBTRD.
+- `csafe-isu` — CSAFE-ISU cartridge-case scans
+  (github.com/CSAFE-ISU/cartridgeCaseScans): CC BY 4.0.
+- `tmarks` — tmaRks toolmark profiles (github.com/heike/tmaRks): MIT.
+- `figshare` — CSAFE virtual kits (DOI 10.25380/iastate.30854414): CC BY 4.0.
 
 Web app: <https://verity.codes>
 """

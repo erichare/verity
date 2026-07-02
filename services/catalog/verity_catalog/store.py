@@ -13,6 +13,7 @@ import hashlib
 import os
 import tempfile
 from abc import ABC, abstractmethod
+from collections.abc import Iterable
 from pathlib import Path
 
 from .config import Settings, get_settings
@@ -36,6 +37,13 @@ class BlobStore(ABC):
 
     @abstractmethod
     def exists(self, content_hash: str) -> bool: ...
+
+    def existing(self, hashes: Iterable[str]) -> set[str]:
+        """The subset of ``hashes`` present in the store — the batch form the
+        API's per-scan ``blob_available`` flag needs. Default: one :meth:`exists`
+        per hash, which is a cheap ``stat`` on the filesystem store; network
+        backends should override with a single batched lookup."""
+        return {h for h in set(hashes) if self.exists(h)}
 
     @abstractmethod
     def count(self) -> int:
