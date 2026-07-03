@@ -20,7 +20,8 @@ function PlayIcon({ playing }: { playing: boolean }) {
 /**
  * The spine of the experience: the labeled pipeline stages on one timeline, with transport
  * controls. The active node fills with the navy→brass gradient, completed nodes are solid,
- * upcoming are hollow. Clicking a node jumps to that stage; the rail is keyboard-navigable.
+ * upcoming are hollow. Each node is a plain button (Tab/Space/Enter), and a polite live
+ * region announces the current position as playback advances.
  */
 export function TimelineRail({
   stages,
@@ -63,16 +64,7 @@ export function TimelineRail({
         </button>
       </div>
 
-      <ol
-        className="flex flex-1 items-center"
-        role="slider"
-        aria-label="Pipeline stage"
-        aria-valuemin={1}
-        aria-valuemax={stages.length}
-        aria-valuenow={index + 1}
-        aria-valuetext={`Stage ${index + 1} of ${stages.length} — ${stages[index]?.label}`}
-        tabIndex={0}
-      >
+      <ol className="flex flex-1 items-center" aria-label="Pipeline stages">
         {stages.map((s, i) => {
           const done = i < index;
           const active = i === index;
@@ -82,6 +74,7 @@ export function TimelineRail({
                 type="button"
                 onClick={() => onSeek(i)}
                 aria-current={active ? "step" : undefined}
+                aria-label={`Stage ${i + 1} of ${stages.length}: ${s.label}`}
                 className="group flex flex-col items-center gap-1"
                 title={s.label}
               >
@@ -115,8 +108,12 @@ export function TimelineRail({
         })}
       </ol>
 
-      <span className="hidden font-mono text-[10px] text-muted sm:block">
+      <span className="hidden font-mono text-[10px] text-muted sm:block" aria-hidden>
         {index + 1} / {stages.length}
+      </span>
+      {/* Position announcement for screen readers as playback or seeking moves the stage. */}
+      <span className="sr-only" aria-live="polite">
+        Stage {index + 1} of {stages.length}: {stages[index]?.label}
       </span>
     </div>
   );

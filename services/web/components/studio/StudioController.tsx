@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { detectDomain } from "@/lib/api";
 import { runLivePipeline } from "@/lib/liveStudio";
 import {
@@ -44,11 +44,21 @@ export function StudioController() {
     setDomain(d);
   }, []);
 
-  // Keyboard: ← → step · space play/pause · Home/End jump · R restart · M match · U upload · A animate.
+  // Keyboard: ← → step · space play/pause · Home/End jump · R restart · M match · U upload ·
+  // A animate. Suspended while a dialog is open, and ignored whenever focus sits on an
+  // interactive element so native activation (Space on a button, Enter on a link) wins.
   useEffect(() => {
+    const modalOpen = uploadOpen || refusal !== null;
     const onKey = (e: KeyboardEvent) => {
-      const tag = (e.target as HTMLElement)?.tagName;
-      if (tag === "INPUT" || tag === "SELECT" || tag === "TEXTAREA") return;
+      if (modalOpen) return;
+      const el = e.target instanceof HTMLElement ? e.target : null;
+      if (
+        el &&
+        el !== document.body &&
+        (el.isContentEditable ||
+          el.closest("input, select, textarea, button, a, [role='button'], [contenteditable]"))
+      )
+        return;
       switch (e.key) {
         case "ArrowRight":
           tl.next();
@@ -87,7 +97,7 @@ export function StudioController() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [tl, run]);
+  }, [tl, run, uploadOpen, refusal]);
 
   if (!run) {
     return (
@@ -103,49 +113,76 @@ export function StudioController() {
     <div className="flex h-[100svh] flex-col bg-background text-foreground">
       <StudioNav />
 
-      <div className="flex min-h-0 flex-1">
-        <div className="relative min-w-0 flex-1">
-          <StageStage run={run} stage={stage} progress={tl.progress} autoRotate={animate} />
-          <UploadPill onOpen={() => setUploadOpen(true)} live={run.provenance === "upload"} />
+      <main className="flex min-h-0 flex-1 flex-col">
+        <h1 className="sr-only">Verity Studio — a forensic comparison, step by step</h1>
+
+        <div className="flex min-h-0 flex-1">
+          <div className="relative min-w-0 flex-1">
+            <StageStage run={run} stage={stage} progress={tl.progress} autoRotate={animate} />
+            <UploadPill onOpen={() => setUploadOpen(true)} live={run.provenance === "upload"} />
+          </div>
+          <div className="hidden w-[340px] shrink-0 border-l border-border lg:block">
+            <CaseFilePanel run={run} stage={stage} total={run.stages.length} />
+          </div>
         </div>
-        <div className="hidden w-[340px] shrink-0 border-l border-border lg:block">
-          <CaseFilePanel run={run} stage={stage} total={run.stages.length} />
+
+        {/* Mobile caption strip (the full Case File panel is hidden below lg): the stage
+            heading plus the provenance badge and key readouts, so phones still see whether
+            this is a curated specimen or their scan, and the numbers behind each step. */}
+        <div className="border-t border-border px-4 py-2 lg:hidden">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="font-mono text-[10px] uppercase tracking-wider text-brass-text">
+              Step {stage.num} / {run.stages.length} · {stage.label}
+            </h2>
+            <span
+              className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 font-mono text-[9px] text-foreground/70 ${
+                run.provenance === "upload"
+                  ? "border-border bg-foreground/[0.04]"
+                  : "border-brass/30 bg-brass/[0.08]"
+              }`}
+            >
+              <span
+                className={`h-1 w-1 rounded-full ${
+                  run.provenance === "upload" ? "bg-foreground/50" : "bg-brass"
+                }`}
+              />
+              {run.provenance === "upload" ? "Your scan" : "Curated specimen"}
+            </span>
+          </div>
+          <p className="mt-0.5 truncate font-display text-sm text-foreground">{stage.caption}</p>
+          {stage.readouts.length > 0 && (
+            <p className="mt-0.5 truncate font-mono text-[10px] text-muted">
+              {stage.readouts.map((r) => `${r.label} ${r.value}`).join(" · ")}
+            </p>
+          )}
         </div>
-      </div>
 
-      {/* Mobile caption strip (the Case File panel is hidden below lg). */}
-      <div className="border-t border-border px-4 py-2 lg:hidden">
-        <p className="font-mono text-[10px] uppercase tracking-wider text-brass-text">
-          Step {stage.num} / {run.stages.length} · {stage.label}
-        </p>
-        <p className="mt-0.5 truncate font-display text-sm text-foreground">{stage.caption}</p>
-      </div>
-
-      <SubBar
-        domain={domain}
-        relation={relation}
-        live={run.provenance === "upload"}
-        animate={animate}
-        onToggleAnimate={() => setAnimate((v) => !v)}
-        onDomain={pickDomain}
-        onRelation={(r) => {
-          setUpload(null);
-          setRelation(r);
-        }}
-        onReturnToTour={() => setUpload(null)}
-      />
-
-      <div className="border-t border-border">
-        <TimelineRail
-          stages={run.stages}
-          index={tl.index}
-          progress={tl.progress}
-          playing={tl.playing}
-          onToggle={tl.toggle}
-          onSeek={tl.seekIndex}
-          onRestart={tl.restart}
+        <SubBar
+          domain={domain}
+          relation={relation}
+          live={run.provenance === "upload"}
+          animate={animate}
+          onToggleAnimate={() => setAnimate((v) => !v)}
+          onDomain={pickDomain}
+          onRelation={(r) => {
+            setUpload(null);
+            setRelation(r);
+          }}
+          onReturnToTour={() => setUpload(null)}
         />
-      </div>
+
+        <div className="border-t border-border">
+          <TimelineRail
+            stages={run.stages}
+            index={tl.index}
+            progress={tl.progress}
+            playing={tl.playing}
+            onToggle={tl.toggle}
+            onSeek={tl.seekIndex}
+            onRestart={tl.restart}
+          />
+        </div>
+      </main>
 
       {/* One slim row of trust chrome — the Studio shell is viewport-locked, so the
           shared footer renders in its compact single-line variant. */}
@@ -196,6 +233,7 @@ function Chip({
     <button
       type="button"
       onClick={onClick}
+      aria-pressed={active}
       className={`rounded-full border px-3.5 py-1.5 text-xs font-medium transition ${
         active
           ? "border-brass/40 bg-brass/15 text-brass-text"
@@ -269,6 +307,7 @@ function SubBar({
           <button
             type="button"
             onClick={() => onRelation("KM")}
+            aria-pressed={!live && relation === "KM"}
             className={`px-3.5 py-1.5 transition ${
               !live && relation === "KM" ? "bg-accent/15 text-accent" : "text-muted hover:text-foreground"
             }`}
@@ -278,6 +317,7 @@ function SubBar({
           <button
             type="button"
             onClick={() => onRelation("KNM")}
+            aria-pressed={!live && relation === "KNM"}
             className={`px-3.5 py-1.5 transition ${
               !live && relation === "KNM"
                 ? "bg-oxblood/15 text-oxblood"
@@ -338,11 +378,13 @@ function UploadModal({
   const multiple = domain === "striated";
 
   return (
-    <Backdrop onClose={onClose}>
+    <Backdrop onClose={onClose} labelledBy="upload-modal-title">
       <div className="glass w-full max-w-lg space-y-4 rounded-2xl p-6">
         <div className="flex items-start justify-between">
           <div>
-            <h2 className="font-display text-xl text-foreground">Compare your own scans</h2>
+            <h2 id="upload-modal-title" className="font-display text-xl text-foreground">
+              Compare your own scans
+            </h2>
             <p className="mt-1 text-sm text-muted">
               .x3p surface scans, compared live against the deployed engine.
             </p>
@@ -401,7 +443,7 @@ function UploadModal({
 
 function RefusalModal({ refusal, onClose }: { refusal: RefusalResponse; onClose: () => void }) {
   return (
-    <Backdrop onClose={onClose}>
+    <Backdrop onClose={onClose} label="Comparison refused — out of scope">
       <div className="w-full max-w-xl">
         <RefusalView result={refusal} />
         <div className="mt-3 text-center">
@@ -418,13 +460,39 @@ function RefusalModal({ refusal, onClose }: { refusal: RefusalResponse; onClose:
   );
 }
 
-function Backdrop({ onClose, children }: { onClose: () => void; children: React.ReactNode }) {
+function Backdrop({
+  onClose,
+  labelledBy,
+  label,
+  children,
+}: {
+  onClose: () => void;
+  labelledBy?: string;
+  label?: string;
+  children: React.ReactNode;
+}) {
+  const ref = useRef<HTMLDialogElement>(null);
+
+  // Native <dialog> modality: showModal() moves focus into the dialog, makes everything
+  // outside it inert, handles Escape (→ close event), and restores focus on close.
+  useEffect(() => {
+    const dialog = ref.current;
+    dialog?.showModal();
+    return () => dialog?.close();
+  }, []);
+
   return (
-    <div
-      className="fixed inset-0 z-40 flex items-center justify-center bg-[color-mix(in_srgb,var(--background)_70%,transparent)] p-4 backdrop-blur-sm"
-      onClick={onClose}
+    <dialog
+      ref={ref}
+      aria-labelledby={labelledBy}
+      aria-label={label}
+      onClose={onClose}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      className="fixed inset-0 z-40 m-0 flex h-full max-h-none w-full max-w-none items-center justify-center bg-[color-mix(in_srgb,var(--background)_70%,transparent)] p-4 backdrop-blur-sm backdrop:bg-transparent"
     >
-      <div onClick={(e) => e.stopPropagation()}>{children}</div>
-    </div>
+      {children}
+    </dialog>
   );
 }
