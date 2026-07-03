@@ -17,6 +17,7 @@ const DOCS_LINKS: DocsLink[] = [
   { href: "/benchmark", label: "Benchmark" },
   { href: "/catalog", label: "Catalog" },
   { href: "/references", label: "References" },
+  { href: "/lineage", label: "Lineage" },
   { href: "/docs", label: "Use Verity" },
   { href: "https://api.verity.codes/scalar", label: "API", external: true },
   { href: "/whitepaper.pdf", label: "White paper", external: true },
@@ -111,6 +112,12 @@ export function DocsSiteNav() {
         <nav className="border-t border-border/60 px-4 pb-4 pt-1 sm:px-6 lg:hidden">
           <div className="mx-auto flex max-w-6xl flex-col">
             {DOCS_LINKS.map((link) => renderLink(link, true))}
+            <a
+              href="https://app.verity.codes"
+              className="border-b border-border/40 py-2.5 text-sm font-medium text-accent"
+            >
+              Studio ↗
+            </a>
             <a
               href="https://verity.codes"
               className="py-2.5 text-sm font-medium text-accent"

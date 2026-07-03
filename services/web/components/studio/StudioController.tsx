@@ -13,6 +13,7 @@ import {
 import { type MarkDomain, type RefusalResponse } from "@/lib/types";
 import { FilePick } from "@/components/FilePick";
 import RefusalView from "@/components/RefusalView";
+import { SiteFooter } from "@/components/SiteFooter";
 import { StudioNav } from "./StudioNav";
 import { StageStage } from "./StageStage";
 import { CaseFilePanel } from "./CaseFilePanel";
@@ -137,6 +138,10 @@ export function StudioController() {
           onRestart={tl.restart}
         />
       </div>
+
+      {/* One slim row of trust chrome — the Studio shell is viewport-locked, so the
+          shared footer renders in its compact single-line variant. */}
+      <SiteFooter variant="compact" />
 
       {uploadOpen && (
         <UploadModal

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { DocsSiteNav } from "@/components/docs/DocsSiteNav";
+import { SiteFooter } from "@/components/SiteFooter";
 
 // docs.verity.codes — the science/docs umbrella. metadataBase points social/OG at the
 // docs host (the app host keeps its own in the root layout). Next only emits a
@@ -20,6 +21,7 @@ export default function DocsSiteLayout({ children }: { children: React.ReactNode
     <>
       <DocsSiteNav />
       {children}
+      <SiteFooter />
     </>
   );
 }

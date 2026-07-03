@@ -336,6 +336,19 @@ export default async function BenchmarkPage() {
           public catalog with{" "}
           <code className="font-mono text-foreground/70">verity-build-benchmark</code>.
         </p>
+        <p className="mt-4 max-w-3xl text-sm leading-relaxed text-foreground/50">
+          Everything this page reads — the frozen splits, the leaderboard, and the replication
+          kits — is served by the open Data API at{" "}
+          <a
+            href="https://data.verity.codes/scalar"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-foreground/70 underline decoration-border underline-offset-2 transition hover:text-accent hover:decoration-accent"
+          >
+            data.verity.codes ↗
+          </a>
+          .
+        </p>
       </Reveal>
     </main>
   );
