@@ -719,8 +719,8 @@ uv run verity-catalog info`}
                 .
               </p>
               <p>
-                <strong className="text-foreground">The next external test is pre-registered.</strong>{" "}
-                The one-shot validation on untouched data is{" "}
+                <strong className="text-foreground">The pre-registered external test landed — H1 supported.</strong>{" "}
+                The one-shot validation on untouched data was{" "}
                 <a
                   href="https://osf.io/prjs9"
                   target="_blank"
@@ -729,7 +729,9 @@ uv run verity-catalog info`}
                 >
                   pre-registered on OSF
                 </a>{" "}
-                (filed 2026-07-01) — a frozen protocol, published win or lose; result pending. Protocol:{" "}
+                (2026-07-01, before any data access) and run once as registered: on the independent Weller et al. (2012)
+                cartridge-case set the frozen pipeline reached pooled Cllr 0.163 (95% CI 0.147–0.189), AUC 0.9995 — the
+                pre-registered H1 (pooled Cllr ≤ 0.45) is supported. Protocol:{" "}
                 <a
                   href="https://github.com/erichare/verity/blob/main/docs/weller-preregistration.md"
                   target="_blank"

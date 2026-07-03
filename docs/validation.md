@@ -53,14 +53,21 @@ deployable LR layer, not a better matcher.
 `diag_contrast` was selected over the Phase-1 `diag_mean` and a multivariate fusion by
 an explicit barrel-disjoint ablation (the `verity-margin` command). Candidly, that
 ablation reused the same four studies as the validation above, so a one-shot
-confirmation on untouched data is the next milestone (see the whitepaper's
-Limitations). That confirmation is now **pre-registered**: a frozen protocol on the
-Weller cartridge-case set, filed on [OSF](https://osf.io/prjs9) (2026-07-01) before any
-Weller scan was parsed, scored, or ingested by any Verity component — the registration
-precedes the first Weller-touching commit (see the pre-registration's Appendix A,
-"Deviations and transparent-changes log", for a clarification about a clone side
-effect). The result will be published win or lose:
-[`weller-preregistration.md`](weller-preregistration.md) (result pending).
+confirmation on untouched data was the next milestone (see the whitepaper's
+Limitations). **That confirmation has now run — once, as pre-registered.** A frozen
+protocol on the Weller cartridge-case set was filed on [OSF](https://osf.io/prjs9)
+(2026-07-01) before any Weller scan was parsed, scored, or ingested by any Verity
+component — the registration precedes the first Weller-touching commit (see the
+pre-registration's Appendix A, "Deviations and transparent-changes log", for a
+clarification about a clone side effect). Run unchanged on all 4,465 evaluable pairs
+(95 breech-face scans, 11 slides, 0 exclusions), the frozen Fadul-calibrated pipeline
+reached **pooled Cllr 0.163** (95% CI 0.147–0.189, cluster bootstrap by slide),
+AUC 0.9995 — the pre-registered **H1 (pooled Cllr ≤ 0.45) is supported**. The pooled
+figure sits below the within-study Fadul reference (0.343) because Weller separates
+strongly and supplies ~37× more same-source pairs; Weller's own within-study
+`cartridge-v2` LOSO split isolates it at Cllr 0.045. Published win or lose:
+[`weller-preregistration.md`](weller-preregistration.md); every number is in
+[`headline-numbers.md`](headline-numbers.md).
 
 ## 4. What doesn't work yet
 
@@ -105,4 +112,4 @@ Toolmarks are the largest, most stable set (≈ 3.5k same-source pairs): source-
 Further reading: [`headline-numbers.md`](headline-numbers.md) (the registry) ·
 [whitepaper PDF](whitepaper/verity-whitepaper.pdf) (full method + limitations) ·
 [`weller-preregistration.md`](weller-preregistration.md) (pre-registered protocol —
-result pending).
+H1 supported, pooled Cllr 0.163).
