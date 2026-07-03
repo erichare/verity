@@ -10,11 +10,17 @@ import { Reveal } from "@/components/Reveal";
  * CSAFE framing.
  */
 
+interface Cite {
+  label: string;
+  href: string;
+}
+
 interface Pillar {
   tag: string;
   title: string;
   body: string;
-  cite?: { label: string; href: string };
+  // One or more citations; each gets its own correct link.
+  cites?: Cite[];
 }
 
 const PILLARS: Pillar[] = [
@@ -22,28 +28,36 @@ const PILLARS: Pillar[] = [
     tag: "The method",
     title: "Automatic bullet matching",
     body: "Verity's bullet-land pipeline descends directly from the CSAFE/Iowa State automatic-matching method — surface signatures, alignment, and a learned similarity score, validated on the community's bullet benchmarks.",
-    cite: {
-      label: "Hare, Hofmann & Carriquiry (2017), AOAS",
-      href: "https://doi.org/10.1214/17-AOAS1080",
-    },
+    cites: [
+      {
+        label: "Hare, Hofmann & Carriquiry (2017), AOAS",
+        href: "https://doi.org/10.1214/17-AOAS1080",
+      },
+    ],
   },
   {
     tag: "The principle",
     title: "Congruent Matching Cells",
     body: "The cell-counting idea at Verity's core is Song's CMC. Verity generalizes it to Congruent Matching Regions so one pipeline spans striated and impressed marks, rather than a bespoke method per mark type.",
-    cite: {
-      label: "Song (2015); Song et al. (2018)",
-      href: "https://doi.org/10.1016/j.forsciint.2017.12.013",
-    },
+    cites: [
+      {
+        label: "Song (2015)",
+        href: "https://www.nist.gov/publications/proposed-congruent-matching-cells-cmc-method-ballistic-identifications-and-evidence",
+      },
+      {
+        label: "Song et al. (2018)",
+        href: "https://doi.org/10.1016/j.forsciint.2017.12.013",
+      },
+    ],
   },
   {
     tag: "The evidence",
     title: "Public benchmark data",
     body: "Verity is validated against the data the community built and shares — Hamby 252/173 bullets from the open NIST NBTRD, Fadul consecutively-manufactured cartridge cases from CSAFE-ISU's open scan repository, and screwdriver toolmarks from the open tmaRks dataset.",
-    cite: {
-      label: "NIST NBTRD; Hamby (2009); Fadul (2011)",
-      href: "https://tsapps.nist.gov/NRBTD/",
-    },
+    cites: [
+      { label: "NIST NBTRD", href: "https://tsapps.nist.gov/NRBTD/" },
+      { label: "Fadul (2011)", href: "https://doi.org/10.1111/j.1556-4029.2010.01424.x" },
+    ],
   },
 ];
 
@@ -82,15 +96,22 @@ export function Lineage() {
                   {p.title}
                 </h3>
                 <p className="mt-2 text-sm leading-relaxed text-foreground/75">{p.body}</p>
-                {p.cite && (
-                  <a
-                    href={p.cite.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-auto pt-3 text-xs text-muted underline decoration-border underline-offset-2 transition hover:text-accent hover:decoration-accent"
-                  >
-                    {p.cite.label} ↗
-                  </a>
+                {p.cites && (
+                  <div className="mt-auto flex flex-col gap-1 pt-3">
+                    {p.cites.map((c) => (
+                      <a
+                        key={c.href}
+                        href={c.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-muted underline decoration-border underline-offset-2 transition hover:text-accent hover:decoration-accent"
+                      >
+                        {c.label}{" "}
+                        <span aria-hidden>↗</span>
+                        <span className="sr-only">(opens in new tab)</span>
+                      </a>
+                    ))}
+                  </div>
                 )}
               </div>
             ))}

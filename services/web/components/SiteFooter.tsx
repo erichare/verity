@@ -99,7 +99,7 @@ export function SiteFooter({
             <span className="accent-text">Verity</span>
           </p>
           <p className="mt-3 text-xs leading-relaxed text-muted">
-            The representation reports a calibrated likelihood ratio; it never makes the
+            Verity reports a calibrated likelihood ratio; it never makes the
             decision. Not a claim about the error rate of forensic examination, which remains
             unknown.
           </p>

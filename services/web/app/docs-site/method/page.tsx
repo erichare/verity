@@ -369,7 +369,8 @@ export default function MethodPage() {
             Verity turns a pair of 3-D surface scans into a calibrated likelihood ratio — and shows
             its work at every step. The <strong className="text-foreground">same pipeline</strong>{" "}
             weighs three different kinds of mark; swap between them to see three real, calibrated
-            verdicts from one algorithm — then follow the entire pipeline, step by step, on a bullet.
+            likelihood ratios from one algorithm — then follow the entire pipeline, step by step, on
+            a bullet.
           </p>
         </section>
 
@@ -388,7 +389,8 @@ export default function MethodPage() {
           <p className="mt-3 max-w-2xl text-sm leading-relaxed text-foreground/80 sm:text-base">
             Here is the entire machine on a real Hamby-252 bullet — six steps from raw scan to
             calibrated evidence. Flip between two bullets fired from <em>the same</em> firearm and two
-            from <em>different</em> firearms, and watch the same algorithm reach opposite conclusions.
+            from <em>different</em> firearms, and watch the same algorithm report opposite weights of
+            evidence.
           </p>
 
           <div className="mt-6">
@@ -546,7 +548,7 @@ export default function MethodPage() {
                 className="h-52"
               />
               <p className="mt-1 px-1 text-xs text-muted">
-                {cal.nKm} same-source · {cal.nKnm} different-source reference pairs · AUC {cal.auc} · Cllr {cal.cllr}
+                {cal.nKm.toLocaleString("en-US")} same-source · {cal.nKnm.toLocaleString("en-US")} different-source reference pairs · AUC {cal.auc} · Cllr {cal.cllr}
               </p>
             </Frame>
           }
@@ -639,7 +641,7 @@ export default function MethodPage() {
                       frozen-benchmark AUC {CARTRIDGE_FROZEN_BENCHMARK.auc.toFixed(3)} (fold
                       mean) · internal source-disjoint reads Cllr{" "}
                       {r.source_disjoint.cllr.toFixed(2)}, AUC{" "}
-                      {r.source_disjoint.auc.toFixed(3)} — with only {r.n_km} same-source
+                      {r.source_disjoint.auc.toFixed(3)} — with only {r.n_km.toLocaleString("en-US")} same-source
                       pairs, per-fold AUC is unstable across protocols
                     </p>
                   </>
@@ -654,7 +656,7 @@ export default function MethodPage() {
                       </span>
                     </div>
                     <p className="mt-1 text-xs text-muted">
-                      AUC {r.source_disjoint.auc.toFixed(3)} · {r.n_km} same-source pairs ·{" "}
+                      AUC {r.source_disjoint.auc.toFixed(3)} · {r.n_km.toLocaleString("en-US")} same-source pairs ·{" "}
                       {r.source_disjoint.n_folds} folds
                     </p>
                   </>
@@ -662,6 +664,13 @@ export default function MethodPage() {
                 <p className="mt-auto border-t border-border pt-3 text-[11px] leading-snug text-foreground/70">
                   {r.reference}
                   <span className="mt-1 block text-muted">vs. specialist: {r.specialist}</span>
+                  <span className="mt-1 block text-muted">
+                    Specialists still lead on their home studies; Verity&rsquo;s contribution is the
+                    calibrated, bounded LR layer.{" "}
+                    <a href="/why#benchmarks" className="text-accent hover:underline">
+                      See the head-to-head tables →
+                    </a>
+                  </span>
                 </p>
               </div>
             ))}

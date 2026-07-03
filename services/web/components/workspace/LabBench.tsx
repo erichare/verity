@@ -56,9 +56,32 @@ export function LabBench({
   const hasSignatures = !!result.signatures;
   const hasCalibration = !!result.calibration;
 
+  // Honest-calibration disclosure: when we know the ground-truth relation (gallery
+  // pairs carry it) and the LR points the *other* way, say so plainly rather than
+  // hiding it. A weak LR on a known different-source pair is calibration working, not
+  // a bug — the whole promise is a weight of evidence, not a verdict.
+  const lrSaysSame = report.log10_lr > 0;
+  const groundTruthMismatch =
+    (result.relation === "KNM" && lrSaysSame) || (result.relation === "KM" && !lrSaysSame);
+
   return (
     <div className="space-y-5">
       <Header aLabel={aLabel} bLabel={bLabel} result={result} />
+
+      {groundTruthMismatch && (
+        <Beat show={step >= 4}>
+          <p className="rounded-lg border border-brass/30 bg-brass/[0.06] p-3 text-xs leading-relaxed text-foreground/80">
+            This is a known{" "}
+            <strong className="text-foreground">
+              {result.relation === "KNM" ? "different-source" : "same-source"}
+            </strong>{" "}
+            pair, yet the likelihood ratio leans the other way — weakly. That is what honest
+            calibration looks like: Verity reports the weight of evidence the surfaces actually
+            carry, not the answer you already know. A weak, near-1 LR is the calibrated system
+            declining to overclaim.
+          </p>
+        </Beat>
+      )}
 
       {hasSurfaces && (
         <Beat show={step >= 1}>

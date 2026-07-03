@@ -156,6 +156,7 @@ export const REFERENCES: Reference[] = [
     venue: "AFTE Journal 41(2), 99–110",
     group: "standards",
     url: "https://afte.org/resources/searchable-journal-index",
+    urlUnverified: true,
     relevance:
       "The Hamby 10-barrel test sets (e.g. 252, 173) — the canonical bullet benchmark Verity is validated on.",
   },

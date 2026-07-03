@@ -128,7 +128,7 @@ function DomainCard({ g }: { g: DomainGroup }) {
                   <td className="px-4 py-2.5 sm:px-5">
                     <div className="font-medium text-foreground">{s.study}</div>
                     <div className="text-[11px] text-muted">
-                      {s.nKm} KM · {s.nKnm} KNM
+                      {s.nKm.toLocaleString("en-US")} KM · {s.nKnm.toLocaleString("en-US")} KNM
                     </div>
                     {s.verityScorer && (
                       <div className="text-[11px] text-muted">Verity = {s.verityScorer}</div>
@@ -194,7 +194,7 @@ export function Benchmarks() {
                     <td className="px-4 py-2.5 sm:px-5">
                       <div className="font-medium text-foreground">{s.study}</div>
                       <div className="text-[11px] text-muted">
-                        {s.nKm} KM · {s.nKnm} KNM
+                        {s.nKm.toLocaleString("en-US")} KM · {s.nKnm.toLocaleString("en-US")} KNM
                       </div>
                     </td>
                     <td className="px-2 py-2.5 text-center font-mono text-sm text-foreground/80 sm:px-3">

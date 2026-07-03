@@ -163,7 +163,10 @@ export default function WhyPage() {
         </Reveal>
 
         <Reveal className="mt-16">
-          <h2 className="font-display text-2xl font-medium text-foreground sm:text-3xl">
+          <h2
+            id="benchmarks"
+            className="scroll-mt-24 font-display text-2xl font-medium text-foreground sm:text-3xl"
+          >
             Measured against the specialists, on their home turf
           </h2>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-foreground/80">
@@ -217,8 +220,34 @@ export default function WhyPage() {
             The four gaps
           </h2>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-foreground/80">
-            Two decades of review — the National Research Council (2009) and PCAST (2016) — and recent
-            work by Cuellar et&nbsp;al. (2024) converge on the same shortfalls.
+            Two decades of review — the{" "}
+            <a
+              href="https://doi.org/10.17226/12589"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline decoration-border underline-offset-2 transition hover:text-accent hover:decoration-accent"
+            >
+              National Research Council (2009)
+            </a>{" "}
+            and{" "}
+            <a
+              href="https://obamawhitehouse.archives.gov/sites/default/files/microsites/ostp/PCAST/pcast_forensic_science_report_final.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline decoration-border underline-offset-2 transition hover:text-accent hover:decoration-accent"
+            >
+              PCAST (2016)
+            </a>{" "}
+            — and recent work by{" "}
+            <a
+              href="https://doi.org/10.1093/lpr/mgae015"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline decoration-border underline-offset-2 transition hover:text-accent hover:decoration-accent"
+            >
+              Cuellar et&nbsp;al. (2024)
+            </a>{" "}
+            converge on the same shortfalls.
           </p>
         </Reveal>
 
@@ -232,8 +261,16 @@ export default function WhyPage() {
           <Gap n="02" title="A likelihood ratio, not a score">
             A random-forest matchscore, a CMC count, a U-statistic — none is a weight of evidence. The
             reportable answer should be a <em>calibrated</em> likelihood ratio with a characterized cost
-            (Cllr), the standard from forensic speaker comparison (Brümmer &amp; du Preez, 2006). Verity
-            reports exactly that, bounded to what the reference data can support.
+            (Cllr), the standard from forensic speaker comparison (
+            <a
+              href="https://doi.org/10.1016/j.csl.2005.08.001"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline decoration-border underline-offset-2 transition hover:text-accent hover:decoration-accent"
+            >
+              Brümmer &amp; du Preez, 2006
+            </a>
+            ). Verity reports exactly that, bounded to what the reference data can support.
           </Gap>
           <Gap n="03" title="Glass-box, not black-box">
             Recent deep networks beat classical methods on raw discrimination — but emit an

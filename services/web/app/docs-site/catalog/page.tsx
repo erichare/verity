@@ -40,6 +40,7 @@ export default function CatalogPage() {
   const [instruments, setInstruments] = useState<string[]>([]);
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     getStudies().then(setStudies);
@@ -53,6 +54,7 @@ export default function CatalogPage() {
       if (!active) return;
       setScans(r.scans);
       setTotal(r.total);
+      setError(Boolean(r.error));
       setLoading(false);
     });
     return () => {
@@ -117,7 +119,12 @@ export default function CatalogPage() {
             <div>
               <h2 className="font-display text-2xl font-medium text-foreground">Scans</h2>
               <p className="mt-1 text-sm text-muted">
-                {loading ? "Loading…" : `${total.toLocaleString()} scans`} · 3-D surface scans (X3P) + 1-D tool-mark profiles
+                {loading
+                  ? "Loading…"
+                  : error
+                    ? "Catalog temporarily unavailable"
+                    : `${total.toLocaleString()} scans`}{" "}
+                · 3-D surface scans (X3P) + 1-D tool-mark profiles
               </p>
             </div>
             <div className="flex w-full max-w-md flex-wrap items-center gap-2">
@@ -222,7 +229,9 @@ export default function CatalogPage() {
                 {!loading && scans.length === 0 && (
                   <tr>
                     <td colSpan={6} className="px-4 py-8 text-center text-sm text-muted">
-                      No scans match that filter.
+                      {error
+                        ? "The catalog is temporarily unavailable — try again shortly."
+                        : "No scans match that filter."}
                     </td>
                   </tr>
                 )}

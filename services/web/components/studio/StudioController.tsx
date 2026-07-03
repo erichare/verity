@@ -312,7 +312,7 @@ function SubBar({
               !live && relation === "KM" ? "bg-accent/15 text-accent" : "text-muted hover:text-foreground"
             }`}
           >
-            Match
+            Same source
           </button>
           <button
             type="button"
@@ -324,7 +324,7 @@ function SubBar({
                 : "text-muted hover:text-foreground"
             }`}
           >
-            Non-match
+            Different source
           </button>
         </div>
       </div>
