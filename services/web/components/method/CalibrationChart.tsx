@@ -32,12 +32,15 @@ export function CalibrationChart({
   score,
   lrLabel,
   className,
+  label,
 }: {
   km: number[];
   knm: number[];
   score: number;
   lrLabel: string;
   className?: string;
+  /** Text alternative for the chart (role="img"). */
+  label?: string;
 }) {
   const v = useMemo(() => {
     const [allLo, allHi] = minmax([...km, ...knm, score]);
@@ -65,7 +68,16 @@ export function CalibrationChart({
   const sx = v.scoreX * W;
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className={className} style={{ width: "100%" }}>
+    <svg
+      viewBox={`0 0 ${W} ${H}`}
+      className={className}
+      style={{ width: "100%" }}
+      role="img"
+      aria-label={
+        label ??
+        `Chart: score densities of ${km.length} same-source and ${knm.length} different-source reference pairs, with this comparison's score ${score.toFixed(3)} marked — mapping to a likelihood ratio of ${lrLabel}`
+      }
+    >
       <line x1="0" y1={base} x2={W} y2={base} stroke="var(--border)" strokeWidth={1} />
       <path d={area(v.knmY)} fill="var(--oxblood)" fillOpacity={0.18} stroke="var(--oxblood)" strokeOpacity={0.5} strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
       <path d={area(v.kmY)} fill="var(--accent)" fillOpacity={0.2} stroke="var(--accent)" strokeOpacity={0.7} strokeWidth={1.5} vectorEffect="non-scaling-stroke" />

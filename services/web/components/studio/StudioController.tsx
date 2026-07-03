@@ -28,6 +28,14 @@ export function StudioController() {
   const [uploadOpen, setUploadOpen] = useState(false);
   const [animate, setAnimate] = useState(true);
 
+  // Respect prefers-reduced-motion on arrival: start with the rotation off
+  // (WCAG 2.2.2). The Animate toggle / "A" key still lets the user opt back in.
+  useEffect(() => {
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+      setAnimate(false);
+    }
+  }, []);
+
   const run = upload ?? tourRun(domain, relation) ?? FLAGSHIP;
   const tl = useTimeline(run?.stages.length ?? 1, run?.id ?? "none");
 
@@ -107,7 +115,7 @@ export function StudioController() {
 
       {/* Mobile caption strip (the Case File panel is hidden below lg). */}
       <div className="border-t border-border px-4 py-2 lg:hidden">
-        <p className="font-mono text-[10px] uppercase tracking-wider text-brass">
+        <p className="font-mono text-[10px] uppercase tracking-wider text-brass-text">
           Step {stage.num} / {run.stages.length} · {stage.label}
         </p>
         <p className="mt-0.5 truncate font-display text-sm text-foreground">{stage.caption}</p>
@@ -190,7 +198,7 @@ function Chip({
       onClick={onClick}
       className={`rounded-full border px-3.5 py-1.5 text-xs font-medium transition ${
         active
-          ? "border-brass/40 bg-brass/15 text-brass"
+          ? "border-brass/40 bg-brass/15 text-brass-text"
           : "border-border text-muted hover:text-foreground"
       }`}
     >
@@ -239,7 +247,7 @@ function SubBar({
           title="Toggle the rotating 3-D view (A)"
           className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
             animate
-              ? "border-brass/40 bg-brass/15 text-brass"
+              ? "border-brass/40 bg-brass/15 text-brass-text"
               : "border-border text-muted hover:text-foreground"
           }`}
         >

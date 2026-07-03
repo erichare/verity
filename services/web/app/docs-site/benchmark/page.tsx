@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Reveal } from "@/components/Reveal";
+import { SplitHash } from "@/components/benchmark/SplitHash";
 import {
   benchmarkConfigured,
   getSplits,
@@ -23,10 +24,6 @@ function fmt(x: number | null | undefined, digits = 3): string {
   return x == null ? "—" : x.toFixed(digits);
 }
 
-function shortHash(h: string): string {
-  return `${h.slice(0, 12)}…`;
-}
-
 function Leaderboard({
   split,
   rows,
@@ -36,7 +33,7 @@ function Leaderboard({
 }) {
   if (rows.length === 0) {
     return (
-      <p className="mt-4 text-sm text-foreground/60">
+      <p className="mt-4 text-sm text-foreground/70">
         No scored submissions yet — download the kit below and be the first.
       </p>
     );
@@ -54,7 +51,7 @@ function Leaderboard({
             }`}
           >
             <div className="flex items-baseline gap-2">
-              <span className="font-mono text-sm text-foreground/50">{i + 1}</span>
+              <span className="font-mono text-sm text-muted">{i + 1}</span>
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-sm font-medium">
@@ -77,34 +74,34 @@ function Leaderboard({
                     </span>
                   )}
                 </div>
-                <div className="text-xs text-foreground/50">{s.submitter}</div>
+                <div className="text-xs text-muted">{s.submitter}</div>
               </div>
             </div>
             <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 border-t border-border/50 pt-3">
               <div>
-                <dt className="text-xs text-foreground/50">Calibration loss</dt>
+                <dt className="text-xs text-muted">Calibration loss</dt>
                 <dd className="font-mono text-sm font-semibold accent-text">
                   {s.calibration_loss >= 0 ? "+" : ""}
                   {fmt(s.calibration_loss)}
                 </dd>
               </div>
               <div>
-                <dt className="text-xs text-foreground/50">Cllr</dt>
+                <dt className="text-xs text-muted">Cllr</dt>
                 <dd className="font-mono text-sm">
                   {fmt(s.cllr)}
-                  <span className="text-foreground/40"> ±{fmt(s.cllr_std, 2)}</span>
+                  <span className="text-muted"> ±{fmt(s.cllr_std, 2)}</span>
                 </dd>
               </div>
               <div>
-                <dt className="text-xs text-foreground/50">Cllr_min</dt>
+                <dt className="text-xs text-muted">Cllr_min</dt>
                 <dd className="font-mono text-sm text-foreground/70">{fmt(s.cllr_min)}</dd>
               </div>
               <div>
-                <dt className="text-xs text-foreground/50">AUC</dt>
+                <dt className="text-xs text-muted">AUC</dt>
                 <dd className="font-mono text-sm text-foreground/70">{fmt(s.auc)}</dd>
               </div>
             </dl>
-            <div className="mt-2 text-xs text-foreground/50">
+            <div className="mt-2 text-xs text-muted">
               {new Date(s.created_at).toISOString().slice(0, 10)}
             </div>
           </li>
@@ -114,17 +111,20 @@ function Leaderboard({
       {/* md+: the full leaderboard table (640px fits without horizontal scroll). */}
       <div className="mt-4 hidden overflow-x-auto md:block">
         <table className="w-full min-w-[640px] border-collapse text-left">
+        <caption className="sr-only">
+          Leaderboard for {split.title} — submissions ranked by total Cllr
+        </caption>
         <thead>
-          <tr className="border-b border-border text-xs uppercase tracking-wider text-foreground/50">
-            <th className="px-2 py-2 sm:px-3">#</th>
-            <th className="px-2 py-2 sm:px-3">Method</th>
-            <th className="px-2 py-2 text-center sm:px-3">
-              Cllr <span className="normal-case text-foreground/40">(rank)</span>
+          <tr className="border-b border-border text-xs uppercase tracking-wider text-muted">
+            <th scope="col" className="px-2 py-2 sm:px-3">#</th>
+            <th scope="col" className="px-2 py-2 sm:px-3">Method</th>
+            <th scope="col" className="px-2 py-2 text-center sm:px-3">
+              Cllr <span className="normal-case text-muted">(rank)</span>
             </th>
-            <th className="px-2 py-2 text-center sm:px-3">Cllr_min</th>
-            <th className="px-2 py-2 text-center accent-text sm:px-3">Calibration loss</th>
-            <th className="px-2 py-2 text-center sm:px-3">AUC</th>
-            <th className="px-2 py-2 text-right sm:px-3">Date</th>
+            <th scope="col" className="px-2 py-2 text-center sm:px-3">Cllr_min</th>
+            <th scope="col" className="px-2 py-2 text-center accent-text sm:px-3">Calibration loss</th>
+            <th scope="col" className="px-2 py-2 text-center sm:px-3">AUC</th>
+            <th scope="col" className="px-2 py-2 text-right sm:px-3">Date</th>
           </tr>
         </thead>
         <tbody>
@@ -133,7 +133,7 @@ function Leaderboard({
               key={`${s.submitter}-${s.created_at}`}
               className={`border-b border-border/50 ${s.is_reference ? "bg-accent/5" : ""}`}
             >
-              <td className="px-2 py-2.5 font-mono text-sm text-foreground/50 sm:px-3">{i + 1}</td>
+              <td className="px-2 py-2.5 font-mono text-sm text-muted sm:px-3">{i + 1}</td>
               <td className="px-2 py-2.5 sm:px-3">
                 <div className="text-sm font-medium">
                   {s.url ? (
@@ -154,11 +154,11 @@ function Leaderboard({
                     </span>
                   )}
                 </div>
-                <div className="text-xs text-foreground/50">{s.submitter}</div>
+                <div className="text-xs text-muted">{s.submitter}</div>
               </td>
               <td className="px-2 py-2.5 text-center font-mono text-sm sm:px-3">
                 {fmt(s.cllr)}
-                <span className="text-foreground/40"> ±{fmt(s.cllr_std, 2)}</span>
+                <span className="text-muted"> ±{fmt(s.cllr_std, 2)}</span>
               </td>
               <td className="px-2 py-2.5 text-center font-mono text-sm text-foreground/70 sm:px-3">
                 {fmt(s.cllr_min)}
@@ -170,7 +170,7 @@ function Leaderboard({
               <td className="px-2 py-2.5 text-center font-mono text-sm text-foreground/70 sm:px-3">
                 {fmt(s.auc)}
               </td>
-              <td className="px-2 py-2.5 text-right text-xs text-foreground/50 sm:px-3">
+              <td className="px-2 py-2.5 text-right text-xs text-muted sm:px-3">
                 {new Date(s.created_at).toISOString().slice(0, 10)}
               </td>
             </tr>
@@ -198,31 +198,31 @@ function SplitCard({
       <section className="rounded-2xl border border-border bg-card/60 p-6 sm:p-8">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h2 className="text-xl font-semibold">{split.title}</h2>
-          <span className="rounded-full border border-border px-3 py-1 text-xs text-foreground/60">
+          <span className="rounded-full border border-border px-3 py-1 text-xs text-foreground/70">
             {modalityLabel(split.modality)}
           </span>
         </div>
         <dl className="mt-4 grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-5">
           <div>
-            <dt className="text-foreground/50">Pairs</dt>
+            <dt className="text-muted">Pairs</dt>
             <dd className="font-mono">{split.n_pairs.toLocaleString()}</dd>
           </div>
           <div>
-            <dt className="text-foreground/50">Same-source</dt>
+            <dt className="text-muted">Same-source</dt>
             <dd className="font-mono">{split.n_km.toLocaleString()}</dd>
           </div>
           <div>
-            <dt className="text-foreground/50">Sources</dt>
+            <dt className="text-muted">Sources</dt>
             <dd className="font-mono">{split.n_sources}</dd>
           </div>
           <div>
-            <dt className="text-foreground/50">Frozen folds</dt>
+            <dt className="text-muted">Frozen folds</dt>
             <dd className="font-mono">{split.n_folds}</dd>
           </div>
           <div>
-            <dt className="text-foreground/50">Split hash</dt>
-            <dd className="font-mono" title={split.split_hash}>
-              {shortHash(split.split_hash)}
+            <dt className="text-muted">Split hash</dt>
+            <dd className="font-mono">
+              <SplitHash hash={split.split_hash} />
             </dd>
           </div>
         </dl>
@@ -237,13 +237,13 @@ function SplitCard({
             Download replication kit ↓
           </a>
           <details className="group">
-            <summary className="cursor-pointer text-sm text-foreground/60 transition hover:text-foreground">
+            <summary className="cursor-pointer text-sm text-foreground/70 transition hover:text-foreground">
               Submit your method
             </summary>
             <pre className="mt-3 overflow-x-auto rounded-lg border border-border bg-background/60 p-4 text-xs leading-relaxed text-foreground/80">
               {curl}
             </pre>
-            <p className="mt-2 max-w-2xl text-xs text-foreground/50">
+            <p className="mt-2 max-w-2xl text-xs text-muted">
               One finite, positive likelihood ratio per frozen pair. The kit&apos;s{" "}
               <code className="font-mono">evaluate.py</code> scores your submission offline with
               the identical code — what you see locally is what the leaderboard records.
@@ -303,8 +303,8 @@ export default async function BenchmarkPage() {
             },
           ].map((c) => (
             <div key={c.t} className="rounded-xl border border-border bg-card/40 p-5">
-              <h3 className="text-sm font-semibold">{c.t}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-foreground/60">{c.d}</p>
+              <h2 className="text-sm font-semibold">{c.t}</h2>
+              <p className="mt-2 text-sm leading-relaxed text-foreground/70">{c.d}</p>
             </div>
           ))}
         </div>
@@ -313,7 +313,7 @@ export default async function BenchmarkPage() {
       <div className="mt-12 space-y-8">
         {splits.length === 0 ? (
           <Reveal>
-            <div className="rounded-2xl border border-border bg-card/40 p-8 text-center text-foreground/60">
+            <div className="rounded-2xl border border-border bg-card/40 p-8 text-center text-foreground/70">
               {benchmarkConfigured
                 ? "The frozen splits are being published — check back shortly."
                 : "Benchmark data is not configured for this deployment."}
@@ -327,7 +327,7 @@ export default async function BenchmarkPage() {
       </div>
 
       <Reveal>
-        <p className="mt-12 max-w-3xl text-sm leading-relaxed text-foreground/50">
+        <p className="mt-12 max-w-3xl text-sm leading-relaxed text-muted">
           The ground-truth labels are public (the underlying scans are open data), so this is a
           replication benchmark, not a blind contest: the leaderboard ranks by total Cllr — the
           proper scoring rule — and the submission contract asks for source-disjoint

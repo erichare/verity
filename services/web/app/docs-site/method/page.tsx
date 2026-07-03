@@ -218,10 +218,20 @@ function buildPanel(key: ModalityKey, others?: Others): ModalityPanel | null {
       viz: (
         <div className="grid grid-cols-2 gap-3">
           <Frame className="h-48 sm:h-56">
-            <SurfaceViewer grid={scanA} regions={c.bandsA} className="h-full w-full" />
+            <SurfaceViewer
+              grid={scanA}
+              regions={c.bandsA}
+              label={`3-D rendering of cartridge breech-face scan A with ${c.bandsA.length} congruent matching cells highlighted; drag to rotate`}
+              className="h-full w-full"
+            />
           </Frame>
           <Frame className="h-48 sm:h-56">
-            <SurfaceViewer grid={scanB} regions={c.bandsB} className="h-full w-full" />
+            <SurfaceViewer
+              grid={scanB}
+              regions={c.bandsB}
+              label={`3-D rendering of cartridge breech-face scan B with ${c.bandsB.length} congruent matching cells highlighted; drag to rotate`}
+              className="h-full w-full"
+            />
           </Frame>
         </div>
       ),
@@ -387,6 +397,7 @@ export default function MethodPage() {
                 <button
                   key={k}
                   onClick={() => setMode(k)}
+                  aria-pressed={mode === k}
                   className={`rounded-full px-4 py-1.5 font-medium transition ${
                     mode === k ? "bg-primary text-[#f4f1ea]" : "text-foreground/70 hover:text-foreground"
                   }`}
@@ -417,7 +428,11 @@ export default function MethodPage() {
           title="Every mark is a surface"
           viz={
             <Frame className="h-72">
-              <SurfaceViewer grid={ex.scan} className="h-full w-full" />
+              <SurfaceViewer
+                grid={ex.scan}
+                label="3-D rendering of the raw X3P topography scan of a bullet land, including its gross curvature; drag to rotate"
+                className="h-full w-full"
+              />
             </Frame>
           }
         >
@@ -436,13 +451,21 @@ export default function MethodPage() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Frame className="aspect-square">
-                  <Heatmap grid={ex.leveled} className="h-full w-full" />
+                  <Heatmap
+                    grid={ex.leveled}
+                    label="Heatmap of the leveled scan — form removed, waviness still present"
+                    className="h-full w-full"
+                  />
                 </Frame>
                 <p className="mt-1.5 text-center text-xs text-muted">leveled scan</p>
               </div>
               <div>
                 <Frame className="aspect-square">
-                  <Heatmap grid={ex.roughness} className="h-full w-full" />
+                  <Heatmap
+                    grid={ex.roughness}
+                    label="Heatmap of the individualizing roughness band after the ISO 16610 band-pass filter"
+                    className="h-full w-full"
+                  />
                 </Frame>
                 <p className="mt-1.5 text-center text-xs text-muted">individualizing band</p>
               </div>
@@ -636,7 +659,7 @@ export default function MethodPage() {
                     </p>
                   </>
                 )}
-                <p className="mt-auto border-t border-border pt-3 text-[11px] leading-snug text-foreground/60">
+                <p className="mt-auto border-t border-border pt-3 text-[11px] leading-snug text-foreground/70">
                   {r.reference}
                   <span className="mt-1 block text-muted">vs. specialist: {r.specialist}</span>
                 </p>

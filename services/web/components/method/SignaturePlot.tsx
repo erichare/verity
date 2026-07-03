@@ -15,7 +15,16 @@ function extent(values: number[]): [number, number] {
 
 /** A single 1-D striation signature drawn as an elegant line with a soft area fill,
  *  drawing itself on when scrolled into view. */
-export function SignaturePlot({ values, className }: { values: number[]; className?: string }) {
+export function SignaturePlot({
+  values,
+  className,
+  label,
+}: {
+  values: number[];
+  className?: string;
+  /** Text alternative for the chart (role="img"). */
+  label?: string;
+}) {
   const ref = useRef<SVGSVGElement>(null);
   const [shown, setShown] = useState(false);
 
@@ -50,7 +59,18 @@ export function SignaturePlot({ values, className }: { values: number[]; classNa
   const area = `${line} L ${W},${H} L 0,${H} Z`;
 
   return (
-    <svg ref={ref} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className={className} style={{ width: "100%" }}>
+    <svg
+      ref={ref}
+      viewBox={`0 0 ${W} ${H}`}
+      preserveAspectRatio="none"
+      className={className}
+      style={{ width: "100%" }}
+      role="img"
+      aria-label={
+        label ??
+        `Chart: a 1-D striation signature of ${values.length} samples — the height profile the pipeline extracts from the scan and compares`
+      }
+    >
       <defs>
         <linearGradient id="sig-fill" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.28" />

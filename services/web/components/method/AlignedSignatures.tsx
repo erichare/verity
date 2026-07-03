@@ -30,12 +30,15 @@ export function AlignedSignatures({
   bandsA,
   bandsB,
   className,
+  label,
 }: {
   a: number[];
   b: number[];
   bandsA: Band[];
   bandsB: Band[];
   className?: string;
+  /** Text alternative for the chart (role="img"). */
+  label?: string;
 }) {
   const ref = useRef<SVGSVGElement>(null);
   const [shown, setShown] = useState(false);
@@ -88,7 +91,17 @@ export function AlignedSignatures({
   const m = Math.min(bandsA.length, bandsB.length);
 
   return (
-    <svg ref={ref} viewBox={`0 0 ${W} ${H}`} className={className} style={{ width: "100%" }}>
+    <svg
+      ref={ref}
+      viewBox={`0 0 ${W} ${H}`}
+      className={className}
+      style={{ width: "100%" }}
+      role="img"
+      aria-label={
+        label ??
+        `Chart: the 1-D striation signatures of mark A and mark B drawn on one shared scale, with ${m} matched region${m === 1 ? "" : "s"} highlighted and linked between the two traces`
+      }
+    >
       {bandsA.map((r, i) => (
         <rect key={`a${i}`} x={xs(r.x_frac * a.length)} y={aY0} width={xs(r.w_frac * a.length)} height={laneH} fill="var(--brass)" fillOpacity={0.16} style={fade(0.7)} />
       ))}

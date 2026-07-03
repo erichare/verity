@@ -27,7 +27,16 @@ function ramp(t: number): [number, number, number] {
 // (the buffer is ~1:1 with the on-screen size, so the browser barely rescales it).
 const TARGET = 480; // backing-buffer long side, in px
 
-export function Heatmap({ grid, className }: { grid: number[][]; className?: string }) {
+export function Heatmap({
+  grid,
+  className,
+  label,
+}: {
+  grid: number[][];
+  className?: string;
+  /** Text alternative for the rendered canvas (role="img"). */
+  label?: string;
+}) {
   const ref = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -79,6 +88,8 @@ export function Heatmap({ grid, className }: { grid: number[][]; className?: str
       ref={ref}
       className={className}
       style={{ width: "100%", height: "100%", display: "block" }}
+      role="img"
+      aria-label={label ?? "Heatmap of the scanned surface's height field"}
     />
   );
 }

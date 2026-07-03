@@ -46,6 +46,11 @@ export default function RootLayout({
       className={`${inter.variable} ${newsreader.variable} ${plexMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        {/* Scroll-reveal needs JS to add .reveal-in; without it, content must never
+            stay hidden at opacity 0 — show everything for no-JS readers. */}
+        <noscript>
+          <style>{`.reveal { opacity: 1 !important; transform: none !important; }`}</style>
+        </noscript>
         <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>

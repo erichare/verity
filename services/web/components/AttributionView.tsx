@@ -1,7 +1,9 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { useState } from "react";
 import type { AttributionRegion } from "@/lib/types";
+import { usePrefersReducedMotion } from "@/lib/usePrefersReducedMotion";
 
 const SurfaceViewer = dynamic(() => import("@/components/three/SurfaceViewer"), {
   ssr: false,
@@ -23,6 +25,10 @@ export default function AttributionView({
 }) {
   const striated = domain === "striated";
   const n = regions.length;
+  const reducedMotion = usePrefersReducedMotion();
+  // null = follow the user's reduced-motion preference; the toggle overrides it.
+  const [animateOverride, setAnimateOverride] = useState<boolean | null>(null);
+  const animate = animateOverride ?? !reducedMotion;
 
   const heading = striated
     ? `Attribution — ${n} consecutive matching stria${n === 1 ? "" : "e"}`
@@ -37,15 +43,45 @@ export default function AttributionView({
 
   return (
     <div className="space-y-3 border-t border-border pt-5">
-      <p className="text-sm font-medium text-foreground">{heading}</p>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-sm font-medium text-foreground">{heading}</p>
+        <button
+          type="button"
+          onClick={() => setAnimateOverride(!animate)}
+          aria-pressed={animate}
+          title="Toggle the rotating 3-D view"
+          className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition ${
+            animate
+              ? "border-brass/40 bg-brass/15 text-brass-text"
+              : "border-border text-muted hover:text-foreground"
+          }`}
+        >
+          <span className={animate ? "animate-spin-slow" : ""} aria-hidden>
+            ⟳
+          </span>
+          Animate
+        </button>
+      </div>
       <p className="text-xs text-muted">{blurb}</p>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="flex flex-col items-center gap-1.5">
-          <SurfaceViewer grid={previews.a} regions={regions} className={VIEWER_CLASS} />
+          <SurfaceViewer
+            grid={previews.a}
+            regions={regions}
+            autoRotate={animate}
+            label={`3-D rendering of ${labelA.toLowerCase()}; drag to rotate`}
+            className={VIEWER_CLASS}
+          />
           <span className="text-xs text-muted">{labelA}</span>
         </div>
         <div className="flex flex-col items-center gap-1.5">
-          <SurfaceViewer grid={previews.b} regions={regionsB} className={VIEWER_CLASS} />
+          <SurfaceViewer
+            grid={previews.b}
+            regions={regionsB}
+            autoRotate={animate}
+            label={`3-D rendering of ${labelB.toLowerCase()}; drag to rotate`}
+            className={VIEWER_CLASS}
+          />
           <span className="text-xs text-muted">{labelB}</span>
         </div>
       </div>
