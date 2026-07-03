@@ -1599,7 +1599,7 @@ provides-extras = ["dev"]
 
 [[package]]
 name = "verity-x3p"
-version = "0.1.0"
+version = "0.2.0"
 source = { directory = "../../bindings/python" }
 dependencies = [
     { name = "numpy" },

@@ -38,3 +38,6 @@ packages = ["verity_api"]
 
 [tool.hatch.build.targets.wheel.force-include]
 "verity_api/references" = "verity_api/references"
+# The self-hosted Scalar API-reference bundle (pinned; served at /static so the /scalar
+# docs load no external CDN script — see main.py). Ships in the wheel like the references.
+"verity_api/static" = "verity_api/static"

@@ -35,7 +35,10 @@ import verity_x3p
 from fastapi import APIRouter, FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from verity import land_trace
 from verity.compare import compare_bullets_with_previews, compare_with_previews
@@ -81,6 +84,44 @@ def _engine_version() -> str:
         return "unknown"
 
 
+class HeadAsGetMiddleware:
+    """Pure-ASGI: answer a ``HEAD`` by routing it as ``GET`` and dropping the body.
+
+    Starlette routes ``HEAD`` only where a route explicitly declares it, so a plain
+    ``@app.get`` 405s on ``HEAD`` — surprising for monitors and idiomatically wrong
+    (RFC 9110: a resource that answers ``GET`` should answer ``HEAD`` with the same
+    headers and no body). This middleware rewrites the method to ``GET`` for routing,
+    then strips the response body while preserving the status and headers.
+    """
+
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http" or scope.get("method") != "HEAD":
+            await self.app(scope, receive, send)
+            return
+
+        get_scope = {**scope, "method": "GET"}
+        body_done = False
+
+        async def send_without_body(message: Message) -> None:
+            nonlocal body_done
+            if message["type"] == "http.response.body":
+                # Emit ONE empty terminal body frame, then swallow the rest: the wrapped app
+                # may stream several chunks (and a final empty frame), but a HEAD response
+                # carries no body. The Content-Length from the start frame is preserved as
+                # sent — correct for HEAD (the length the GET body *would* have been).
+                if body_done:
+                    return
+                body_done = True
+                await send({"type": "http.response.body", "body": b"", "more_body": False})
+                return
+            await send(message)
+
+        await self.app(get_scope, receive, send_without_body)
+
+
 def _init_sentry() -> None:
     """Env-gated error monitoring: initialize Sentry only when ``SENTRY_DSN`` is set,
     so local dev, tests, and CI stay a silent no-op. Tracing is off by default
@@ -110,8 +151,15 @@ _init_sentry()
 
 _DESCRIPTION = """\
 **Verity** — calibrated, bounded **likelihood ratios** for forensic surface
-comparison, across **striated** marks (bullet lands, toolmarks) and **impressed**
-marks (cartridge breech faces).
+comparison, across three calibrated domains: **striated** marks (bullet lands),
+**impressed** marks (cartridge breech faces), and **toolmark** marks (striated
+toolmarks, e.g. screwdriver marks).
+
+Each domain calibrates against its own named reference population, so the mark type
+you declare (`domain`) selects the reference the likelihood ratio is calibrated on.
+Declaring the wrong domain — e.g. a striated toolmark sent as `striated` (bullet
+lands) — calibrates the score against the wrong population and yields an invalid LR;
+pick the domain that matches the mark.
 
 Upload X3P 3-D topography scans; the engine decodes them with the native
 `verity_x3p` codec, scores the comparison, calibrates the score to a likelihood
@@ -142,7 +190,7 @@ at **`/mcp`** — streamable HTTP, stateless — exposing `compare_marks`, `dete
 `calibrate_score`, `list_references`, `scorer_config`, and `service_health`. Scans are
 passed inline as base64-encoded X3P (a hosted server can't read the agent's local files).
 
-Web app: <https://verity.codes> · Method & references: <https://verity.codes/#science>
+Web app: <https://verity.codes> · Method & references: <https://docs.verity.codes/method>
 """
 
 _TAGS = [
@@ -150,6 +198,48 @@ _TAGS = [
     {"name": "meta", "description": "Service health and mark-type detection."},
     {"name": "v1", "description": "Versioned API: comparison with inspectable intermediates."},
 ]
+
+# The calibration domain: one enum value per calibrated reference population. The value
+# you pass selects the reference the LR is calibrated on, so it must match the mark type —
+# a striated toolmark sent as ``striated`` (bullet lands) calibrates against the wrong
+# population. Shared across every route that takes a ``domain`` so the OpenAPI schema is
+# self-documenting (the enum + this guidance surface in /scalar and the generated clients).
+_DOMAIN_VALUES = ["striated", "impressed", "toolmark"]
+_DOMAIN_DESCRIPTION = (
+    "Calibration domain — selects the reference population the likelihood ratio is "
+    "calibrated on; must match the mark type. `striated` = bullet lands; `impressed` = "
+    "cartridge breech faces; `toolmark` = striated toolmarks (e.g. screwdriver marks)."
+)
+
+
+def _detail_response(description: str) -> dict:
+    """An OpenAPI ``responses`` entry for a ``{"detail": …}`` error body."""
+    return {
+        "description": description,
+        "content": {
+            "application/json": {
+                "schema": {"type": "object", "properties": {"detail": {"type": "string"}}}
+            }
+        },
+    }
+
+
+# The upload endpoints reject over-limit and non-X3P bodies before scoring, and rate-limit
+# per client IP — declared here so /scalar and generated clients see the real error surface.
+_UPLOAD_ERROR_RESPONSES = {
+    413: _detail_response("Payload too large (per-file, total-request, or file-count limit)."),
+    415: _detail_response("Unsupported media type — the upload is not a readable X3P."),
+    429: _detail_response("Rate limit exceeded; a `Retry-After` header gives the cool-down."),
+}
+
+# The /compare endpoint appends this to its description: honest oversized uploads may be
+# rejected by the reverse proxy (Cloudflare) with a non-JSON error before they reach the app.
+_PROXY_CAP_NOTE = (
+    "\n\nNote: requests larger than the reverse-proxy request-body cap "
+    "(~100 MB, the Cloudflare proxy limit) may be rejected upstream with a non-JSON "
+    '(HTML) `413` before reaching the app — so an oversized upload can fail without the '
+    'JSON `{"detail": …}` body the app returns for limits it enforces itself.'
+)
 
 
 def _warm_caches() -> None:
@@ -213,13 +303,15 @@ class DetectResponse(BaseModel):
 
 
 # The Next.js UI is a separate origin, so the browser needs CORS. Defaults cover
-# local dev (localhost / 127.0.0.1 :3000); override with VERITY_CORS_ORIGINS
-# (comma-separated) for a deployed front end.
+# local dev (localhost / 127.0.0.1 :3000) plus the deployed docs site
+# (docs.verity.codes, whose API-reference tries this API cross-origin); override
+# with VERITY_CORS_ORIGINS (comma-separated) to add or replace the deployed origins.
+_DEFAULT_CORS_ORIGINS = (
+    "http://localhost:3000,http://127.0.0.1:3000,https://docs.verity.codes"
+)
 _cors_origins = [
     o.strip()
-    for o in os.environ.get(
-        "VERITY_CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000"
-    ).split(",")
+    for o in os.environ.get("VERITY_CORS_ORIGINS", _DEFAULT_CORS_ORIGINS).split(",")
     if o.strip()
 ]
 app.add_middleware(
@@ -313,21 +405,45 @@ async def _enforce_limits(request: Request, call_next):
     ):
         return JSONResponse(status_code=413, content={"detail": "request body too large"})
     if request.url.path in _RATE_LIMITED_PATHS and not _rate_ok(request):
-        return JSONResponse(status_code=429, content={"detail": "rate limit exceeded; slow down"})
+        # Retry-After (whole seconds, rounded up) is the sliding-window length: a client
+        # that waits it out is guaranteed the oldest hit has aged out of the bucket.
+        import math
+
+        retry_after = str(max(1, math.ceil(limits.LIMITS.rate_window_s)))
+        return JSONResponse(
+            status_code=429,
+            content={"detail": "rate limit exceeded; slow down"},
+            headers={"Retry-After": retry_after},
+        )
     return await call_next(request)
 
 
 # Security headers on every response (including the early 413/429 returns above, since this
-# middleware is registered later and so wraps the limiter). We deliberately do NOT set a
-# restrictive `default-src` Content-Security-Policy: this app also serves the Scalar API-reference
-# UI at /scalar, which loads its bundle from a CDN — a strict default-src would break it. We set
-# `frame-ancestors 'none'` (the clickjacking-relevant directive) plus the safe transport headers.
+# middleware is registered later and so wraps the limiter). The Scalar API-reference UI at
+# /scalar now loads its bundle from THIS origin (self-hosted at /static, no CDN), so we can
+# lock scripts to `'self'` — no external script host is trusted. `'wasm-unsafe-eval'` is the
+# minimal allowance the Scalar bundle needs (it compiles a small WASM module); styles stay
+# `'unsafe-inline'` because Scalar (Vue) injects inline styles and our theme is an inline
+# <style>; `img-src https:` covers the absolute-URL favicon; `frame-ancestors 'none'` is the
+# anti-clickjacking directive.
+_CSP = (
+    "default-src 'self'; "
+    "script-src 'self' 'wasm-unsafe-eval'; "
+    "style-src 'self' 'unsafe-inline'; "
+    "img-src 'self' data: https:; "
+    "font-src 'self' data:; "
+    "connect-src 'self'; "
+    "worker-src 'self' blob:; "
+    "base-uri 'self'; "
+    "form-action 'self'; "
+    "frame-ancestors 'none'"
+)
 _SECURITY_HEADERS = {
     "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
     "X-Content-Type-Options": "nosniff",
     "X-Frame-Options": "DENY",
     "Referrer-Policy": "no-referrer",
-    "Content-Security-Policy": "frame-ancestors 'none'",
+    "Content-Security-Policy": _CSP,
 }
 
 
@@ -339,9 +455,26 @@ async def _security_headers(request: Request, call_next):
     return response
 
 
+# Added last, so it is the OUTERMOST layer: the HEAD→GET method rewrite happens before
+# routing, the limiter, and the security headers — a HEAD to any GET route resolves to
+# that route's handler and returns its headers with an empty body (idiomatic, RFC 9110).
+app.add_middleware(HeadAsGetMiddleware)
+
+
 @app.exception_handler(limits.UploadRejected)
 async def _on_upload_rejected(_request: Request, exc: limits.UploadRejected) -> JSONResponse:
     return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+
+
+# The uniform ``{"detail": …}`` envelope for HTTP errors is registered on Starlette's
+# parent ``HTTPException`` (not just FastAPI's subclass), so router-level 404/405 — which
+# Starlette raises directly — return the same shape as handler-raised errors, instead of
+# Starlette's bare default. Delegate to FastAPI's default handler for the exact same body.
+@app.exception_handler(StarletteHTTPException)
+async def _on_http_exception(request: Request, exc: StarletteHTTPException) -> JSONResponse:
+    from fastapi.exception_handlers import http_exception_handler
+
+    return await http_exception_handler(request, exc)
 
 
 # Bounded worker pool for the CPU-bound comparison: numpy releases the GIL on the heavy
@@ -433,6 +566,7 @@ app.add_api_route(
     tags=["meta"],
     summary="Suggest a mark type from one scan",
     response_model=DetectResponse,
+    responses=_UPLOAD_ERROR_RESPONSES,
 )
 async def detect(scan: UploadFile = File(...)) -> dict:
     """Suggest a mark type for one uploaded scan, from striation anisotropy — the
@@ -455,6 +589,15 @@ _REFUSAL_NOTE = (
 # resolve the roughness band, or the wrong mark type for this reference. Coverage and
 # signal shortfalls stay as loud warnings — a masked cartridge scan is legitimately
 # sparse, so refusing on coverage would reject valid known-match comparisons.
+#
+# FOLLOW-UP (M16, not implemented here — do NOT reject): the modality guard only
+# distinguishes striated-vs-impressed physics, so a striated *toolmark* sent as
+# domain="striated" (bullet lands) passes the guard and is calibrated against the wrong
+# (bullet-land) reference. `detect_domain` already returns a striation-coherence score; a
+# cheap, safe follow-up would attach a WARN-severity scope note (never a refusal) when a
+# striated-domain scan looks toolmark-like on a coherence/scale heuristic, nudging the user
+# toward domain="toolmark". Left as a warn-only enhancement so it can never reject a valid
+# bullet-land comparison.
 _HARD_REFUSE_CHECKS = frozenset({"resolution", "modality"})
 
 
@@ -726,6 +869,10 @@ _COMPARE_EXAMPLE = {
         "cllr": 0.193,
         "cllr_min": 0.168,
         "auc": 0.984,
+        # These diagnostics are the IN-SAMPLE fit of the deployed reference (optimistic by
+        # construction — not a validation claim). Source-disjoint validation figures are in
+        # docs/headline-numbers.md (https://docs.verity.codes/method).
+        "diagnostics_protocol": "in-sample fit of the deployed reference",
     },
     "attribution": [
         {
@@ -757,16 +904,23 @@ _COMPARE_EXAMPLE = {
     "/compare",
     tags=["compare"],
     summary="Compare two marks → calibrated likelihood-ratio report",
-    responses={200: {"content": {"application/json": {"example": _COMPARE_EXAMPLE}}}},
+    description=(
+        "Compare two marks into a calibrated, bounded **likelihood ratio** with "
+        "region-level attribution. (Lean payload; use `/v1/compare?include=...` for the "
+        "inspectable intermediate computations.)" + _PROXY_CAP_NOTE
+    ),
+    responses={
+        200: {"content": {"application/json": {"example": _COMPARE_EXAMPLE}}},
+        **_UPLOAD_ERROR_RESPONSES,
+    },
 )
 async def compare(
-    domain: str = Form(...),
+    domain: str = Form(
+        ..., description=_DOMAIN_DESCRIPTION, json_schema_extra={"enum": _DOMAIN_VALUES}
+    ),
     mark_a: list[UploadFile] = File(...),
     mark_b: list[UploadFile] = File(...),
 ) -> dict:
-    """Compare two marks into a calibrated, bounded **likelihood ratio** with
-    region-level attribution. (Lean payload; use `/v1/compare?include=...` for the
-    inspectable intermediate computations.)"""
     return await _run_compare(domain, mark_a, mark_b, include=set())
 
 
@@ -779,10 +933,15 @@ v1 = APIRouter(prefix="/v1")
     "/compare",
     tags=["v1"],
     summary="Compare two marks, optionally returning intermediate computations",
-    responses={200: {"content": {"application/json": {"example": _COMPARE_EXAMPLE}}}},
+    responses={
+        200: {"content": {"application/json": {"example": _COMPARE_EXAMPLE}}},
+        **_UPLOAD_ERROR_RESPONSES,
+    },
 )
 async def compare_v1(
-    domain: str = Form(...),
+    domain: str = Form(
+        ..., description=_DOMAIN_DESCRIPTION, json_schema_extra={"enum": _DOMAIN_VALUES}
+    ),
     mark_a: list[UploadFile] = File(...),
     mark_b: list[UploadFile] = File(...),
     include: str | None = Form(None),
@@ -821,10 +980,17 @@ async def compare_v1(
     )
 
 
-@v1.post("/scope", tags=["v1"], summary="Applicability-domain check for one scan")
+@v1.post(
+    "/scope",
+    tags=["v1"],
+    summary="Applicability-domain check for one scan",
+    responses=_UPLOAD_ERROR_RESPONSES,
+)
 async def scope_v1(
     scan: UploadFile = File(...),
-    domain: str = Form(...),
+    domain: str = Form(
+        ..., description=_DOMAIN_DESCRIPTION, json_schema_extra={"enum": _DOMAIN_VALUES}
+    ),
     mode: str = Form("refuse"),
 ) -> dict:
     """Check whether one scan is inside the validated domain for `domain`
@@ -844,9 +1010,12 @@ async def scope_v1(
     tags=["v1"],
     summary="Court-ready per-comparison PDF report",
     response_class=Response,
+    responses=_UPLOAD_ERROR_RESPONSES,
 )
 async def compare_report_pdf(
-    domain: str = Form(...),
+    domain: str = Form(
+        ..., description=_DOMAIN_DESCRIPTION, json_schema_extra={"enum": _DOMAIN_VALUES}
+    ),
     mark_a: list[UploadFile] = File(...),
     mark_b: list[UploadFile] = File(...),
     case_id: str | None = Form(None),
@@ -897,7 +1066,8 @@ def references_v1() -> dict:
 
 @v1.get("/references/{reference_id}", tags=["v1"], summary="Provenance for one reference")
 def reference_v1(reference_id: str) -> dict:
-    """Provenance for one reference by id (`striated`, `impressed`, `striated_single`)."""
+    """Provenance for one reference by id (`striated` = bullet lands, `impressed` = cartridge
+    breech faces, `toolmark` = striated toolmarks, `striated_single` = single bullet land)."""
     meta = reference_metadata(reference_id)
     if meta is None:
         raise HTTPException(status_code=404, detail=f"unknown reference {reference_id!r}")
@@ -907,6 +1077,10 @@ def reference_v1(reference_id: str) -> dict:
 app.include_router(v1)
 app.include_router(steps_router)
 
+# Static assets (the self-hosted Scalar bundle). Mounted from the packaged directory so
+# the /scalar docs load their JS same-origin — no CDN, keeping the strict script-src CSP.
+app.mount("/static", StaticFiles(directory=Path(__file__).parent / "static"), name="static")
+
 # Remote MCP endpoint: the same calibrated tools as the stdio server, hosted. The
 # FastMCP app exposes a single route at /mcp; add it to the API router directly (rather
 # than mounting under a prefix) so the JSON-RPC endpoint answers at exactly
@@ -915,20 +1089,34 @@ app.include_router(steps_router)
 app.router.routes.extend(mcp_server.streamable_http_app().routes)
 
 
-_SCALAR_HTML = """<!doctype html>
-<html>
+# Self-hosted Scalar API-reference bundle: the exact pinned `dist/browser/standalone.js`
+# from the npm tarball (NOT the CDN's dynamically-minified artifact, which jsDelivr warns
+# is unsafe to SRI-pin), vendored under verity_api/static and served from THIS origin. This
+# is what lets the CSP above lock scripts to `'self'` — the /scalar page pulls no external JS.
+_SCALAR_VERSION = "1.62.3"
+_SCALAR_BUNDLE_PATH = f"/static/scalar-api-reference-{_SCALAR_VERSION}.js"
+
+_SCALAR_HTML = f"""<!doctype html>
+<html lang="en">
   <head>
     <title>Verity API reference</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Interactive API reference for Verity — calibrated, bounded likelihood ratios for forensic surface comparison (striated, impressed, and toolmark domains)." />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Verity API reference" />
+    <meta property="og:description" content="Calibrated, bounded likelihood ratios for forensic surface comparison — the interactive API reference." />
+    <meta property="og:url" content="https://api.verity.codes/scalar" />
+    <link rel="icon" href="https://verity.codes/icon.svg" type="image/svg+xml" />
     <style>
-      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
       /* Evidence palette — Scalar custom-theme variables (paper-first). theme:none
-         in the config below disables Scalar's built-in presets so these take effect. */
-      :root {
+         in the config below disables Scalar's built-in presets so these take effect.
+         Fonts use system stacks (no external @import) so the page loads no third-party
+         CSS/font hosts and the strict CSP holds. */
+      :root {{
         --scalar-color-1: #13243a;            /* ink */
         --scalar-color-2: #5a6677;            /* muted */
-        --scalar-color-3: #8a93a3;
+        --scalar-color-3: #606976;            /* subtle — WCAG AA (4.9:1 on #f4f1ea) */
         --scalar-color-accent: #0e2a47;       /* navy primary */
         --scalar-background-1: #f4f1ea;       /* canvas / bone */
         --scalar-background-2: #ece7db;       /* panel */
@@ -942,8 +1130,8 @@ _SCALAR_HTML = """<!doctype html>
         --scalar-color-orange: #a9803e;
         --scalar-font: 'Inter', ui-sans-serif, system-ui, sans-serif;
         --scalar-font-code: 'IBM Plex Mono', ui-monospace, monospace;
-      }
-      .dark-mode {
+      }}
+      .dark-mode {{
         --scalar-color-1: #e8e2d4;
         --scalar-color-2: #9aa6b6;
         --scalar-color-accent: #6e97c4;       /* lifted steel — navy is invisible on dark */
@@ -956,15 +1144,22 @@ _SCALAR_HTML = """<!doctype html>
         --scalar-color-green: #c9a063;
         --scalar-color-blue: #6e97c4;
         --scalar-color-red: #c76b6b;
-      }
+      }}
     </style>
   </head>
   <body>
+    <noscript>
+      <p style="font-family: system-ui, sans-serif; max-width: 40rem; margin: 3rem auto; padding: 0 1rem;">
+        This interactive API reference needs JavaScript. The machine-readable OpenAPI
+        schema is available without it at
+        <a href="/openapi.json">/openapi.json</a>.
+      </p>
+    </noscript>
     <script
       id="api-reference"
       data-url="/openapi.json"
-      data-configuration='{"theme":"none","darkMode":false}'></script>
-    <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
+      data-configuration='{{"theme":"none","darkMode":false}}'></script>
+    <script src="{_SCALAR_BUNDLE_PATH}"></script>
   </body>
 </html>"""
 

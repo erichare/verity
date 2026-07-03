@@ -180,10 +180,14 @@ def service_health() -> dict:
 
 @mcp.tool()
 def detect_mark_type(scan_base64: str) -> dict:
-    """Suggest whether a 3-D surface scan is a STRIATED mark (bullet land, toolmark) or an
-    IMPRESSED mark (cartridge breech face), from striation anisotropy. `scan_base64` is the
-    raw bytes of one `.x3p` file, base64-encoded. The mark type selects the calibration
-    reference, so confirm it before comparing."""
+    """Suggest whether a 3-D surface scan is a STRIATED mark (directional striae — bullet
+    lands or toolmarks) or an IMPRESSED mark (cartridge breech face), from striation
+    anisotropy. `scan_base64` is the raw bytes of one `.x3p` file, base64-encoded.
+
+    This detects the *physics* (striated vs impressed), not the calibration domain: a
+    striated result maps to either the `striated` domain (bullet lands) or the `toolmark`
+    domain (screwdriver-style toolmarks), which calibrate against different references. The
+    detected mark type selects the reference, so confirm the domain before comparing."""
     budget = limits.ByteBudget(limits.LIMITS.max_total_bytes)
     data, _ = _decode_scan(scan_base64, filename="scan.x3p", budget=budget)
     try:
@@ -203,7 +207,10 @@ def compare_marks(
     """Compare two forensic marks into a CALIBRATED likelihood ratio with a reproducible
     recipe handle and region-level attribution.
 
-    - `domain`: "striated" (bullet lands / toolmarks) or "impressed" (cartridge breech faces).
+    - `domain`: one of "striated" (bullet lands), "impressed" (cartridge breech faces), or
+      "toolmark" (striated toolmarks, e.g. screwdriver marks). This selects the reference the
+      LR is calibrated on, so it must match the mark type — a striated toolmark sent as
+      "striated" (bullet lands) calibrates against the wrong population.
     - `mark_a_base64`, `mark_b_base64`: base64-encoded `.x3p` bytes — one per side for
       impressed; for a bullet, pass ALL of that bullet's land scans (aggregating the lands is
       the strong path). (This server is hosted, so it cannot read local paths — send the bytes.)

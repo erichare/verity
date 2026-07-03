@@ -141,6 +141,99 @@ def test_cors_header_present_for_web_origin():
     assert r.headers.get("access-control-allow-origin") == "http://localhost:3000"
 
 
+def test_cors_allows_docs_site_origin():
+    # The docs site (docs.verity.codes) calls this API cross-origin; it is a default origin.
+    r = client.get("/health", headers={"Origin": "https://docs.verity.codes"})
+    assert r.headers.get("access-control-allow-origin") == "https://docs.verity.codes"
+
+
+# --- HEAD where GET exists (idiomatic; monitors probe with HEAD) -------------- #
+def test_head_on_get_route_returns_200_with_empty_body():
+    r = client.head("/health")
+    assert r.status_code == 200
+    assert r.text == ""  # HEAD carries no body
+
+
+def test_head_on_scalar_docs_returns_200():
+    assert client.head("/scalar").status_code == 200
+
+
+def test_head_on_missing_route_still_404s():
+    assert client.head("/no-such-route").status_code == 404
+
+
+# --- Uniform {"detail": …} envelope on router-level 404 / 405 ----------------- #
+def test_router_404_uses_detail_envelope():
+    r = client.get("/definitely-not-a-route")
+    assert r.status_code == 404
+    assert "detail" in r.json()
+
+
+def test_router_405_uses_detail_envelope():
+    # DELETE on a GET-only route → Starlette raises 405 during routing; the handler,
+    # registered on the Starlette parent HTTPException, still returns the envelope.
+    r = client.delete("/health")
+    assert r.status_code == 405
+    assert "detail" in r.json()
+
+
+# --- OpenAPI contract: domain enum, error responses, in-sample protocol ------- #
+def test_openapi_declares_domain_enum_and_toolmark():
+    spec = client.get("/openapi.json").json()
+    dumped = str(spec)
+    # All three calibrated domains appear as enum values in the schema.
+    assert "toolmark" in dumped and "impressed" in dumped and "striated" in dumped
+    comp = spec["paths"]["/compare"]["post"]
+    assert set(comp["responses"]) >= {"413", "415", "429"}
+
+
+def test_openapi_compare_notes_proxy_cap():
+    spec = client.get("/openapi.json").json()
+    desc = spec["paths"]["/compare"]["post"].get("description", "")
+    assert "Cloudflare" in desc and "100 MB" in desc
+
+
+def test_openapi_compare_example_labels_in_sample_diagnostics():
+    spec = client.get("/openapi.json").json()
+    example = spec["paths"]["/compare"]["post"]["responses"]["200"]["content"][
+        "application/json"
+    ]["example"]
+    assert example["reference"]["diagnostics_protocol"] == "in-sample fit of the deployed reference"
+
+
+# --- /scalar template: self-hosted bundle + a11y/meta + strict CSP ------------ #
+def test_scalar_serves_self_hosted_bundle_not_cdn():
+    html = client.get("/scalar").text
+    assert "/static/scalar-api-reference-" in html
+    assert "jsdelivr" not in html and "cdn." not in html
+
+
+def test_scalar_static_bundle_is_served():
+    from verity_api.main import _SCALAR_BUNDLE_PATH
+
+    r = client.get(_SCALAR_BUNDLE_PATH)
+    assert r.status_code == 200
+    assert "javascript" in r.headers.get("content-type", "")
+    assert len(r.content) > 1_000_000  # the real ~3.7 MB standalone bundle
+
+
+def test_scalar_template_has_accessibility_and_meta_tags():
+    html = client.get("/scalar").text
+    assert 'lang="en"' in html
+    assert 'name="description"' in html
+    assert 'property="og:title"' in html
+    assert 'rel="icon"' in html
+    assert "<noscript>" in html and "/openapi.json" in html
+
+
+def test_scalar_page_carries_strict_script_csp():
+    csp = client.get("/scalar").headers.get("content-security-policy", "")
+    # Scripts locked to this origin — no external script host trusted.
+    assert "script-src 'self'" in csp
+    assert "frame-ancestors 'none'" in csp
+    assert "cdn.jsdelivr.net" not in csp
+
+
 # --- toolmark domain ---------------------------------------------------------- #
 def _toolmark_x3p(tmp_path: Path, name: str, shift: int = 0) -> Path:
     """A synthetic striated toolmark scan: anisotropic vertical striae with real

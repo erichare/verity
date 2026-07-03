@@ -63,6 +63,31 @@ def test_mcp_endpoint_is_metered(exhausted_budget):
     assert r.json()["detail"].startswith("rate limit")
 
 
+def test_429_carries_retry_after(exhausted_budget):
+    # A rate-limited response advertises Retry-After (the sliding-window length in seconds),
+    # so a client knows exactly how long to back off.
+    r = client.post(
+        "/compare",
+        data={"domain": "striated"},
+        files={
+            "mark_a": ("a.x3p", b"x", "application/octet-stream"),
+            "mark_b": ("b.x3p", b"y", "application/octet-stream"),
+        },
+    )
+    assert r.status_code == 429
+    retry_after = r.headers.get("retry-after")
+    assert retry_after is not None
+    # Whole seconds, at least 1, == the configured window (60s here — the fixture keeps it).
+    assert retry_after.isdigit() and int(retry_after) == 60
+
+
+def test_scalar_csp_locks_script_to_self():
+    # With the Scalar bundle self-hosted, no external script host is trusted.
+    csp = client.get("/scalar").headers.get("content-security-policy", "")
+    assert "script-src 'self'" in csp
+    assert "cdn.jsdelivr.net" not in csp
+
+
 def test_cheap_gets_are_not_metered(exhausted_budget):
     # Unmetered read endpoints stay open even with the upload budget exhausted.
     assert client.get("/health").status_code == 200
