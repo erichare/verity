@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
+import { LinkArrow } from "@/components/LinkArrow";
 
 interface DocsLink {
   href: string;
@@ -90,7 +91,7 @@ export function DocsSiteNav() {
             href="https://app.verity.codes"
             className="whitespace-nowrap text-sm font-medium text-accent transition hover:opacity-80"
           >
-            Studio ↗
+            Studio<LinkArrow kind="external" className="ml-1" />
           </a>
           <ThemeToggle />
         </nav>
@@ -122,13 +123,13 @@ export function DocsSiteNav() {
               href="https://app.verity.codes"
               className="border-b border-border/40 py-2.5 text-sm font-medium text-accent"
             >
-              Studio ↗
+              Studio<LinkArrow kind="external" className="ml-1" />
             </a>
             <a
               href="https://verity.codes"
               className="py-2.5 text-sm font-medium text-accent"
             >
-              Open the app ↗
+              Open the app<LinkArrow kind="external" className="ml-1" />
             </a>
           </div>
         </nav>

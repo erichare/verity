@@ -12,6 +12,7 @@ import {
   type BenchmarkSubmission,
 } from "@/lib/benchmark";
 import { JsonLd, benchmarkDatasetJsonLd } from "@/components/seo/JsonLd";
+import { LinkArrow } from "@/components/LinkArrow";
 
 const BENCH_TITLE = "Open benchmark — frozen, source-disjoint, replicable";
 const BENCH_DESC =
@@ -359,7 +360,7 @@ export default async function BenchmarkPage() {
             rel="noopener noreferrer"
             className="text-foreground/70 underline decoration-border underline-offset-2 transition hover:text-accent hover:decoration-accent"
           >
-            data.verity.codes ↗
+            data.verity.codes<LinkArrow kind="external" className="ml-1" />
           </a>
           .
         </p>

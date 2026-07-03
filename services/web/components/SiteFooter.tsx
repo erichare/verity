@@ -1,3 +1,5 @@
+import { LinkArrow } from "@/components/LinkArrow";
+
 const GITHUB = "https://github.com/erichare/verity";
 
 // The five-host map — one line each. This is the single place the whole split is
@@ -68,7 +70,7 @@ export function SiteFooter({
         </p>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-muted">
           <FooterLink href={GITHUB} external>
-            GitHub ↗
+            GitHub<LinkArrow kind="external" className="ml-1" />
           </FooterLink>
           <span className="whitespace-nowrap">
             <FooterLink href={`${GITHUB}/blob/main/LICENSE-MIT`} external>
@@ -83,9 +85,11 @@ export function SiteFooter({
             White paper
           </FooterLink>
           <FooterLink href="https://data.verity.codes/scalar" external>
-            Data API ↗
+            Data API<LinkArrow kind="external" className="ml-1" />
           </FooterLink>
-          <FooterLink href="https://docs.verity.codes/about">About ↗</FooterLink>
+          <FooterLink href="https://docs.verity.codes/about">
+            About<LinkArrow kind="external" className="ml-1" />
+          </FooterLink>
         </div>
       </footer>
     );
@@ -134,7 +138,7 @@ export function SiteFooter({
                 <li key={l.label}>
                   <FooterLink href={l.href} external={l.external}>
                     {l.label}
-                    {l.external ? " ↗" : ""}
+                    {l.external && <LinkArrow kind="external" className="ml-1" />}
                   </FooterLink>
                 </li>
               ))}

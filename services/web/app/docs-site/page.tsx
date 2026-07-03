@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { HostMap } from "@/components/docs/HostMap";
+import { LinkArrow } from "@/components/LinkArrow";
 
 const DOCS_HOME_TITLE = "Verity documentation — method, validation, data, and API";
 const DOCS_HOME_DESC =
@@ -129,9 +130,10 @@ export default function DocsLanding() {
           >
             <h2 className="font-display text-xl font-medium text-foreground">
               {c.title}
-              <span aria-hidden className="ml-1 text-accent transition group-hover:translate-x-0.5">
-                {c.external ? " ↗" : " →"}
-              </span>
+              <LinkArrow
+                kind={c.external ? "external" : "right"}
+                className="ml-1 text-accent transition-transform group-hover:translate-x-0.5"
+              />
               {c.external && <span className="sr-only"> (opens in new tab)</span>}
             </h2>
             <p className="text-sm leading-relaxed text-muted">{c.blurb}</p>

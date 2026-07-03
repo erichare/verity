@@ -11,6 +11,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { Workspace } from "@/components/workspace/Workspace";
 import { LabBench } from "@/components/workspace/LabBench";
 import { JsonLd, organizationJsonLd } from "@/components/seo/JsonLd";
+import { LinkArrow } from "@/components/LinkArrow";
 
 const DOMAIN_LABELS: Record<string, string> = {
   impressed: "Impressed — cartridge breech face",
@@ -144,7 +145,7 @@ export default function Home() {
               href="https://docs.verity.codes/why"
               className="glass mt-5 inline-block rounded-full px-6 py-3 text-sm font-medium text-foreground/80 transition hover:text-foreground"
             >
-              Why this exists →
+              Why this exists<LinkArrow className="ml-1" />
             </a>
           </div>
         </Reveal>

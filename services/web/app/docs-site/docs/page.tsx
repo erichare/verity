@@ -4,6 +4,7 @@ import { Reveal } from "@/components/Reveal";
 import { CodeBlock } from "@/components/docs/CodeBlock";
 import { CodeTabs } from "@/components/docs/CodeTabs";
 import { DocsNav, type NavSection } from "@/components/docs/DocsNav";
+import { LinkArrow } from "@/components/LinkArrow";
 
 export const metadata: Metadata = {
   // Matches the nav label ("Use Verity"); `absolute` so the docs-layout template
@@ -309,7 +310,7 @@ export default function DocsPage() {
                   rel="noopener noreferrer"
                   className="text-accent hover:underline"
                 >
-                  decision/lr.py ↗
+                  decision/lr.py<LinkArrow kind="external" className="ml-1" />
                 </a>
                 .
               </p>
@@ -360,7 +361,7 @@ export default function DocsPage() {
                   rel="noopener noreferrer"
                   className="text-accent hover:underline"
                 >
-                  docs/congruent-matching-regions.md ↗
+                  docs/congruent-matching-regions.md<LinkArrow kind="external" className="ml-1" />
                 </a>
               </p>
             </Section>
@@ -564,7 +565,7 @@ export default function DocsPage() {
                   rel="noopener noreferrer"
                   className="text-accent hover:underline"
                 >
-                  clients/ ↗
+                  clients/<LinkArrow kind="external" className="ml-1" />
                 </a>
               </p>
             </Section>
@@ -738,7 +739,7 @@ uv run verity-catalog info`}
                   rel="noopener noreferrer"
                   className="text-accent hover:underline"
                 >
-                  docs/weller-preregistration.md ↗
+                  docs/weller-preregistration.md<LinkArrow kind="external" className="ml-1" />
                 </a>
                 .
               </p>
@@ -762,7 +763,7 @@ uv run verity-catalog info`}
                       className="glass flex items-center justify-between rounded-xl px-4 py-3 text-sm text-foreground/80 transition hover:text-foreground"
                     >
                       {label}
-                      <span aria-hidden className="text-muted">→</span>
+                      <LinkArrow className="text-muted" />
                     </a>
                   </li>
                 ))}

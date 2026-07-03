@@ -9,6 +9,7 @@ import { Heatmap } from "@/components/method/Heatmap";
 import { SignaturePlot } from "@/components/method/SignaturePlot";
 import { AlignedSignatures } from "@/components/method/AlignedSignatures";
 import { CalibrationChart } from "@/components/method/CalibrationChart";
+import { LinkArrow } from "@/components/LinkArrow";
 
 const SurfaceViewer = dynamic(() => import("@/components/three/SurfaceViewer"), { ssr: false });
 
@@ -592,7 +593,7 @@ export default function MethodPage() {
             step, parameter, and input hash — under a content handle, so the result can be verified by
             re-running it.{" "}
             <a href="/docs#reproducibility" className="text-accent hover:underline">
-              See the glass-box API →
+              See the glass-box API<LinkArrow className="ml-1" />
             </a>
           </p>
         </Stage>
@@ -668,7 +669,7 @@ export default function MethodPage() {
                     Specialists still lead on their home studies; Verity&rsquo;s contribution is the
                     calibrated, bounded LR layer.{" "}
                     <a href="/why#benchmarks" className="text-accent hover:underline">
-                      See the head-to-head tables →
+                      See the head-to-head tables<LinkArrow className="ml-1" />
                     </a>
                   </span>
                 </p>
@@ -699,7 +700,7 @@ export default function MethodPage() {
               href="https://verity.codes/#compare"
               className="mt-6 inline-block rounded-full bg-primary px-6 py-3 text-sm font-semibold text-[#f4f1ea] shadow-lg shadow-[#0e2a47]/20 transition hover:opacity-90"
             >
-              Try it on your own scans →
+              Try it on your own scans<LinkArrow className="ml-1" />
             </a>
           </div>
         </Reveal>

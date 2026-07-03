@@ -1,4 +1,5 @@
 import { Reveal } from "@/components/Reveal";
+import { LinkArrow } from "@/components/LinkArrow";
 
 /**
  * CSAFE / Iowa State lineage. Verity operationalizes and deploys a research
@@ -106,8 +107,8 @@ export function Lineage() {
                         rel="noopener noreferrer"
                         className="text-xs text-muted underline decoration-border underline-offset-2 transition hover:text-accent hover:decoration-accent"
                       >
-                        {c.label}{" "}
-                        <span aria-hidden>↗</span>
+                        {c.label}
+                        <LinkArrow kind="external" className="ml-1" />
                         <span className="sr-only">(opens in new tab)</span>
                       </a>
                     ))}

@@ -13,6 +13,7 @@ import {
   type Scan,
   type Study,
 } from "@/lib/catalog";
+import { LinkArrow } from "@/components/LinkArrow";
 
 const PAGE = 25;
 
@@ -221,7 +222,8 @@ export default function CatalogPage() {
                         rel="noopener noreferrer"
                         className="text-xs text-accent underline decoration-border underline-offset-2 hover:decoration-accent"
                       >
-                        {sourceLabel(sc)} ↗
+                        {sourceLabel(sc)}
+                        <LinkArrow kind="external" className="ml-1" />
                       </a>
                     </td>
                   </tr>
@@ -283,7 +285,7 @@ export default function CatalogPage() {
             rel="noopener noreferrer"
             className="underline decoration-border underline-offset-2 transition hover:text-accent hover:decoration-accent"
           >
-            data.verity.codes ↗
+            data.verity.codes<LinkArrow kind="external" className="ml-1" />
           </a>
           .
         </p>
