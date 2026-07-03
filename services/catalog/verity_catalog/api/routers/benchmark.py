@@ -154,14 +154,59 @@ def get_split(name: str, session: Session = Depends(get_session)) -> Envelope[Be
     return ok(detail)
 
 
+class _UnsatisfiableRange(Exception):
+    """A syntactically valid ``Range`` that lies entirely outside the body (416)."""
+
+
+def _parse_byte_range(header: str, size: int) -> tuple[int, int] | None:
+    """Parse a single-range ``Range: bytes=…`` header against a ``size``-byte body.
+
+    Returns the inclusive ``(start, end)`` window to serve as 206, or ``None``
+    when the header is malformed, non-bytes, or multi-range — RFC 9110 lets a
+    server ignore ``Range`` and answer the full 200. Raises
+    :class:`_UnsatisfiableRange` when the range is valid but out of bounds."""
+    units, _, spec = header.partition("=")
+    if units.strip().lower() != "bytes" or "," in spec:
+        return None
+    start_s, sep, end_s = spec.strip().partition("-")
+    if not sep:
+        return None
+    start_s, end_s = start_s.strip(), end_s.strip()
+    try:
+        if not start_s:  # suffix form "-N": the last N bytes
+            n = int(end_s)
+            if n <= 0:
+                raise _UnsatisfiableRange
+            return max(size - n, 0), size - 1
+        start = int(start_s)
+        end = int(end_s) if end_s else size - 1
+    except ValueError:
+        return None
+    if start < 0:
+        return None
+    # A valid start at or past the body is unsatisfiable (416). This must be
+    # checked before ``end < start``, because the open-ended form ``bytes=N-``
+    # defaults ``end`` to ``size - 1``, which is < N exactly when N == size.
+    if start >= size:
+        raise _UnsatisfiableRange
+    if end < start:
+        return None
+    return start, min(end, size - 1)
+
+
 @router.get(
     "/splits/{name}/kit",
     summary="Download the replication kit (zip)",
     response_class=Response,
 )
-def get_kit(name: str, session: Session = Depends(get_session)) -> Response:
+def get_kit(name: str, request: Request, session: Session = Depends(get_session)) -> Response:
     """Frozen pairs + folds + provenance + the scorer + a standalone
-    ``evaluate.py``. Offline evaluation equals the leaderboard scoring."""
+    ``evaluate.py``. Offline evaluation equals the leaderboard scoring.
+
+    Serves ``Accept-Ranges: bytes`` and honors single-range ``Range`` requests
+    (206/416) so interrupted kit downloads — the toolmark kit is ~13 MB — can
+    resume instead of restarting. HEAD is answered app-wide (same headers, no
+    body) for monitors and link checkers."""
     split = _get_split(session, name)
     _require_complete_pairs(session, split)
     pairs = session.exec(
@@ -170,14 +215,29 @@ def get_kit(name: str, session: Session = Depends(get_session)) -> Response:
         .order_by(models.BenchmarkPair.id)
     ).all()
     data = build_kit(split, pairs)
-    return Response(
-        content=data,
-        media_type="application/zip",
-        headers={
-            "Content-Disposition": f'attachment; filename="verity-benchmark-{split.name}.zip"',
-            "ETag": f'"{split.split_hash}"',
-        },
-    )
+    headers = {
+        "Content-Disposition": f'attachment; filename="verity-benchmark-{split.name}.zip"',
+        "ETag": f'"{split.split_hash}"',
+        "Accept-Ranges": "bytes",
+    }
+    range_header = request.headers.get("range")
+    if range_header:
+        try:
+            window = _parse_byte_range(range_header, len(data))
+        except _UnsatisfiableRange:
+            return Response(
+                status_code=416,
+                headers={**headers, "Content-Range": f"bytes */{len(data)}"},
+            )
+        if window is not None:
+            start, end = window
+            return Response(
+                content=data[start : end + 1],
+                status_code=206,
+                media_type="application/zip",
+                headers={**headers, "Content-Range": f"bytes {start}-{end}/{len(data)}"},
+            )
+    return Response(content=data, media_type="application/zip", headers=headers)
 
 
 @router.get(
