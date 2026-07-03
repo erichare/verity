@@ -470,7 +470,8 @@ function buildStages(run: Omit<StudioRun, "stages">): Stage[] {
       },
       [
         { label: "score", value: report.score.toFixed(3) },
-        { label: "reference AUC", value: report.reference.auc.toFixed(3) },
+        // In-sample diagnostic of the deployed reference fit — not a validation AUC.
+        { label: "reference AUC (in-sample fit)", value: report.reference.auc.toFixed(3) },
         { label: "reference", value: report.reference.name },
       ],
       true,

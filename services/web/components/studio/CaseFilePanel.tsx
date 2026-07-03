@@ -47,7 +47,7 @@ export function CaseFilePanel({
   const drifted = !isUpload && liveHash != null && liveHash !== run.configHash;
 
   return (
-    <aside className="flex h-full w-full flex-col gap-4 overflow-y-auto p-5">
+    <aside aria-label="Case file" className="flex h-full w-full flex-col gap-4 overflow-y-auto p-5">
       <div className="flex items-center justify-between">
         <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted">
           Case file
@@ -75,9 +75,9 @@ export function CaseFilePanel({
       </div>
 
       <div className="border-t border-border pt-4">
-        <p className="font-mono text-[10px] uppercase tracking-wider text-brass">
+        <h2 className="font-mono text-[10px] uppercase tracking-wider text-brass">
           Step {stage.num} / {total} · {stage.label}
-        </p>
+        </h2>
         <p className="mt-2 font-display text-lg leading-snug text-foreground">{stage.caption}</p>
         <p className="mt-2 text-sm leading-relaxed text-muted">{stage.why}</p>
       </div>
