@@ -14,11 +14,12 @@ import os
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse
 
 from .. import __version__
 from .body_limit import BodySizeLimitMiddleware
 from .envelope import Envelope
+from .head import HeadRequestMiddleware
 from .routers import benchmark, bullets, datasets, firearms, meta, scans, studies
 
 _DESCRIPTION = """\
@@ -84,6 +85,11 @@ app = FastAPI(
 # parsing; cap configurable via VERITY_CATALOG_MAX_BODY_BYTES. Registered before
 # CORS so CORS stays outermost and 413 responses still carry CORS headers.
 app.add_middleware(BodySizeLimitMiddleware)
+
+# Answer HEAD on every GET route (RFC 9110): monitors and link checkers probe
+# the kit downloads with HEAD and previously got 405. Registered here so routing
+# (inner) sees GET while CORS + security headers (outer) still run normally.
+app.add_middleware(HeadRequestMiddleware)
 
 # The catalog is consumed cross-origin (the verity.codes UI and the validation
 # harness), so CORS is required. Default to the production origin; override with
@@ -163,16 +169,83 @@ app.include_router(meta.router)
 
 
 # --- Docs ------------------------------------------------------------------- #
-_SCALAR_HTML = """<!doctype html>
-<html>
+# The same Evidence-themed Scalar shell as api.verity.codes/scalar, so the two
+# reference pages read as one product. The Scalar bundle is pinned to an exact
+# version with subresource integrity; to bump it, recompute the hash:
+#   curl -s https://cdn.jsdelivr.net/npm/@scalar/api-reference@<ver>/dist/browser/standalone.js \
+#     | openssl dgst -sha384 -binary | base64
+_SCALAR_DESCRIPTION = (
+    "Verity data API — the open catalog and frozen benchmark splits: faceted search "
+    "over content-addressed forensic X3P scans, pinned dataset manifests, replication "
+    "kits, and the public leaderboard."
+)
+_SCALAR_HTML = f"""<!doctype html>
+<html lang="en">
   <head>
-    <title>Verity data catalog — API reference</title>
+    <title>Verity data API reference</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="{_SCALAR_DESCRIPTION}" />
+    <meta property="og:title" content="Verity data API reference" />
+    <meta property="og:description" content="{_SCALAR_DESCRIPTION}" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://data.verity.codes/scalar" />
+    <meta property="og:site_name" content="Verity" />
+    <link rel="icon" type="image/svg+xml" href="https://verity.codes/icon.svg" />
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+      /* Evidence palette — Scalar custom-theme variables (paper-first). theme:none
+         in the config below disables Scalar's built-in presets so these take effect. */
+      :root {{
+        --scalar-color-1: #13243a;            /* ink */
+        --scalar-color-2: #5a6677;            /* muted */
+        --scalar-color-3: #626c7b;            /* 4.71:1 on --scalar-background-1 (WCAG AA) */
+        --scalar-color-accent: #0e2a47;       /* navy primary */
+        --scalar-background-1: #f4f1ea;       /* canvas / bone */
+        --scalar-background-2: #ece7db;       /* panel */
+        --scalar-background-3: #e3ddcf;
+        --scalar-border-color: rgba(19, 36, 58, 0.14);
+        --scalar-button-1: #0e2a47;
+        --scalar-button-1-color: #f4f1ea;
+        --scalar-color-green: #a9803e;        /* brass — GET */
+        --scalar-color-blue: #0e2a47;         /* navy — POST */
+        --scalar-color-red: #7a2e2e;          /* oxblood — errors / DELETE */
+        --scalar-color-orange: #a9803e;
+        --scalar-font: 'Inter', ui-sans-serif, system-ui, sans-serif;
+        --scalar-font-code: 'IBM Plex Mono', ui-monospace, monospace;
+      }}
+      .dark-mode {{
+        --scalar-color-1: #e8e2d4;
+        --scalar-color-2: #9aa6b6;
+        --scalar-color-3: #8a93a3;            /* 5.97:1 on the dark background */
+        --scalar-color-accent: #6e97c4;       /* lifted steel — navy is invisible on dark */
+        --scalar-background-1: #0c1420;
+        --scalar-background-2: #11203b;
+        --scalar-background-3: #16263b;
+        --scalar-border-color: rgba(232, 226, 212, 0.12);
+        --scalar-button-1: #173b5e;
+        --scalar-button-1-color: #e8e2d4;
+        --scalar-color-green: #c9a063;
+        --scalar-color-blue: #6e97c4;
+        --scalar-color-red: #c76b6b;
+      }}
+    </style>
   </head>
   <body>
-    <script id="api-reference" data-url="/openapi.json"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
+    <noscript>
+      <p>
+        This interactive API reference needs JavaScript. The raw OpenAPI document
+        is available at <a href="/openapi.json">/openapi.json</a>.
+      </p>
+    </noscript>
+    <script
+      id="api-reference"
+      data-url="/openapi.json"
+      data-configuration='{{"theme":"none","darkMode":false}}'></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/@scalar/api-reference@1.62.2/dist/browser/standalone.js"
+      integrity="sha384-eL3WJPzR+jPCLfuBs+/9g7eBP2h8PLbtoiFB7e9vX8L3NO9I3qg+T4yPhCACQixp"
+      crossorigin="anonymous"></script>
   </body>
 </html>"""
 
@@ -182,6 +255,13 @@ def scalar_docs() -> HTMLResponse:
     """A modern API reference (Scalar). Swagger UI (/docs) and ReDoc (/redoc) are
     also available."""
     return HTMLResponse(_SCALAR_HTML)
+
+
+@app.get("/robots.txt", include_in_schema=False)
+def robots_txt() -> PlainTextResponse:
+    """Crawlers may fetch everything; no sitemap line — this is an API host
+    (the sitemap lives on the web host)."""
+    return PlainTextResponse("User-agent: *\nAllow: /\n")
 
 
 @app.get("/", include_in_schema=False)

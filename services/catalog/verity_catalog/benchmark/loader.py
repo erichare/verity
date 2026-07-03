@@ -100,7 +100,9 @@ def load_split(session: Session, artifacts: SplitArtifacts) -> models.BenchmarkS
                 split_id=split.id,
                 submitter="Verity",
                 method=prov.get("scorer", {}).get("score_kind", "verity"),
-                url="https://verity.codes/method",
+                # The method page lives on the docs host since the app/science
+                # split; the old verity.codes/method URL bounces through a 308.
+                url="https://docs.verity.codes/method",
                 is_reference=True,
                 cllr=m["cllr"],
                 cllr_std=m["cllr_std"],

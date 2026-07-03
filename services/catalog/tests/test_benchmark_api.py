@@ -196,6 +196,9 @@ def test_leaderboard_has_reference_row(split_env):
     ref = [r for r in rows if r["is_reference"]]
     assert len(ref) == 1
     assert ref[0]["submitter"] == "Verity"
+    # The method page lives on the docs host since the app/science split; the
+    # old verity.codes/method URL only answers via a 308 redirect.
+    assert ref[0]["url"] == "https://docs.verity.codes/method"
     assert ref[0]["calibration_loss"] == pytest.approx(
         artifacts.verity_metrics["calibration_loss"]
     )
@@ -255,6 +258,74 @@ def test_kit_roundtrip_and_offline_evaluation(split_env, tmp_path):
     assert offline["calibration_loss"] == pytest.approx(
         artifacts.verity_metrics["calibration_loss"], rel=1e-6
     )
+
+
+# --------------------------------------------------------------------------- #
+# The kit — HEAD + Range (monitors, link checkers, resumable downloads)
+# --------------------------------------------------------------------------- #
+_KIT_URL = "/benchmark/splits/synthetic-v1/kit"
+
+
+def test_kit_head_reports_length_without_body(split_env):
+    """HEAD answers 200 (not 405) with the full GET headers and an empty body."""
+    client, _, _ = split_env
+    full = client.get(_KIT_URL)
+    head = client.head(_KIT_URL)
+    assert head.status_code == 200
+    assert head.content == b""
+    assert int(head.headers["content-length"]) == len(full.content)
+    assert head.headers["content-type"] == "application/zip"
+    assert head.headers["accept-ranges"] == "bytes"
+    assert head.headers["etag"] == full.headers["etag"]
+
+
+def test_kit_range_requests_resume(split_env):
+    """Single-range requests get 206 slices whose concatenation is the zip."""
+    client, _, _ = split_env
+    full = client.get(_KIT_URL)
+    assert full.headers["accept-ranges"] == "bytes"
+    data = full.content
+
+    first = client.get(_KIT_URL, headers={"Range": "bytes=0-99"})
+    assert first.status_code == 206
+    assert first.content == data[:100]
+    assert first.headers["content-range"] == f"bytes 0-99/{len(data)}"
+    assert int(first.headers["content-length"]) == 100
+
+    # Resume from byte 100 (open-ended); the concatenation is a valid zip again.
+    rest = client.get(_KIT_URL, headers={"Range": "bytes=100-"})
+    assert rest.status_code == 206
+    assert rest.headers["content-range"] == f"bytes 100-{len(data) - 1}/{len(data)}"
+    assert first.content + rest.content == data
+    zipfile.ZipFile(io.BytesIO(first.content + rest.content))
+
+    # Suffix form: the last 64 bytes.
+    tail = client.get(_KIT_URL, headers={"Range": "bytes=-64"})
+    assert tail.status_code == 206
+    assert tail.content == data[-64:]
+    assert tail.headers["content-range"] == f"bytes {len(data) - 64}-{len(data) - 1}/{len(data)}"
+
+    # An over-long end is clipped to the body, per RFC 9110.
+    clipped = client.get(_KIT_URL, headers={"Range": f"bytes=0-{len(data) * 2}"})
+    assert clipped.status_code == 206
+    assert clipped.content == data
+
+
+def test_kit_range_unsatisfiable_and_malformed(split_env):
+    client, _, _ = split_env
+    data = client.get(_KIT_URL).content
+
+    # Entirely past the end: 416 with the total size advertised.
+    r = client.get(_KIT_URL, headers={"Range": f"bytes={len(data)}-"})
+    assert r.status_code == 416
+    assert r.headers["content-range"] == f"bytes */{len(data)}"
+
+    # Malformed / multi-range / non-bytes headers are ignored → full 200
+    # (RFC 9110 allows a server to ignore Range).
+    for header in ("bytes=abc", "bytes=5-2", "bytes=0-9,20-29", "items=0-1", "bytes"):
+        r = client.get(_KIT_URL, headers={"Range": header})
+        assert r.status_code == 200, header
+        assert r.content == data, header
 
 
 # --------------------------------------------------------------------------- #

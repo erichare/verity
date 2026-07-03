@@ -269,6 +269,19 @@ Note `migrate-db` is the *row copy* (data), distinct from the Alembic *schema*
 migrations in step 1 — run Alembic first and pass `--no-create-schema` so the
 schema is exactly what the migrations (and their RLS policies) define.
 
+### One-off prod fix — leaderboard submission URLs (run once)
+
+Verity baseline submissions loaded before the docs-host split carry the
+pre-migration `https://verity.codes/method` URL (it bounces through a 308
+today; the right URL is `https://docs.verity.codes/method`). The committed
+loader now writes the docs URL, so future `load-benchmark` runs are correct;
+fix the existing prod rows with one statement against the pooler URL
+(idempotent — re-running is a no-op):
+
+```sql
+UPDATE benchmarksubmission SET url = replace(url, 'https://verity.codes/method', 'https://docs.verity.codes/method') WHERE url LIKE '%verity.codes/method%';
+```
+
 ### Custom domain (`data.verity.codes` — **live**)
 
 The domain is wired and answering: Railway holds `data.verity.codes` as the
