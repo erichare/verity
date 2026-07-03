@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Reveal } from "@/components/Reveal";
+import { LinkArrow } from "@/components/LinkArrow";
 
 const GITHUB = "https://github.com/erichare/verity";
 
@@ -143,7 +144,8 @@ export default function AboutPage() {
                       {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
                       className="text-xs text-muted underline decoration-border underline-offset-2 transition hover:text-accent hover:decoration-accent"
                     >
-                      {l.label} {external ? "↗" : "→"}
+                      {l.label}
+                      <LinkArrow kind={external ? "external" : "right"} className="ml-1" />
                     </a>
                   );
                 })}

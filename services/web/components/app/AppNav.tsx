@@ -1,6 +1,7 @@
 "use client";
 
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
+import { LinkArrow } from "@/components/LinkArrow";
 
 /**
  * The app chrome for verity.codes — deliberately minimal so the compare workspace is
@@ -29,13 +30,13 @@ export function AppNav() {
             href="https://app.verity.codes"
             className="whitespace-nowrap text-sm font-medium text-accent transition hover:opacity-80"
           >
-            Studio ↗
+            Studio<LinkArrow kind="external" className="ml-1" />
           </a>
           <a
             href="https://docs.verity.codes"
             className="whitespace-nowrap text-sm text-foreground/70 transition hover:text-foreground"
           >
-            Docs ↗
+            Docs<LinkArrow kind="external" className="ml-1" />
           </a>
           <a
             href="https://api.verity.codes/scalar"
@@ -43,7 +44,7 @@ export function AppNav() {
             rel="noopener noreferrer"
             className="whitespace-nowrap text-sm text-foreground/70 transition hover:text-foreground"
           >
-            API ↗
+            API<LinkArrow kind="external" className="ml-1" />
           </a>
           <ThemeToggle />
         </nav>

@@ -4,6 +4,7 @@ import { Benchmarks } from "@/components/why/Benchmarks";
 import { Lineage } from "@/components/why/Lineage";
 import { CuellarResponse } from "@/components/why/CuellarResponse";
 import { JsonLd, docsArticleJsonLd } from "@/components/seo/JsonLd";
+import { LinkArrow } from "@/components/LinkArrow";
 
 const WHY_TITLE = "Why Verity — what was missing";
 const WHY_DESC =
@@ -95,7 +96,8 @@ function Matrix() {
                 <div className={`font-medium ${r.verity ? "accent-text" : "text-foreground"}`}>
                   {r.href ? (
                     <a href={r.href} target="_blank" rel="noopener noreferrer" className="hover:text-accent">
-                      {r.name} ↗
+                      {r.name}
+                      <LinkArrow kind="external" className="ml-1" />
                     </a>
                   ) : (
                     r.name
@@ -344,7 +346,7 @@ export default function WhyPage() {
                 href="https://verity.codes/#compare"
                 className="rounded-full bg-primary px-6 py-3 text-sm font-semibold text-[#f4f1ea] shadow-lg shadow-[#0e2a47]/20 transition hover:opacity-90"
               >
-                Try a comparison →
+                Try a comparison<LinkArrow className="ml-1" />
               </a>
             </div>
           </div>

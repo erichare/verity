@@ -9,6 +9,7 @@ import {
   type Reference,
 } from "@/lib/references";
 import { JsonLd, docsArticleJsonLd } from "@/components/seo/JsonLd";
+import { LinkArrow } from "@/components/LinkArrow";
 
 const REF_TITLE = "References — the science behind Verity";
 const REF_DESC =
@@ -43,9 +44,10 @@ function RefRow({ r }: { r: Reference }) {
           </span>{" "}
           <span className="italic transition group-hover:text-foreground">{r.title}.</span>{" "}
           <span className="text-muted">{r.venue}.</span>
-          <span aria-hidden className="ml-1 text-muted/60 transition group-hover:text-accent">
-            ↗
-          </span>
+          <LinkArrow
+            kind="external"
+            className="ml-1 text-muted/60 transition-colors group-hover:text-accent"
+          />
           {r.urlUnverified && (
             <span className="ml-2 align-middle text-[10px] uppercase tracking-wider text-muted/70">
               link to confirm

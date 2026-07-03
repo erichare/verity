@@ -1,3 +1,5 @@
+import { LinkArrow } from "@/components/LinkArrow";
+
 interface HostRow {
   href: string;
   host: string;
@@ -63,7 +65,10 @@ export function HostMap() {
                 className="font-mono text-sm text-foreground/80 transition hover:text-accent"
               >
                 {h.host}
-                <span aria-hidden className="text-accent"> {h.external ? "↗" : "→"}</span>
+                <LinkArrow
+                  kind={h.external ? "external" : "right"}
+                  className="ml-1 text-accent"
+                />
                 {h.external && <span className="sr-only"> (opens in new tab)</span>}
               </a>
               {h.here && (

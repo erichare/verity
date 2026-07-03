@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Reveal } from "@/components/Reveal";
 import { JsonLd, docsArticleJsonLd } from "@/components/seo/JsonLd";
+import { LinkArrow } from "@/components/LinkArrow";
 
 const LINEAGE_TITLE = "Scientific lineage — the research Verity operationalizes";
 // Kept ≤160 chars for a clean SERP snippet (was ~318). The full lineage — Hare,
@@ -154,7 +155,8 @@ export default function LineagePage() {
                       rel="noopener noreferrer"
                       className="text-xs text-muted underline decoration-border underline-offset-2 transition hover:text-accent hover:decoration-accent"
                     >
-                      {c.label} ↗
+                      {c.label}
+                      <LinkArrow kind="external" className="ml-1" />
                     </a>
                   ))}
                 </div>
@@ -249,7 +251,7 @@ export default function LineagePage() {
                   href="/references"
                   className="rounded-full bg-primary px-6 py-3 text-sm font-semibold text-[#f4f1ea] shadow-lg shadow-[#0e2a47]/20 transition hover:opacity-90"
                 >
-                  The full bibliography →
+                  The full bibliography<LinkArrow className="ml-1" />
                 </a>
               </div>
             </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
+import { LinkArrow } from "@/components/LinkArrow";
 
 /**
  * The slim chrome for app.verity.codes — full-bleed (no centered marketing column) so the
@@ -18,7 +19,7 @@ export function StudioNav() {
           href="https://docs.verity.codes"
           className="whitespace-nowrap text-sm text-foreground/70 transition hover:text-foreground"
         >
-          Docs ↗
+          Docs<LinkArrow kind="external" className="ml-1" />
         </a>
         <a
           href="https://api.verity.codes/scalar"
@@ -26,7 +27,7 @@ export function StudioNav() {
           rel="noopener noreferrer"
           className="whitespace-nowrap text-sm text-foreground/70 transition hover:text-foreground"
         >
-          API ↗
+          API<LinkArrow kind="external" className="ml-1" />
         </a>
         <ThemeToggle />
       </div>
