@@ -13,9 +13,9 @@ function strengthColor(verbal: string, supportsSame: boolean): string {
   if (verbal.includes("no meaningful"))
     return "bg-foreground/10 text-muted border-border";
   if (verbal.includes("weak"))
-    return "bg-brass/12 text-brass border-brass/30";
+    return "bg-brass/12 text-brass-text border-brass/30";
   if (verbal.includes("moderate"))
-    return "bg-brass/15 text-brass border-brass/35";
+    return "bg-brass/15 text-brass-text border-brass/35";
   return "bg-accent/12 text-accent border-accent/35";
 }
 
@@ -83,7 +83,7 @@ export default function ReportView({
             <span>
               log₁₀ LR = {report.log10_lr.toFixed(2)}
               {report.log10_lr_ci_lo != null && report.log10_lr_ci_hi != null && (
-                <span className="text-foreground/50">
+                <span className="text-foreground/70">
                   {" "}· 95% CI [{report.log10_lr_ci_lo.toFixed(2)}, {report.log10_lr_ci_hi.toFixed(2)}]
                   {report.n_sources ? ` across ${report.n_sources} sources` : ""}
                 </span>

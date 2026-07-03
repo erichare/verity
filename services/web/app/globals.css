@@ -17,6 +17,7 @@
   --color-accent: var(--accent);
   --color-accent-2: var(--accent-2);
   --color-brass: var(--brass);
+  --color-brass-text: var(--brass-text);
   --color-oxblood: var(--oxblood);
   --color-danger: var(--danger);
 }
@@ -32,7 +33,8 @@
 
   --primary: #0e2a47;      /* deep navy — primary actions, wordmark */
   --accent: #0e2a47;       /* accent == navy in Evidence */
-  --brass: #a9803e;        /* brass — seal node, highlights, secondary accent */
+  --brass: #a9803e;        /* brass — seal node, highlights, secondary accent (borders/fills) */
+  --brass-text: #7f5c1e;   /* darker brass for TEXT — ≥4.5:1 on paper, panel, and brass-tinted fills */
   --accent-2: #a9803e;     /* alias → brass, for existing --color-accent-2 consumers */
   --oxblood: #7a2e2e;      /* semantic: exclusion / different-source / refusal */
   --danger: #7a2e2e;       /* alias → oxblood */
@@ -55,6 +57,7 @@
   --primary: #173b5e;      /* navy that reads as a surface on near-black */
   --accent: #6e97c4;       /* lifted steel-blue — navy is invisible on the dark canvas */
   --brass: #c9a063;        /* brass that holds on dark (lighter, warmer) */
+  --brass-text: #c9a063;   /* dark theme: brass already passes AA for text (7.65:1) */
   --accent-2: #c9a063;
   --oxblood: #c76b6b;      /* oxblood lifted for contrast on dark */
   --danger: #c76b6b;

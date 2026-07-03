@@ -96,7 +96,7 @@ export function TimelineRail({
                 />
                 <span
                   className={`hidden whitespace-nowrap font-mono text-[9px] uppercase tracking-wide sm:block ${
-                    active ? "text-brass" : "text-muted/70 group-hover:text-foreground/70"
+                    active ? "text-brass-text" : "text-muted group-hover:text-foreground/70"
                   }`}
                 >
                   {s.label}

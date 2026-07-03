@@ -85,7 +85,7 @@ export default function Home() {
             <strong className="text-foreground">likelihood ratio with a characterized cost</strong>, and a
             map of <strong className="text-foreground">exactly which regions drove the match</strong>.
           </p>
-          <p className="mx-auto mt-4 max-w-xl text-xs leading-relaxed text-foreground/55">
+          <p className="mx-auto mt-4 max-w-xl text-xs leading-relaxed text-foreground/70">
             It reports the weight of evidence — it never makes the decision, and makes no claim about
             the error rate of examination.
           </p>

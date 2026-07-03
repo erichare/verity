@@ -6,6 +6,7 @@ import { useTheme } from "next-themes";
 import { useEffect, useMemo, useState } from "react";
 import * as THREE from "three";
 import type { AttributionRegion } from "@/lib/types";
+import { usePrefersReducedMotion } from "@/lib/usePrefersReducedMotion";
 
 const PLANE = 2; // surface spans [-1, 1] in local X/Y
 const HEIGHT_SCALE = 0.62;
@@ -168,25 +169,38 @@ export default function SurfaceViewer({
   grid,
   regions,
   className,
-  autoRotate = true,
+  autoRotate,
+  label,
 }: {
   grid: number[][];
   regions?: AttributionRegion[];
   className?: string;
-  /** Auto-rotate the camera. Turn off via the Studio "Animate" toggle. */
+  /** Auto-rotate the camera. When omitted, defaults on — unless the user prefers
+   *  reduced motion (WCAG 2.2.2). Pass explicitly to control it (Studio "Animate"). */
   autoRotate?: boolean;
+  /** Text alternative for the rendered canvas (role="img"). */
+  label?: string;
 }) {
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
   const isDark = !mounted || resolvedTheme === "dark";
+  const reducedMotion = usePrefersReducedMotion();
+  const rotate = autoRotate ?? !reducedMotion;
 
   const small = useMemo(() => downsample(grid), [grid]);
 
   return (
-    <div className={className}>
+    <div
+      className={className}
+      role="img"
+      aria-label={
+        label ??
+        "Interactive 3-D rendering of the scanned mark surface; drag to rotate"
+      }
+    >
       <Canvas camera={{ position: [0, 1.85, 2.95], fov: 38 }} dpr={[1, 2]} gl={{ antialias: true, alpha: true }}>
-        <Scene grid={small} regions={regions} autoRotate={autoRotate} isDark={isDark} />
+        <Scene grid={small} regions={regions} autoRotate={rotate} isDark={isDark} />
       </Canvas>
     </div>
   );

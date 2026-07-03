@@ -40,25 +40,33 @@ const ROWS: Row[] = [
   { name: "Verity", note: "one calibrated method", cells: ["y", "y", "y", "y", "y", "y"], verity: true },
 ];
 
-const GLYPH: Record<Mark, { c: string; cls: string }> = {
-  y: { c: "✓", cls: "text-accent" },
-  p: { c: "◐", cls: "text-muted" },
-  n: { c: "✕", cls: "text-foreground/20" },
+const GLYPH: Record<Mark, { c: string; cls: string; sr: string }> = {
+  y: { c: "✓", cls: "text-accent", sr: "yes" },
+  p: { c: "◐", cls: "text-muted", sr: "partial" },
+  n: { c: "✕", cls: "text-foreground/65", sr: "no" },
 };
 
 function Cell({ m }: { m: Mark }) {
-  return <span className={`text-base ${GLYPH[m].cls}`}>{GLYPH[m].c}</span>;
+  return (
+    <span className={`text-base ${GLYPH[m].cls}`}>
+      <span aria-hidden>{GLYPH[m].c}</span>
+      <span className="sr-only">{GLYPH[m].sr}</span>
+    </span>
+  );
 }
 
 function Matrix() {
   return (
     <div className="glass overflow-x-auto rounded-2xl p-2 sm:p-4">
       <table className="w-full min-w-[640px] border-collapse text-sm">
+        <caption className="sr-only">
+          Capability comparison of forensic mark-comparison approaches
+        </caption>
         <thead>
           <tr className="text-xs uppercase tracking-wider text-muted">
-            <th className="px-3 py-3 text-left font-medium">Approach</th>
+            <th scope="col" className="px-3 py-3 text-left font-medium">Approach</th>
             {CAPS.map((c) => (
-              <th key={c} className="px-2 py-3 text-center font-medium">
+              <th key={c} scope="col" className="px-2 py-3 text-center font-medium">
                 {c}
               </th>
             ))}
@@ -70,7 +78,7 @@ function Matrix() {
               key={r.name}
               className={`border-t border-border ${r.verity ? "rounded-lg bg-accent/[0.07]" : ""}`}
             >
-              <td className="px-3 py-3">
+              <th scope="row" className="px-3 py-3 text-left font-normal">
                 <div className={`font-medium ${r.verity ? "accent-text" : "text-foreground"}`}>
                   {r.href ? (
                     <a href={r.href} target="_blank" rel="noopener noreferrer" className="hover:text-accent">
@@ -80,8 +88,8 @@ function Matrix() {
                     r.name
                   )}
                 </div>
-                <div className="text-xs text-muted">{r.note}</div>
-              </td>
+                <div className="text-xs font-normal text-muted">{r.note}</div>
+              </th>
               {r.cells.map((m, i) => (
                 <td key={i} className="px-2 py-3 text-center">
                   <Cell m={m} />
@@ -93,7 +101,7 @@ function Matrix() {
       </table>
       <p className="px-3 pt-3 text-xs text-muted">
         <span className="text-accent">✓</span> yes · <span className="text-muted">◐</span> partial / with
-        caveats · <span className="text-foreground/30">✕</span> no. A high-level summary; each tool is
+        caveats · <span className="text-foreground/65">✕</span> no. A high-level summary; each tool is
         excellent at what it was built for.
       </p>
     </div>
