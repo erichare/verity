@@ -355,7 +355,7 @@ export default function MethodPage() {
   return (
     <>
 
-      <main className="mx-auto w-full max-w-4xl px-6 pb-24 pt-28 sm:pt-36">
+      <main id="main" className="mx-auto w-full max-w-4xl px-6 pb-24 pt-28 sm:pt-36">
         {/* Intro */}
         <section className="rise">
           <span className="glass inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs text-foreground/70">
