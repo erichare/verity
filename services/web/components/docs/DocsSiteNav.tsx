@@ -81,7 +81,10 @@ export function DocsSiteNav() {
         </a>
 
         {/* lg+: the full horizontal nav (every item fits without scrolling). */}
-        <div className="hidden items-center gap-4 lg:flex xl:gap-5">
+        <nav
+          aria-label="Documentation"
+          className="hidden items-center gap-4 lg:flex xl:gap-5"
+        >
           {DOCS_LINKS.map((link) => renderLink(link, false))}
           <a
             href="https://app.verity.codes"
@@ -90,7 +93,7 @@ export function DocsSiteNav() {
             Studio ↗
           </a>
           <ThemeToggle />
-        </div>
+        </nav>
 
         {/* Below lg: theme toggle stays reachable; the rest collapses behind a menu. */}
         <div className="flex items-center gap-2 lg:hidden">
@@ -109,7 +112,10 @@ export function DocsSiteNav() {
 
       {/* Mobile/tablet dropdown panel. */}
       {open && (
-        <nav className="border-t border-border/60 px-4 pb-4 pt-1 sm:px-6 lg:hidden">
+        <nav
+          aria-label="Documentation (mobile)"
+          className="border-t border-border/60 px-4 pb-4 pt-1 sm:px-6 lg:hidden"
+        >
           <div className="mx-auto flex max-w-6xl flex-col">
             {DOCS_LINKS.map((link) => renderLink(link, true))}
             <a

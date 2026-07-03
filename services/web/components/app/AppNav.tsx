@@ -24,7 +24,7 @@ export function AppNav() {
             Research preview
           </a>
         </div>
-        <div className="flex items-center gap-4 sm:gap-5">
+        <nav aria-label="Primary" className="flex items-center gap-4 sm:gap-5">
           <a
             href="https://app.verity.codes"
             className="whitespace-nowrap text-sm font-medium text-accent transition hover:opacity-80"
@@ -46,7 +46,7 @@ export function AppNav() {
             API ↗
           </a>
           <ThemeToggle />
-        </div>
+        </nav>
       </div>
     </header>
   );

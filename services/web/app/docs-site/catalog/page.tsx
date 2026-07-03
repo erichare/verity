@@ -64,7 +64,7 @@ export default function CatalogPage() {
 
   return (
     <>
-      <main className="mx-auto w-full max-w-6xl px-6 pb-24 pt-28 sm:pt-36">
+      <main id="main" className="mx-auto w-full max-w-6xl px-6 pb-24 pt-28 sm:pt-36">
         <section className="rise max-w-3xl">
           <span className="glass inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs text-foreground/70">
             <span className="h-1.5 w-1.5 rounded-full bg-accent" />

@@ -1,10 +1,24 @@
 import type { Metadata } from "next";
 import { HostMap } from "@/components/docs/HostMap";
 
+const DOCS_HOME_TITLE = "Verity documentation — method, validation, data, and API";
+const DOCS_HOME_DESC =
+  "The method, the open benchmark, the reference data catalog, and the API behind Verity's calibrated forensic surface comparison.";
+
 export const metadata: Metadata = {
-  title: "Verity docs",
-  description:
-    "The method, the open benchmark, the reference data catalog, and the API behind Verity's calibrated forensic surface comparison.",
+  // `absolute` so the layout's "%s · Verity docs" template doesn't double the
+  // wordmark on the docs home (would read "Verity documentation … · Verity docs").
+  title: { absolute: DOCS_HOME_TITLE },
+  description: DOCS_HOME_DESC,
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    siteName: "Verity",
+    url: "/",
+    title: DOCS_HOME_TITLE,
+    description: DOCS_HOME_DESC,
+    images: [{ url: "/opengraph-image", alt: "Verity documentation" }],
+  },
 };
 
 interface DocCard {
@@ -68,7 +82,7 @@ const CARDS: DocCard[] = [
 
 export default function DocsLanding() {
   return (
-    <main className="mx-auto w-full max-w-5xl px-6 pb-24 pt-28 sm:pt-36">
+    <main id="main" className="mx-auto w-full max-w-5xl px-6 pb-24 pt-28 sm:pt-36">
       <div className="rise max-w-3xl">
         <span className="glass inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs text-foreground/70">
           <span className="h-1.5 w-1.5 rounded-full bg-brass" />

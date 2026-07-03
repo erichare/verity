@@ -25,6 +25,24 @@ export function proxy(request: NextRequest) {
   const isDocsHost = DOCS_HOSTS.has(host);
   const isAppHost = APP_HOSTS.has(host);
 
+  // App host: the Studio's public URL is the root (app.verity.codes/). A direct hit on
+  // the internal /studio segment would serve the same page at a second URL, so 308 it
+  // back to the canonical root (permanent, method-preserving) so search engines fold it.
+  if (isAppHost && pathname.startsWith("/studio")) {
+    const url = request.nextUrl.clone();
+    url.pathname = pathname.replace(/^\/studio/, "") || "/";
+    return NextResponse.redirect(url, 308);
+  }
+
+  // Docs host: the public URLs are clean (docs.verity.codes/method). A direct hit on
+  // the internal /docs-site segment would serve each page at a second path, so 308 it
+  // back to the clean path so the /docs-site/* duplicates never get indexed.
+  if (isDocsHost && pathname.startsWith("/docs-site")) {
+    const url = request.nextUrl.clone();
+    url.pathname = pathname.replace(/^\/docs-site/, "") || "/";
+    return NextResponse.redirect(url, 308);
+  }
+
   // App host: rewrite /<path> → /studio/<path> (transparent to the URL bar).
   if (isAppHost && !pathname.startsWith("/studio")) {
     const url = request.nextUrl.clone();

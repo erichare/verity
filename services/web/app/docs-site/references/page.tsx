@@ -8,11 +8,24 @@ import {
   referencesByGroup,
   type Reference,
 } from "@/lib/references";
+import { JsonLd, docsArticleJsonLd } from "@/components/seo/JsonLd";
+
+const REF_TITLE = "References — the science behind Verity";
+const REF_DESC =
+  "The full bibliography behind Verity: the foundational matching methods, the standards and critiques that motivated it, the public benchmark datasets and open tooling it is validated against, and the calibration statistics it borrows.";
 
 export const metadata: Metadata = {
-  title: "References — the science behind Verity",
-  description:
-    "The full bibliography behind Verity: the foundational matching methods, the standards and critiques that motivated it, the public benchmark datasets and open tooling it is validated against, and the calibration statistics it borrows.",
+  title: REF_TITLE,
+  description: REF_DESC,
+  alternates: { canonical: "/references" },
+  openGraph: {
+    type: "article",
+    siteName: "Verity",
+    url: "/references",
+    title: REF_TITLE,
+    description: REF_DESC,
+    images: [{ url: "/opengraph-image", alt: "Verity — references" }],
+  },
 };
 
 function RefRow({ r }: { r: Reference }) {
@@ -50,8 +63,9 @@ function RefRow({ r }: { r: Reference }) {
 export default function ReferencesPage() {
   return (
     <>
+      <JsonLd data={docsArticleJsonLd({ slug: "references", title: REF_TITLE, description: REF_DESC, breadcrumb: "References" })} />
 
-      <main className="mx-auto w-full max-w-4xl px-6 pb-24 pt-28 sm:pt-36">
+      <main id="main" className="mx-auto w-full max-w-4xl px-6 pb-24 pt-28 sm:pt-36">
         <section className="rise">
           <span className="glass inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs text-foreground/70">
             <span className="h-1.5 w-1.5 rounded-full bg-accent" />

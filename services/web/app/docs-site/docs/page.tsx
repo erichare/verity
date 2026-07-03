@@ -6,7 +6,9 @@ import { CodeTabs } from "@/components/docs/CodeTabs";
 import { DocsNav, type NavSection } from "@/components/docs/DocsNav";
 
 export const metadata: Metadata = {
-  title: "Verity Docs — REST API, X3P codec, and method",
+  // Matches the nav label ("Use Verity"); `absolute` so the docs-layout template
+  // doesn't append "· Verity docs" and produce a doubled wordmark (fixes #66).
+  title: { absolute: "Use Verity — quickstart, API, and architecture" },
   description:
     "Use Verity: the calibrated likelihood-ratio comparison API, the native X3P (ISO 25178-72) codec for Rust/Python/R, the data catalog, and the core concepts (LR, Cllr, Congruent Matching Regions).",
 };
@@ -220,7 +222,7 @@ export default function DocsPage() {
   return (
     <>
 
-      <main className="mx-auto w-full max-w-6xl px-6 pb-24 pt-28 sm:pt-32">
+      <main id="main" className="mx-auto w-full max-w-6xl px-6 pb-24 pt-28 sm:pt-32">
         {/* Intro */}
         <div className="rise max-w-3xl">
           <span className="glass inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs text-foreground/70">

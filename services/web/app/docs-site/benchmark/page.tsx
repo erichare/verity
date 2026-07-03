@@ -11,11 +11,24 @@ import {
   type BenchmarkSplit,
   type BenchmarkSubmission,
 } from "@/lib/benchmark";
+import { JsonLd, benchmarkDatasetJsonLd } from "@/components/seo/JsonLd";
+
+const BENCH_TITLE = "Open benchmark — frozen, source-disjoint, replicable";
+const BENCH_DESC =
+  "A frozen, source-disjoint benchmark for calibrated forensic-comparison likelihood ratios across bullet lands, cartridge breech faces, and toolmarks — with a downloadable replication kit and a leaderboard that scores calibration, not just discrimination.";
 
 export const metadata: Metadata = {
-  title: "Open benchmark — frozen, source-disjoint, replicable",
-  description:
-    "A frozen, source-disjoint benchmark for calibrated forensic-comparison likelihood ratios across bullet lands, cartridge breech faces, and toolmarks — with a downloadable replication kit and a leaderboard that scores calibration, not just discrimination.",
+  title: BENCH_TITLE,
+  description: BENCH_DESC,
+  alternates: { canonical: "/benchmark" },
+  openGraph: {
+    type: "website",
+    siteName: "Verity",
+    url: "/benchmark",
+    title: BENCH_TITLE,
+    description: BENCH_DESC,
+    images: [{ url: "/opengraph-image", alt: "Verity — the open benchmark" }],
+  },
 };
 
 export const revalidate = 300;
@@ -265,7 +278,8 @@ export default async function BenchmarkPage() {
   }
 
   return (
-    <main className="mx-auto w-full min-w-0 max-w-5xl px-4 pb-24 pt-28 sm:px-6">
+    <main id="main" className="mx-auto w-full min-w-0 max-w-5xl px-4 pb-24 pt-28 sm:px-6">
+      <JsonLd data={benchmarkDatasetJsonLd} />
 
       <Reveal>
         <p className="text-xs font-medium uppercase tracking-[0.2em] accent-text">

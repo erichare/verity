@@ -1,10 +1,26 @@
 import type { Metadata } from "next";
 import { Reveal } from "@/components/Reveal";
+import { JsonLd, docsArticleJsonLd } from "@/components/seo/JsonLd";
+
+const LINEAGE_TITLE = "Scientific lineage — the research Verity operationalizes";
+// Kept ≤160 chars for a clean SERP snippet (was ~318). The full lineage — Hare,
+// Hofmann & Carriquiry (2017), Song's CMC, and the non-affiliation disclaimer —
+// stays in the page body; this is only the meta summary.
+const LINEAGE_DESC =
+  "The prior open research Verity operationalizes — automatic bullet-land matching and Congruent Matching Cells. Independent; unaffiliated with CSAFE or NIST.";
 
 export const metadata: Metadata = {
-  title: "Scientific lineage — the research Verity operationalizes",
-  description:
-    "Verity operationalizes prior open research: the Hare, Hofmann & Carriquiry (2017) automatic bullet-land matching method, Song's Congruent Matching Cells, and the open-data ecosystem of public benchmarks and tooling. Verity is an independent project, not affiliated with CSAFE, NIST, or Iowa State University.",
+  title: LINEAGE_TITLE,
+  description: LINEAGE_DESC,
+  alternates: { canonical: "/lineage" },
+  openGraph: {
+    type: "article",
+    siteName: "Verity",
+    url: "/lineage",
+    title: LINEAGE_TITLE,
+    description: LINEAGE_DESC,
+    images: [{ url: "/opengraph-image", alt: "Verity — scientific lineage" }],
+  },
 };
 
 interface Pillar {
@@ -99,8 +115,9 @@ const DOWNLOADS = [
 export default function LineagePage() {
   return (
     <>
+      <JsonLd data={docsArticleJsonLd({ slug: "lineage", title: LINEAGE_TITLE, description: LINEAGE_DESC, breadcrumb: "Scientific lineage" })} />
 
-      <main className="mx-auto w-full max-w-4xl px-6 pb-24 pt-28 sm:pt-36">
+      <main id="main" className="mx-auto w-full max-w-4xl px-6 pb-24 pt-28 sm:pt-36">
         <section className="rise max-w-3xl">
           <span className="glass inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs text-foreground/70">
             <span className="h-1.5 w-1.5 rounded-full bg-accent" />

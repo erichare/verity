@@ -3,11 +3,24 @@ import { Reveal } from "@/components/Reveal";
 import { Benchmarks } from "@/components/why/Benchmarks";
 import { Lineage } from "@/components/why/Lineage";
 import { CuellarResponse } from "@/components/why/CuellarResponse";
+import { JsonLd, docsArticleJsonLd } from "@/components/seo/JsonLd";
+
+const WHY_TITLE = "Why Verity — what was missing";
+const WHY_DESC =
+  "Forensic comparison has excellent, hard-won tools. Verity exists to close gaps none of them close on their own: one calibrated, explainable, open method across mark types.";
 
 export const metadata: Metadata = {
-  title: "Why Verity — what was missing",
-  description:
-    "Forensic comparison has excellent, hard-won tools. Verity exists to close gaps none of them close on their own: one calibrated, explainable, open method across mark types.",
+  title: WHY_TITLE,
+  description: WHY_DESC,
+  alternates: { canonical: "/why" },
+  openGraph: {
+    type: "article",
+    siteName: "Verity",
+    url: "/why",
+    title: WHY_TITLE,
+    description: WHY_DESC,
+    images: [{ url: "/opengraph-image", alt: "Verity — why this exists" }],
+  },
 };
 
 const CAPS = ["Striated", "Impressed", "One method", "Calibrated LR", "Attribution", "Open"];
@@ -121,8 +134,9 @@ function Gap({ n, title, children }: { n: string; title: string; children: React
 export default function WhyPage() {
   return (
     <>
+      <JsonLd data={docsArticleJsonLd({ slug: "why", title: WHY_TITLE, description: WHY_DESC, breadcrumb: "Why Verity" })} />
 
-      <main className="mx-auto w-full max-w-4xl px-6 pb-24 pt-28 sm:pt-36">
+      <main id="main" className="mx-auto w-full max-w-4xl px-6 pb-24 pt-28 sm:pt-36">
         <section className="rise">
           <span className="glass inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs text-foreground/70">
             <span className="h-1.5 w-1.5 rounded-full bg-accent" />

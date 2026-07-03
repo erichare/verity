@@ -10,6 +10,7 @@ import { AppNav } from "@/components/app/AppNav";
 import { SiteFooter } from "@/components/SiteFooter";
 import { Workspace } from "@/components/workspace/Workspace";
 import { LabBench } from "@/components/workspace/LabBench";
+import { JsonLd, organizationJsonLd } from "@/components/seo/JsonLd";
 
 const DOMAIN_LABELS: Record<string, string> = {
   impressed: "Impressed — cartridge breech face",
@@ -70,7 +71,12 @@ export default function Home() {
     <>
       {/* Top bar — the shared fixed nav */}
       <AppNav />
+      {/* Organization + WebSite entity signals for search engines (server-rendered). */}
+      <JsonLd data={organizationJsonLd} />
 
+      {/* The primary landmark wraps the hero (with the page h1) through the content.
+          The footer is intentionally rendered after </main>, outside the landmark. */}
+      <main id="main">
       {/* Hero — clean paper canvas + the faint ledger grid from the body */}
       <section
         id="top"
@@ -108,7 +114,7 @@ export default function Home() {
       </section>
 
       {/* Content */}
-      <main className="mx-auto mt-6 w-full max-w-4xl px-6 pb-24">
+      <div className="mx-auto mt-6 w-full max-w-4xl px-6 pb-24">
         {/* The compare workspace — the live app, front and center. */}
         <section id="compare" className="scroll-mt-20">
           <div className="mb-5">
@@ -236,6 +242,7 @@ export default function Home() {
           </section>
         )}
 
+      </div>
       </main>
 
       {/* Shared trust chrome — GitHub, license, white paper, About, and the five-host
