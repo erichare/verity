@@ -13,6 +13,7 @@ const DOCS_PATHS = [
   "/references",
   "/docs",
   "/lineage",
+  "/about",
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {

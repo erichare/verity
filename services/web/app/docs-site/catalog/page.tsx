@@ -264,6 +264,20 @@ export default function CatalogPage() {
           reproducible validation. X3P blob downloads are served separately and are not enabled
           on this public view.
         </p>
+        {/* M18: data.verity.codes is its own host — say where "served separately" is. */}
+        <p className="mt-3 max-w-3xl text-xs leading-relaxed text-muted">
+          Machine-readable access — this catalog, the frozen benchmark splits, and the
+          replication kits — is served by the Data API at{" "}
+          <a
+            href="https://data.verity.codes/scalar"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline decoration-border underline-offset-2 transition hover:text-accent hover:decoration-accent"
+          >
+            data.verity.codes ↗
+          </a>
+          .
+        </p>
       </main>
     </>
   );

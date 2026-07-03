@@ -7,6 +7,7 @@ import { FilePick } from "@/components/FilePick";
 import { Reveal } from "@/components/Reveal";
 import { StatBand } from "@/components/home/StatBand";
 import { AppNav } from "@/components/app/AppNav";
+import { SiteFooter } from "@/components/SiteFooter";
 import { Workspace } from "@/components/workspace/Workspace";
 import { LabBench } from "@/components/workspace/LabBench";
 
@@ -235,24 +236,12 @@ export default function Home() {
           </section>
         )}
 
-        <footer className="mt-16 space-y-3 text-center text-xs leading-relaxed text-muted">
-          <p>
-            <a
-              href="https://api.verity.codes/scalar"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline decoration-border underline-offset-2 transition hover:text-accent hover:decoration-accent"
-            >
-              API reference ↗
-            </a>
-          </p>
-          <p>
-            The representation reports a calibrated likelihood ratio; it never makes the decision.
-            <br />
-            Not a claim about the error rate of forensic examination, which remains unknown.
-          </p>
-        </footer>
       </main>
+
+      {/* Shared trust chrome — GitHub, license, white paper, About, and the five-host
+          map. It carries the calibrated-LR / error-rate disclaimer that used to live in
+          the inline footer here. */}
+      <SiteFooter />
     </>
   );
 }

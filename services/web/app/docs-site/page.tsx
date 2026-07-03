@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { HostMap } from "@/components/docs/HostMap";
 
 export const metadata: Metadata = {
   title: "Verity docs",
@@ -43,6 +44,12 @@ const CARDS: DocCard[] = [
     title: "References",
     blurb:
       "The foundational methods, standards, benchmark datasets, and calibration literature Verity builds on, with relevance notes.",
+  },
+  {
+    href: "/lineage",
+    title: "Scientific lineage",
+    blurb:
+      "The published research Verity operationalizes — automatic bullet-land matching, Congruent Matching Cells, and the open-data ecosystem — plus the downloadable validation report.",
   },
   {
     href: "/docs",
@@ -102,6 +109,8 @@ export default function DocsLanding() {
           </a>
         ))}
       </div>
+
+      <HostMap />
     </main>
   );
 }
