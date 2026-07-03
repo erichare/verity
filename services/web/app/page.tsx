@@ -65,7 +65,7 @@ export default function Home() {
     if (!manualDomain && d.domain !== domain) setDomain(d.domain);
   }
 
-  const shownDomains = domains.length ? domains : ["striated", "impressed"];
+  const shownDomains = domains.length ? domains : ["striated", "impressed", "toolmark"];
 
   return (
     <>
@@ -89,7 +89,7 @@ export default function Home() {
           <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-foreground/80 sm:text-xl">
             One calibrated, explainable method for comparing forensic surface marks — a{" "}
             <strong className="text-foreground">likelihood ratio with a characterized cost</strong>, and a
-            map of <strong className="text-foreground">exactly which regions drove the match</strong>.
+            map of <strong className="text-foreground">exactly which regions drove the comparison</strong>.
           </p>
           <p className="mx-auto mt-4 max-w-xl text-xs leading-relaxed text-foreground/70">
             It reports the weight of evidence — it never makes the decision, and makes no claim about
@@ -104,7 +104,7 @@ export default function Home() {
               Compare two marks ↓
             </a>
             <a
-              href="/method"
+              href="https://docs.verity.codes/method"
               className="glass rounded-full px-6 py-3 text-sm font-medium text-foreground/80 transition hover:text-foreground"
             >
               How it works
@@ -138,10 +138,10 @@ export default function Home() {
             <p className="mx-auto max-w-2xl text-sm leading-relaxed text-foreground/70">
               Forensic mark comparison is used in criminal courts yet has no characterized error
               rate. Verity returns a calibrated likelihood ratio with a quantified cost and
-              region-level attribution — one method across striated and impressed marks.
+              region-level attribution — one method across striated, impressed, and toolmark marks.
             </p>
             <a
-              href="/why"
+              href="https://docs.verity.codes/why"
               className="glass mt-5 inline-block rounded-full px-6 py-3 text-sm font-medium text-foreground/80 transition hover:text-foreground"
             >
               Why this exists →
@@ -210,6 +210,12 @@ export default function Home() {
               <FilePick label="Mark A" files={markA} onPick={onPickA} multiple={domain === "striated"} />
               <FilePick label="Mark B" files={markB} onPick={setMarkB} multiple={domain === "striated"} />
             </div>
+            <p className="text-xs text-muted">
+              Your first Mark A scan is sent to{" "}
+              <span className="font-mono text-foreground/70">api.verity.codes</span> to detect the mark
+              type when you pick it; both marks are sent when you compute the likelihood ratio. Nothing
+              is stored after the response.
+            </p>
             <p className="text-xs text-muted">
               {domain === "striated"
                 ? "Each mark is a bullet — select all of its land scans (e.g. 6). A single land is only weakly diagnostic; the strength comes from aggregating the lands."

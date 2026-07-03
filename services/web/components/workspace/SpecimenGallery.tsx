@@ -14,8 +14,8 @@ const QUICK =
   "rounded-full border border-brass/40 bg-brass/[0.06] px-3 py-1.5 text-xs font-medium text-foreground/85 transition hover:border-brass/70 hover:bg-brass/[0.12]";
 
 /** The specimen picker: domain tabs, a grid of real-mark cards, and the on-stage
- *  shortcuts ("Show me a match / non-match / surprise me"). Tab state is local UI;
- *  selection + pairing live in <Workspace>. */
+ *  shortcuts ("Same-source pair / Different-source pair / Surprise me"). Tab state is
+ *  local UI; selection + pairing live in <Workspace>. */
 export function SpecimenGallery({
   specimens,
   cardState,
@@ -51,10 +51,10 @@ export function SpecimenGallery({
         </div>
         <div className="flex flex-wrap gap-2">
           <button type="button" className={QUICK} onClick={() => onQuick("match", tab)}>
-            Show me a match
+            Same-source pair
           </button>
           <button type="button" className={QUICK} onClick={() => onQuick("nonmatch", tab)}>
-            Show me a non-match
+            Different-source pair
           </button>
           <button type="button" className={QUICK} onClick={() => onQuick("surprise", tab)}>
             Surprise me

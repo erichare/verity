@@ -34,10 +34,15 @@ function toBenchResult(c: GalleryComparison): BenchResult {
 // empty picker. Falls back to any known-match pair if the gallery has no striated one.
 const DEFAULT_PAIR = pickByRelation("KM", "striated") ?? pickByRelation("KM");
 
+// The bench result for the default pair, computed synchronously so server-render
+// and first client paint already show the resolved LR — the copy never contradicts
+// the pre-selected slots (no "pick a second mark" flash under a filled pair).
+const DEFAULT_RESULT = DEFAULT_PAIR ? toBenchResult(DEFAULT_PAIR) : null;
+
 export function Workspace() {
   const [slotA, setSlotA] = useState<string | null>(DEFAULT_PAIR?.aId ?? null);
   const [slotB, setSlotB] = useState<string | null>(DEFAULT_PAIR?.bId ?? null);
-  const [result, setResult] = useState<BenchResult | null>(null);
+  const [result, setResult] = useState<BenchResult | null>(DEFAULT_RESULT);
   const [surprise, setSurprise] = useState(0);
 
   const specA = slotA ? getSpecimen(slotA) : undefined;
@@ -136,7 +141,7 @@ export function Workspace() {
         <p className="border-t border-border pt-6 text-center text-sm text-muted">
           {slotA
             ? "Pick a second mark to compare against — or use a shortcut above."
-            : "Pick two marks, or try “Show me a match”. Every result is a real, precomputed comparison."}
+            : "Pick two marks, or try “Same-source pair”. Every result is a real, precomputed comparison."}
         </p>
       )}
     </div>

@@ -298,6 +298,22 @@ export default function DocsPage() {
                 cap</strong> (ELUB-inspired) — the strongest claim the reference data can support.
               </p>
               <p>
+                <strong className="text-foreground">The calibration model.</strong> The score → LR map is
+                a <strong className="text-foreground">2-parameter logistic fit (Platt scaling)</strong> by
+                default — a monotone, bounded transform, with an optional pool-adjacent-violators
+                (isotonic) alternative. The near-unregularized logistic on a small anchoring set gives
+                the ELUB-style bound. Source:{" "}
+                <a
+                  href="https://github.com/erichare/verity/blob/main/services/engine/verity/decision/lr.py"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-accent hover:underline"
+                >
+                  decision/lr.py ↗
+                </a>
+                .
+              </p>
+              <p>
                 <strong className="text-foreground">Congruent Matching Regions (CMR).</strong> Verity&rsquo;s
                 domain-general similarity principle: partition a mark into regions, register each
                 against the other mark, and count the regions that agree on one common geometry. It
@@ -411,7 +427,7 @@ export default function DocsPage() {
               </div>
 
               <p className="pt-2 font-medium text-foreground">Response — the ComparisonReport</p>
-              <CodeBlock label="200 OK" code={COMPARE_RESPONSE} />
+              <CodeBlock label="200 OK (annotated)" code={COMPARE_RESPONSE} />
               <div className="overflow-x-auto rounded-xl border border-border">
                 <table className="w-full min-w-[520px] text-sm">
                   <tbody>
@@ -572,6 +588,21 @@ export default function DocsPage() {
                 <code className="font-mono text-xs">R CMD INSTALL bindings/r/verityx3p</code> from a
                 clone, which needs a Rust toolchain. TypeScript / Swift / Java bindings are planned.
               </p>
+              <div className="mt-4 rounded-xl border border-brass/30 bg-brass/[0.05] p-4 text-sm leading-relaxed text-foreground/80">
+                <p className="font-medium text-foreground">For examiners</p>
+                <p className="mt-1.5 text-muted">
+                  Verity accepts 3-D surface-topography scans in{" "}
+                  <strong className="text-foreground">X3P (ISO 25178-72)</strong>. To resolve the
+                  individualizing roughness band the calibration relies on, the lateral pitch must be
+                  fine enough — <strong className="text-foreground">≤ 2 µm</strong> (Nyquist for the
+                  λ<sub>s</sub> = 4 µm short cutoff); a scan coarser than 4 µm is refused rather than
+                  scored. Every comparison is checked against its reference&rsquo;s validated domain
+                  (resolution, mark type, coverage, signal) before an LR is emitted. The result is a
+                  calibrated weight of evidence — <strong className="text-foreground">one input to an
+                  examiner&rsquo;s judgment</strong>, not a verdict, and not a claim about the error
+                  rate of examination.
+                </p>
+              </div>
             </Section>
 
             <Section id="catalog" eyebrow="The data" title="Data catalog">

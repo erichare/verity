@@ -63,7 +63,8 @@ export function HostMap() {
                 className="font-mono text-sm text-foreground/80 transition hover:text-accent"
               >
                 {h.host}
-                <span className="text-accent"> {h.external ? "↗" : "→"}</span>
+                <span aria-hidden className="text-accent"> {h.external ? "↗" : "→"}</span>
+                {h.external && <span className="sr-only"> (opens in new tab)</span>}
               </a>
               {h.here && (
                 <span className="ml-2 rounded-full border border-border px-2 py-0.5 text-[10px] text-muted sm:ml-0 sm:mt-1 sm:block sm:w-fit">

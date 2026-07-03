@@ -93,13 +93,27 @@ export default function DocsLanding() {
         </h1>
         <p className="mt-5 max-w-2xl text-lg leading-relaxed text-foreground/80">
           Everything behind the calibrated likelihood ratio — the method, the open benchmark,
-          the reference data, and the API. For forensic examiners, statisticians, and
-          researchers. The app itself lives at{" "}
+          the reference data, and the API. The app itself lives at{" "}
           <a
             href="https://verity.codes"
             className="text-accent underline decoration-border underline-offset-2 transition hover:decoration-accent"
           >
             verity.codes
+          </a>
+          .
+        </p>
+        <p className="mt-4 max-w-2xl text-sm leading-relaxed text-muted">
+          Start where you fit: scientists →{" "}
+          <a href="/method" className="text-accent underline decoration-border underline-offset-2 transition hover:decoration-accent">
+            the method
+          </a>{" "}
+          · developers →{" "}
+          <a href="/docs" className="text-accent underline decoration-border underline-offset-2 transition hover:decoration-accent">
+            use Verity
+          </a>{" "}
+          · examiners →{" "}
+          <a href="/why" className="text-accent underline decoration-border underline-offset-2 transition hover:decoration-accent">
+            why it exists
           </a>
           .
         </p>
@@ -115,9 +129,10 @@ export default function DocsLanding() {
           >
             <h2 className="font-display text-xl font-medium text-foreground">
               {c.title}
-              <span className="ml-1 text-accent transition group-hover:translate-x-0.5">
+              <span aria-hidden className="ml-1 text-accent transition group-hover:translate-x-0.5">
                 {c.external ? " ↗" : " →"}
               </span>
+              {c.external && <span className="sr-only"> (opens in new tab)</span>}
             </h2>
             <p className="text-sm leading-relaxed text-muted">{c.blurb}</p>
           </a>

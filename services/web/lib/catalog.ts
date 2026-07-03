@@ -101,7 +101,9 @@ export async function getScans(opts: {
   instrument?: string;
   limit?: number;
   offset?: number;
-}): Promise<{ scans: Scan[]; total: number }> {
+  // `error` distinguishes an outage (fetch failed / non-2xx) from a legitimate empty
+  // result set, so the UI can show "temporarily unavailable" instead of "no scans".
+}): Promise<{ scans: Scan[]; total: number; error?: boolean }> {
   if (!catalogConfigured) return { scans: [], total: 0 };
   const { search = "", markClass = "all", instrument = "", limit = 50, offset = 0 } = opts;
   // Filtering by instrument needs an inner join on the embedded resource; the
@@ -120,12 +122,17 @@ export async function getScans(opts: {
   if (markClass === "cartridge") params.set("mark_id", "not.is.null");
   if (markClass === "toolmark") params.set("toolmark_id", "not.is.null");
   if (instrument) params.set("instrument.external_id", `eq.${instrument}`);
-  const res = await fetch(`${SB_URL}/rest/v1/scan?${params.toString()}`, {
-    headers: { ...authHeaders(), Prefer: "count=exact" },
-    cache: "no-store",
-  });
-  if (!res.ok) return { scans: [], total: 0 };
-  const range = res.headers.get("content-range") ?? "*/0";
-  const total = Number(range.split("/")[1] || 0);
-  return { scans: await res.json(), total };
+  try {
+    const res = await fetch(`${SB_URL}/rest/v1/scan?${params.toString()}`, {
+      headers: { ...authHeaders(), Prefer: "count=exact" },
+      cache: "no-store",
+    });
+    if (!res.ok) return { scans: [], total: 0, error: true };
+    const range = res.headers.get("content-range") ?? "*/0";
+    const total = Number(range.split("/")[1] || 0);
+    return { scans: await res.json(), total };
+  } catch {
+    // Network failure (DNS, CORS, offline) — an outage, not an empty result.
+    return { scans: [], total: 0, error: true };
+  }
 }

@@ -292,7 +292,7 @@ export default async function BenchmarkPage() {
           Most published comparison algorithms report discrimination (AUC, error rates) on
           splits of their own choosing. This benchmark freezes the comparison pairs and the
           source-disjoint evaluation folds — committed to by a cryptographic split hash — and
-          scores what the field does not otherwise measure:{" "}
+          scores what the field rarely measures:{" "}
           <strong className="text-foreground">
             how honest the reported likelihood ratios are
           </strong>{" "}

@@ -51,7 +51,7 @@ _BENCH_DIR = _ROOT / "services/catalog/benchmarks"
 # Bullet studies that have a cached bulletxtrctr head-to-head.
 _FIREARM_STUDIES = [
     ("Hamby-252", "c09aaa86-5d60-4acb-9031-46dad2c0ad32"),
-    ("PGPD Beretta", "fcafffb1-b96c-49c7-9a9f-b1ec9849f884"),
+    ("Prince George's County PD (PGPD) Beretta", "fcafffb1-b96c-49c7-9a9f-b1ec9849f884"),
 ]
 
 # Per-row scorer labels — the Verity side of every head-to-head row is labeled with
