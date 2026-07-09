@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { compareMarks, detectDomain, getDomains, type Detection } from "@/lib/api";
 import type { CompareResponse } from "@/lib/types";
 import { FilePick } from "@/components/FilePick";
@@ -30,6 +30,7 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [detected, setDetected] = useState<Detection | null>(null);
   const [manualDomain, setManualDomain] = useState(false);
+  const uploadResultRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     getDomains().then((d) => {
@@ -40,7 +41,12 @@ export default function Home() {
     });
   }, []);
 
-  async function onCompare() {
+  useEffect(() => {
+    if (result) uploadResultRef.current?.focus();
+  }, [result]);
+
+  async function onCompare(event?: FormEvent<HTMLFormElement>) {
+    event?.preventDefault();
     if (!markA.length || !markB.length) return;
     setLoading(true);
     setError(null);
@@ -81,60 +87,90 @@ export default function Home() {
       {/* Hero — clean paper canvas + the faint ledger grid from the body */}
       <section
         id="top"
-        className="relative flex min-h-[72svh] items-center justify-center px-6 pt-28 sm:pt-24"
+        className="relative flex items-center justify-center px-6 pb-14 pt-24 sm:min-h-[72svh] sm:pb-12 sm:pt-24"
       >
         <div className="rise mx-auto max-w-3xl text-center">
+          <p className="mb-5 text-[11px] font-semibold uppercase tracking-[0.18em] text-brass-text">
+            Open-source research preview
+          </p>
           <h1 className="font-display text-4xl font-semibold leading-[1.05] tracking-tight sm:text-7xl">
             Forensic marks, <span className="accent-text">weighed as evidence</span>.
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-foreground/80 sm:text-xl">
-            One calibrated, explainable method for comparing forensic surface marks — a{" "}
-            <strong className="text-foreground">likelihood ratio with a characterized cost</strong>, and a
-            map of <strong className="text-foreground">exactly which regions drove the comparison</strong>.
+            Compare real specimens — or upload X3P scans — and get an auditable{" "}
+            <strong className="text-foreground">likelihood ratio, uncertainty, and a map of the regions
+            that drove it</strong>. Never a black-box &ldquo;match.&rdquo;
           </p>
           <p className="mx-auto mt-4 max-w-xl text-xs leading-relaxed text-foreground/70">
-            It reports the weight of evidence — it never makes the decision, and makes no claim about
-            the error rate of examination.
+            Verity reports the weight of evidence. It never makes the decision, and it does not claim
+            an examination error rate.
           </p>
 
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <a
               href="#compare"
-              className="rounded-full bg-primary px-6 py-3 text-sm font-semibold text-[#f4f1ea] shadow-lg shadow-[#0e2a47]/20 transition hover:opacity-90"
+              className="inline-flex min-h-11 items-center rounded-full bg-primary px-6 py-3 text-sm font-semibold text-[#f4f1ea] shadow-lg shadow-[#0e2a47]/20 transition hover:opacity-90"
             >
-              Compare two marks ↓
+              Try a real example<LinkArrow className="ml-1.5" />
             </a>
             <a
-              href="https://docs.verity.codes/method"
-              className="glass rounded-full px-6 py-3 text-sm font-medium text-foreground/80 transition hover:text-foreground"
+              href="#upload"
+              className="glass inline-flex min-h-11 items-center rounded-full px-6 py-3 text-sm font-medium text-foreground/80 transition hover:text-foreground"
             >
-              How it works
+              Upload X3P scans<LinkArrow className="ml-1.5" />
             </a>
           </div>
+          <p className="mt-4 text-xs text-muted">
+            No file needed for the example ·{" "}
+            <a
+              href="https://docs.verity.codes/method"
+              className="font-medium text-foreground/75 underline decoration-border underline-offset-4 transition hover:text-foreground hover:decoration-accent"
+            >
+              Read the method<LinkArrow kind="external" className="ml-1" />
+            </a>
+          </p>
+        </div>
+      </section>
+
+      <section aria-labelledby="validation-at-a-glance" className="mx-auto w-full max-w-4xl px-6">
+        <div className="glass rounded-2xl px-5 py-5 shadow-lg shadow-[#0e2a47]/[0.04] sm:px-7">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2
+              id="validation-at-a-glance"
+              className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted"
+            >
+              Validation at a glance
+            </h2>
+            <a
+              href="https://docs.verity.codes/method"
+              className="text-xs font-medium text-foreground/70 transition hover:text-foreground"
+            >
+              See the methodology<LinkArrow kind="external" className="ml-1" />
+            </a>
+          </div>
+          <StatBand className="mt-5" />
         </div>
       </section>
 
       {/* Content */}
-      <div className="mx-auto mt-6 w-full max-w-4xl px-6 pb-24">
+      <div className="mx-auto mt-16 w-full max-w-4xl px-6 pb-24 sm:mt-20">
         {/* The compare workspace — the live app, front and center. */}
         <section id="compare" className="scroll-mt-20">
           <div className="mb-5">
             <h2 className="font-display text-2xl font-medium text-foreground sm:text-3xl">
               Compare <span className="accent-text">two marks</span>
             </h2>
-            <p className="mt-2 max-w-2xl text-sm text-muted">
-              Pick two real specimens — bullets, cartridge cases, or toolmarks — and watch the
-              calibrated likelihood ratio resolve, no file of your own needed. One pipeline, zero
-              per-modality tuning; every result is a real, precomputed comparison. To run your own
-              scans, upload them below.
+            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">
+              Choose two real specimens — no upload required — and follow the evidence from matched
+              regions to the reference population to a calibrated likelihood ratio. Every example is
+              a real, precomputed comparison across bullets, cartridge cases, and toolmarks.
             </p>
           </div>
           <Workspace />
-          <StatBand compact className="mt-6" />
         </section>
 
         {/* Why this exists — one line; the full scientific argument lives on docs.verity.codes */}
-        <Reveal className="mt-28 sm:mt-40">
+        <Reveal className="mt-20 sm:mt-28">
           <div className="text-center">
             <p className="mx-auto max-w-2xl text-sm leading-relaxed text-foreground/70">
               Forensic mark comparison is used in criminal courts yet has no characterized error
@@ -143,7 +179,7 @@ export default function Home() {
             </p>
             <a
               href="https://docs.verity.codes/why"
-              className="glass mt-5 inline-block rounded-full px-6 py-3 text-sm font-medium text-foreground/80 transition hover:text-foreground"
+              className="glass mt-5 inline-flex min-h-11 items-center rounded-full px-6 py-3 text-sm font-medium text-foreground/80 transition hover:text-foreground"
             >
               Why this exists<LinkArrow className="ml-1" />
             </a>
@@ -151,12 +187,16 @@ export default function Home() {
         </Reveal>
 
         {/* Upload-your-own path — the live API, for visitors with their own .x3p scans. */}
-        <Reveal className="mt-28 sm:mt-40">
+        <Reveal className="mt-20 sm:mt-28">
           <div
             id="upload"
             className="scroll-mt-20 rounded-[1.45rem] bg-gradient-to-br from-brass via-primary to-brass p-[1.5px] shadow-2xl shadow-[#0e2a47]/15"
           >
-            <section className="space-y-5 rounded-[1.35rem] bg-background p-6 sm:p-8">
+            <form
+              onSubmit={onCompare}
+              aria-busy={loading}
+              className="space-y-5 rounded-[1.35rem] bg-background p-6 sm:p-8"
+            >
             <div>
               <h2 className="font-display text-2xl font-medium text-foreground sm:text-3xl">
                 Bring your <span className="accent-text">own scans</span>
@@ -191,7 +231,7 @@ export default function Home() {
                   setMarkB([]);
                   setResult(null);
                 }}
-                className="w-full rounded-lg border border-border bg-background/60 px-3 py-2 text-sm text-foreground outline-none focus:border-accent/60 focus-visible:ring-2 focus-visible:ring-accent"
+                className="min-h-11 w-full rounded-lg border border-control bg-background/60 px-3 py-2 text-sm text-foreground outline-none focus:border-accent focus-visible:ring-2 focus-visible:ring-accent"
               >
                 {shownDomains.map((d) => (
                   <option key={d} value={d}>
@@ -201,47 +241,81 @@ export default function Home() {
               </select>
             </div>
             {detected && (
-              <p className="text-xs text-muted">
+              <p role="status" className="text-xs text-muted">
                 Auto-detected from your scan:{" "}
                 <span className="text-foreground/80">{DOMAIN_LABELS[detected.domain] ?? detected.domain}</span>
                 {" "}— change it above if it&rsquo;s wrong.
               </p>
             )}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <FilePick label="Mark A" files={markA} onPick={onPickA} multiple={domain === "striated"} />
-              <FilePick label="Mark B" files={markB} onPick={setMarkB} multiple={domain === "striated"} />
+              <FilePick
+                key={`${domain}-mark-a`}
+                label="Mark A"
+                files={markA}
+                onPick={onPickA}
+                multiple={domain === "striated"}
+              />
+              <FilePick
+                key={`${domain}-mark-b`}
+                label="Mark B"
+                files={markB}
+                onPick={setMarkB}
+                multiple={domain === "striated"}
+              />
             </div>
-            <p className="text-xs text-muted">
-              Your first Mark A scan is sent to{" "}
-              <span className="font-mono text-foreground/70">api.verity.codes</span> to detect the mark
-              type when you pick it; both marks are sent when you compute the likelihood ratio. Nothing
-              is stored after the response.
-            </p>
-            <p className="text-xs text-muted">
-              {domain === "striated"
-                ? "Each mark is a bullet — select all of its land scans (e.g. 6). A single land is only weakly diagnostic; the strength comes from aggregating the lands."
-                : domain === "toolmark"
-                  ? "One striated profile scan per toolmark (e.g. a screwdriver mark)."
-                  : "One breech-face scan per mark."}
+            <div className="space-y-2 rounded-lg bg-foreground/[0.035] p-3 text-xs leading-relaxed text-muted">
+              <p>
+                <strong className="font-medium text-foreground/80">Private by design.</strong> Your first
+                Mark A scan is sent to{" "}
+                <span className="font-mono text-foreground/70">api.verity.codes</span> to detect the mark
+                type when you pick it; both marks are sent when you compute the likelihood ratio.
+                Nothing is stored after the response.
+              </p>
+              <p>
+                {domain === "striated"
+                  ? "For each bullet, select all land scans (typically 6). A single land is only weakly diagnostic; the strength comes from aggregating the lands."
+                  : domain === "toolmark"
+                    ? "Select one striated profile scan per toolmark (for example, a screwdriver mark)."
+                    : "Select one breech-face scan per mark."}
+              </p>
+            </div>
+            <p className="sr-only" role="status" aria-live="polite">
+              {loading
+                ? "Comparing the selected marks."
+                : result
+                  ? "Comparison complete. The detailed result follows the upload form."
+                  : ""}
             </p>
             <button
-              onClick={onCompare}
+              type="submit"
               disabled={!markA.length || !markB.length || loading}
-              className="w-full rounded-lg bg-primary px-4 py-3 font-semibold text-[#f4f1ea] shadow-lg shadow-[#0e2a47]/20 transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+              className="min-h-12 w-full rounded-lg bg-primary px-4 py-3 font-semibold text-[#f4f1ea] shadow-lg shadow-[#0e2a47]/20 transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              {loading ? "Comparing…" : "Compute likelihood ratio"}
+              {loading
+                ? "Comparing…"
+                : markA.length && markB.length
+                  ? "Compute likelihood ratio"
+                  : "Select both marks to compare"}
             </button>
             {error && (
-              <p className="rounded-lg border border-oxblood/30 bg-oxblood/10 p-3 text-sm text-oxblood">
+              <p role="alert" className="rounded-lg border border-oxblood/30 bg-oxblood/10 p-3 text-sm text-oxblood">
                 {error}
               </p>
             )}
-            </section>
+            </form>
           </div>
         </Reveal>
 
         {result && (
-          <section className="rise mt-8">
+          <section
+            ref={uploadResultRef}
+            tabIndex={-1}
+            aria-labelledby="upload-result-heading"
+            className="rise mt-8 rounded-2xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brass"
+          >
+            <h2 id="upload-result-heading" className="sr-only">
+              Uploaded mark comparison result
+            </h2>
             <LabBench
               result={{ report: result, provenance: "upload" }}
               revealKey={`upload-${uploadKey}`}

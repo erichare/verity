@@ -20,6 +20,7 @@
   --color-brass-text: var(--brass-text);
   --color-oxblood: var(--oxblood);
   --color-danger: var(--danger);
+  --color-control: var(--control-border);
 }
 
 :root {
@@ -29,6 +30,7 @@
   --foreground: #13243a;   /* ink */
   --card: rgba(255, 252, 245, 0.72);   /* warm translucent paper for .glass */
   --border: rgba(19, 36, 58, 0.14);    /* ink hairline */
+  --control-border: rgba(19, 36, 58, 0.5); /* interactive boundary — 3.09:1 on canvas */
   --muted: #5a6677;        /* muted ink */
 
   --primary: #0e2a47;      /* deep navy — primary actions, wordmark */
@@ -52,6 +54,7 @@
   --foreground: #e8e2d4;   /* bone-tinted foreground */
   --card: rgba(232, 226, 212, 0.05);   /* faint bone film for .glass */
   --border: rgba(232, 226, 212, 0.12);
+  --control-border: rgba(232, 226, 212, 0.45); /* interactive boundary — 3.76:1 on canvas */
   --muted: #9aa6b6;
 
   --primary: #173b5e;      /* navy that reads as a surface on near-black */
@@ -69,6 +72,11 @@
 
 html {
   scroll-behavior: smooth;
+}
+
+:where(a, button, summary, select, input):focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 3px;
 }
 
 body {

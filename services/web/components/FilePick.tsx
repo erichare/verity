@@ -26,7 +26,7 @@ export function FilePick({
         ? files[0].name
         : `${files.length} scans selected`;
   return (
-    <label className="group flex cursor-pointer flex-col gap-1.5 rounded-xl border border-dashed border-border bg-foreground/[0.02] p-4 text-sm transition focus-within:border-accent focus-within:ring-2 focus-within:ring-accent hover:border-accent/60 hover:bg-foreground/[0.05]">
+    <label className="group flex min-h-24 cursor-pointer flex-col justify-center gap-1.5 rounded-xl border border-dashed border-control bg-foreground/[0.02] p-4 text-sm transition focus-within:border-accent focus-within:ring-2 focus-within:ring-accent hover:border-accent hover:bg-foreground/[0.05]">
       <span className="font-medium text-foreground">{label}</span>
       <span className="truncate text-muted group-hover:text-foreground/80">{summary}</span>
       <input

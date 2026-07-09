@@ -49,12 +49,12 @@ export function StatBand({ className, compact }: { className?: string; compact?:
   }
   return (
     <dl
-      className={`mx-auto flex max-w-2xl flex-wrap items-stretch justify-center gap-x-8 gap-y-4 ${className ?? ""}`}
+      className={`mx-auto grid w-full max-w-3xl grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-4 ${className ?? ""}`}
     >
       {stats.map((s) => (
         <div key={s.label} className="flex flex-col items-center text-center">
-          <dt className="font-mono text-2xl font-semibold accent-text sm:text-3xl">{s.value}</dt>
-          <dd className="mt-0.5 text-[11px] uppercase tracking-wider text-muted">{s.label}</dd>
+          <dt className="order-2 mt-0.5 text-[11px] uppercase tracking-wider text-muted">{s.label}</dt>
+          <dd className="order-1 font-mono text-2xl font-semibold accent-text sm:text-3xl">{s.value}</dd>
         </div>
       ))}
     </dl>

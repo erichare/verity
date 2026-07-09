@@ -5,12 +5,12 @@ const GITHUB = "https://github.com/erichare/verity";
 // The five-host map — one line each. This is the single place the whole split is
 // spelled out, and the footer renders on all three web shells, so every host can
 // reach every other one (including data.verity.codes, which is otherwise invisible).
-const HOSTS: { href: string; host: string; role: string; external?: boolean }[] = [
-  { href: "https://verity.codes", host: "verity.codes", role: "compare workspace" },
-  { href: "https://app.verity.codes", host: "app.verity.codes", role: "Studio — the pipeline, stage by stage" },
-  { href: "https://docs.verity.codes", host: "docs.verity.codes", role: "documentation & the science" },
-  { href: "https://api.verity.codes/scalar", host: "api.verity.codes", role: "comparison API", external: true },
-  { href: "https://data.verity.codes/scalar", host: "data.verity.codes", role: "catalog & benchmark data API", external: true },
+const HOSTS: { href: string; host: string; label: string; external?: boolean }[] = [
+  { href: "https://verity.codes", host: "verity.codes", label: "Compare specimens" },
+  { href: "https://app.verity.codes", host: "app.verity.codes", label: "Explore the pipeline" },
+  { href: "https://docs.verity.codes", host: "docs.verity.codes", label: "Read the science" },
+  { href: "https://api.verity.codes/scalar", host: "api.verity.codes", label: "Use the comparison API", external: true },
+  { href: "https://data.verity.codes/scalar", host: "data.verity.codes", label: "Browse benchmark data", external: true },
 ];
 
 const PROJECT: { href: string; label: string; external?: boolean }[] = [
@@ -145,9 +145,9 @@ export function SiteFooter({
             </ul>
           </nav>
 
-          <nav aria-label="Verity hosts">
+          <nav aria-label="Explore Verity">
             <p className="text-[11px] font-medium uppercase tracking-wider text-muted">
-              One project, five hosts
+              Explore Verity
             </p>
             <ul className="mt-3 space-y-2 text-xs">
               {HOSTS.map((h) => (
@@ -155,12 +155,12 @@ export function SiteFooter({
                   <FooterLink
                     href={h.href}
                     external={h.external}
-                    className="font-mono text-foreground/70"
+                    className="text-foreground/70"
                   >
-                    {h.host}
+                    {h.label}
                   </FooterLink>
                   <span aria-hidden> — </span>
-                  {h.role}
+                  <span className="font-mono text-[11px]">{h.host}</span>
                 </li>
               ))}
             </ul>

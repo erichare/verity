@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { formatLR } from "@/lib/format";
 
 /**
@@ -17,6 +17,7 @@ export function LRCounter({
   animate?: boolean;
   className?: string;
 }) {
+  const ref = useRef<HTMLSpanElement>(null);
   const [shown, setShown] = useState(value);
 
   useEffect(() => {
@@ -28,25 +29,47 @@ export function LRCounter({
       setShown(value);
       return;
     }
-    const logTarget = Math.log10(value); // 0 (LR=1) → target; works for exclusion too
-    const start = performance.now();
-    const dur = 900;
+    const el = ref.current;
+    if (!el) return;
+    // Keep offscreen and assistive-technology output accurate until the visual
+    // count-up begins at the moment the result enters the viewport.
+    setShown(value);
+
     let raf = 0;
-    const tick = (t: number) => {
-      const p = Math.min(1, (t - start) / dur);
-      const eased = 1 - Math.pow(1 - p, 3);
-      setShown(Math.pow(10, logTarget * eased));
-      if (p < 1) raf = requestAnimationFrame(tick);
+    let done = 0;
+    const run = () => {
+      const logTarget = Math.log10(value); // 0 (LR=1) → target; works for exclusion too
+      const start = performance.now();
+      const dur = 900;
+      const tick = (t: number) => {
+        const p = Math.min(1, (t - start) / dur);
+        const eased = 1 - Math.pow(1 - p, 3);
+        setShown(Math.pow(10, logTarget * eased));
+        if (p < 1) raf = requestAnimationFrame(tick);
+      };
+      setShown(1);
+      raf = requestAnimationFrame(tick);
+      // Guarantee the final value lands even if rAF is throttled (background tab, headless).
+      done = window.setTimeout(() => setShown(value), dur + 80);
     };
-    setShown(1);
-    raf = requestAnimationFrame(tick);
-    // Guarantee the final value lands even if rAF is throttled (background tab, headless).
-    const done = window.setTimeout(() => setShown(value), dur + 80);
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          run();
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.45 },
+    );
+    observer.observe(el);
+
     return () => {
+      observer.disconnect();
       cancelAnimationFrame(raf);
       window.clearTimeout(done);
     };
   }, [value, animate]);
 
-  return <span className={className}>{formatLR(shown)}</span>;
+  return <span ref={ref} className={className}>{formatLR(shown)}</span>;
 }

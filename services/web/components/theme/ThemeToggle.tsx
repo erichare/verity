@@ -22,7 +22,7 @@ export function ThemeToggle() {
           : "Toggle theme"
       }
       onClick={() => setTheme(isDark ? "light" : "dark")}
-      className="glass group inline-flex h-9 w-9 items-center justify-center rounded-full text-foreground/70 transition hover:text-foreground"
+      className="glass group inline-flex h-10 w-10 items-center justify-center rounded-full text-foreground/70 transition hover:text-foreground"
     >
       {mounted ? (
         isDark ? <SunIcon /> : <MoonIcon />

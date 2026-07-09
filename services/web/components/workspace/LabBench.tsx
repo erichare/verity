@@ -9,11 +9,15 @@ import { AlignedSignatures } from "@/components/method/AlignedSignatures";
 import { CalibrationChart } from "@/components/method/CalibrationChart";
 import { ProvenanceBadge } from "./ProvenanceBadge";
 import { useReveal } from "./useReveal";
+import { formatLR } from "@/lib/format";
+import { LinkArrow } from "@/components/LinkArrow";
 
 function Beat({ show, children }: { show: boolean; children: ReactNode }) {
   return (
     <div
-      className={`transition-all duration-700 ease-out ${
+      aria-hidden={!show}
+      inert={!show ? true : undefined}
+      className={`transition-all duration-700 ease-out motion-reduce:transform-none motion-reduce:transition-none ${
         show ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-2 opacity-0"
       }`}
     >
@@ -41,7 +45,7 @@ export function LabBench({
   bLabel?: string;
 }) {
   const report = result.report;
-  const step = useReveal(isRefusal(report) ? null : revealKey, 4);
+  const step = useReveal(isRefusal(report) ? null : revealKey, 3);
 
   if (isRefusal(report)) {
     return (
@@ -60,27 +64,53 @@ export function LabBench({
   // pairs carry it) and the LR points the *other* way, say so plainly rather than
   // hiding it. A weak LR on a known different-source pair is calibration working, not
   // a bug — the whole promise is a weight of evidence, not a verdict.
-  const lrSaysSame = report.log10_lr > 0;
+  const lrDirection = report.log10_lr > 0 ? "same" : report.log10_lr < 0 ? "different" : "neutral";
   const groundTruthMismatch =
-    (result.relation === "KNM" && lrSaysSame) || (result.relation === "KM" && !lrSaysSame);
+    (result.relation === "KNM" && lrDirection === "same") ||
+    (result.relation === "KM" && lrDirection === "different");
+  const resultId = `comparison-result-${revealKey.replace(/[^a-zA-Z0-9_-]/g, "-") || "current"}`;
 
   return (
     <div className="space-y-5">
       <Header aLabel={aLabel} bLabel={bLabel} result={result} />
 
+      <a
+        href={`#${resultId}`}
+        className="glass flex items-center justify-between gap-4 rounded-xl p-4 transition hover:border-accent/50 sm:hidden"
+      >
+        <span>
+          <span className="block text-[10px] font-medium uppercase tracking-[0.14em] text-muted">
+            Calibrated result
+          </span>
+          <span
+            className={`mt-1 block font-mono text-2xl font-semibold ${
+              lrDirection === "same"
+                ? "accent-text"
+                : lrDirection === "different"
+                  ? "text-oxblood"
+                  : "text-foreground"
+            }`}
+          >
+            {formatLR(report.likelihood_ratio)}
+          </span>
+          <span className="mt-1 block text-xs text-foreground/75">{report.verbal}</span>
+        </span>
+        <span className="shrink-0 text-xs font-medium text-foreground/70">
+          Full result<LinkArrow className="ml-1" />
+        </span>
+      </a>
+
       {groundTruthMismatch && (
-        <Beat show={step >= 4}>
-          <p className="rounded-lg border border-brass/30 bg-brass/[0.06] p-3 text-xs leading-relaxed text-foreground/80">
-            This is a known{" "}
-            <strong className="text-foreground">
-              {result.relation === "KNM" ? "different-source" : "same-source"}
-            </strong>{" "}
-            pair, yet the likelihood ratio leans the other way — weakly. That is what honest
-            calibration looks like: Verity reports the weight of evidence the surfaces actually
-            carry, not the answer you already know. A weak, near-1 LR is the calibrated system
-            declining to overclaim.
-          </p>
-        </Beat>
+        <p className="rounded-lg border border-brass/30 bg-brass/[0.06] p-3 text-xs leading-relaxed text-foreground/80">
+          This is a known{" "}
+          <strong className="text-foreground">
+            {result.relation === "KNM" ? "different-source" : "same-source"}
+          </strong>{" "}
+          pair, yet the likelihood ratio leans the other way — weakly. That is what honest
+          calibration looks like: Verity reports the weight of evidence the surfaces actually
+          carry, not the answer you already know. A weak, near-1 LR is the calibrated system
+          declining to overclaim.
+        </p>
       )}
 
       {hasSurfaces && (
@@ -97,7 +127,7 @@ export function LabBench({
       {hasSignatures && (
         <Beat show={step >= 2}>
           <div className="space-y-2 border-t border-border pt-5">
-            <p className="text-sm font-medium text-foreground">Aligned signatures</p>
+            <h3 className="text-sm font-medium text-foreground">Aligned signatures</h3>
             <p className="text-xs text-muted">
               The two profiles on one scale; matched striae are linked. Parallel links = a
               real, consistent correspondence.
@@ -115,7 +145,7 @@ export function LabBench({
       {hasCalibration && (
         <Beat show={step >= 3}>
           <div className="space-y-2 border-t border-border pt-5">
-            <p className="text-sm font-medium text-foreground">Where the score falls</p>
+            <h3 className="text-sm font-medium text-foreground">Where the score falls</h3>
             <p className="text-xs text-muted">
               The comparison&rsquo;s score against the reference population&rsquo;s
               same-source and different-source distributions — which way, and how strongly,
@@ -131,9 +161,9 @@ export function LabBench({
         </Beat>
       )}
 
-      <Beat show={step >= 4}>
-        <ReportView report={report} animateIn showAttribution={false} />
-      </Beat>
+      <div id={resultId} className="scroll-mt-24">
+        <ReportView key={resultId} report={report} animateIn showAttribution={false} />
+      </div>
     </div>
   );
 }

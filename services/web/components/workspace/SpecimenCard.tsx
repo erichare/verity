@@ -19,20 +19,25 @@ export function SpecimenCard({
   return (
     <button
       type="button"
-      onClick={() => onPick(spec.id)}
-      disabled={dimmed}
+      onClick={() => {
+        if (!dimmed) onPick(spec.id);
+      }}
+      aria-disabled={dimmed}
       aria-pressed={selected}
+      aria-label={`${spec.label}, ${spec.source}${
+        dimmed ? ". Unavailable: no precomputed comparison with the selected Mark A." : ""
+      }`}
       title={dimmed ? "No precomputed comparison with Slot A — upload to compare live" : spec.label}
       className={`group relative flex w-full flex-col gap-2 rounded-xl border p-2.5 text-left transition ${
         selected
-          ? "border-brass/60 bg-brass/[0.07]"
+          ? "border-brass bg-brass/[0.07]"
           : dimmed
-            ? "cursor-not-allowed border-border opacity-40"
-            : "border-border hover:border-accent/50 hover:bg-foreground/[0.03]"
+            ? "cursor-not-allowed border-control opacity-45"
+            : "border-control hover:border-accent hover:bg-foreground/[0.03]"
       }`}
     >
       {selected && (
-        <span className="absolute right-2 top-2 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-brass text-[11px] font-semibold text-[#f4f1ea]">
+        <span className="absolute right-2 top-2 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-foreground text-[11px] font-semibold text-background shadow-sm">
           {state === "a" ? "A" : "B"}
         </span>
       )}

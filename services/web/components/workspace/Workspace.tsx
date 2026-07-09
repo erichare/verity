@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type { BenchResult, GalleryComparison, GallerySpecimen, MarkDomain } from "@/lib/types";
+import { isRefusal, type BenchResult, type GalleryComparison, type GallerySpecimen, type MarkDomain } from "@/lib/types";
 import {
   GALLERY_SPECIMENS,
   findComparison,
@@ -12,6 +12,7 @@ import {
 import { SpecimenGallery } from "./SpecimenGallery";
 import type { SlotState } from "./SpecimenCard";
 import { LabBench } from "./LabBench";
+import { formatLR } from "@/lib/format";
 
 function toBenchResult(c: GalleryComparison): BenchResult {
   return {
@@ -60,20 +61,29 @@ export function Workspace() {
     if (id === slotA) {
       setSlotA(null);
       setSlotB(null);
+      setResult(null);
       return;
     }
     if (id === slotB) {
       setSlotB(null);
+      setResult(null);
       return;
     }
-    if (!slotA) setSlotA(id);
-    else setSlotB(id);
+    if (!slotA) {
+      setSlotA(id);
+      setResult(null);
+    } else {
+      setSlotB(id);
+      const comparison = findComparison(slotA, id);
+      setResult(comparison ? toBenchResult(comparison) : null);
+    }
   }
 
   function selectComparison(c: GalleryComparison | undefined) {
     if (!c) return;
     setSlotA(c.aId);
     setSlotB(c.bId);
+    setResult(toBenchResult(c));
   }
 
   function onQuick(kind: "match" | "nonmatch" | "surprise", domain: MarkDomain) {
@@ -88,6 +98,7 @@ export function Workspace() {
   function reset() {
     setSlotA(null);
     setSlotB(null);
+    setResult(null);
   }
 
   const cardState = useMemo(() => {
@@ -102,9 +113,19 @@ export function Workspace() {
   const aLabel = slotA ? getSpecimen(slotA)?.label : undefined;
   const bLabel = slotB ? getSpecimen(slotB)?.label : undefined;
   const revealKey = result && slotA && slotB ? `${slotA}__${slotB}` : "";
+  const comparisonStatus = result
+    ? isRefusal(result.report)
+      ? `Comparison updated for ${aLabel ?? "Mark A"} and ${bLabel ?? "Mark B"}. Verity declined to report a likelihood ratio.`
+      : `Comparison updated for ${aLabel ?? "Mark A"} and ${bLabel ?? "Mark B"}. ${result.report.verbal}. Likelihood ratio ${formatLR(result.report.likelihood_ratio)}.`
+    : slotA
+      ? "Mark A selected. Choose a compatible Mark B."
+      : "Choose two marks to compare.";
 
   return (
     <div className="space-y-6">
+      <p className="sr-only" role="status" aria-live="polite">
+        {comparisonStatus}
+      </p>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <SlotBar
           aLabel={aLabel}
@@ -112,14 +133,18 @@ export function Workspace() {
           onClearA={() => {
             setSlotA(slotB);
             setSlotB(null);
+            setResult(null);
           }}
-          onClearB={() => setSlotB(null)}
+          onClearB={() => {
+            setSlotB(null);
+            setResult(null);
+          }}
         />
         {(slotA || slotB) && (
           <button
             type="button"
             onClick={reset}
-            className="rounded-full border border-border px-3 py-1.5 text-xs font-medium text-foreground/70 transition hover:border-accent/50 hover:text-foreground"
+            className="min-h-10 rounded-full border border-control px-3 py-2 text-xs font-medium text-foreground/70 transition hover:border-accent hover:text-foreground"
           >
             Reset
           </button>
@@ -184,9 +209,9 @@ function Slot({ tag, label, onClear }: { tag: string; label?: string; onClear: (
           type="button"
           onClick={onClear}
           aria-label={`Clear Slot ${tag}`}
-          className="text-muted transition hover:text-foreground"
+          className="-my-1 -mr-1 inline-flex h-7 items-center justify-center rounded-full px-2 text-[10px] font-medium text-muted transition hover:bg-foreground/[0.06] hover:text-foreground"
         >
-          ✕
+          Clear
         </button>
       )}
     </span>
