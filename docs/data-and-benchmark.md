@@ -53,6 +53,11 @@ Base URL `https://data.verity.codes`:
   protocol.
 - `GET /benchmark/splits/{name}/leaderboard` — scored submissions.
 - `POST /benchmark/splits/{name}/submissions` — submit per-pair LRs for scoring.
+- `GET /datasets/{name}/snapshot` — export a versioned, SHA-256-pinned dataset
+  manifest for offline training consumers. Each row includes its license,
+  physical-source hierarchy, content hash, current blob availability, and X3P
+  download route; the snapshot hash excludes mutable store availability, so it
+  remains stable when a pending blob finishes syncing.
 
 Catalog browsing (studies, firearms, datasets, marks) is served by the same API — see
 the interactive reference at

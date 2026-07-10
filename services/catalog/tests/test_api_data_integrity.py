@@ -244,6 +244,67 @@ def test_scan_detail_reports_blob_availability(env):
     assert missing["blob_available"] is False
 
 
+# --- dataset snapshot export: one immutable training-ingest contract -------- #
+def test_dataset_snapshot_is_hash_pinned_and_self_contained(env):
+    client, ids = env
+
+    first = client.get("/datasets/hamby252-barrel1-sample/snapshot")
+    second = client.get("/datasets/hamby252-barrel1-sample/snapshot")
+
+    assert first.status_code == 200
+    body = first.json()
+    assert body["success"] is True
+    snapshot = body["data"]
+    assert snapshot["schema_version"] == 1
+    assert snapshot["dataset"] == "hamby252-barrel1-sample"
+    assert snapshot["source"] == "nbtrd"
+    assert snapshot["license"] == "public-domain-us-gov"
+    assert snapshot["n_files"] == 12
+    assert snapshot["n_resolved"] == 1
+    assert snapshot["complete"] is False
+    assert len(snapshot["manifest_hash"]) == 64
+    assert snapshot["manifest_hash"] == second.json()["data"]["manifest_hash"]
+
+    resolved = next(row for row in snapshot["scans"] if row["scan_id"] == ids["present"])
+    assert resolved["content_hash"] == sha256_hex(PRESENT_BLOB)
+    assert resolved["blob_available"] is True
+    assert resolved["download_url"] == f"/scans/{ids['present']}/x3p"
+    assert resolved["study_id"] == ids["study_bullets"]
+    assert resolved["firearm_id"] is not None
+    assert resolved["bullet_id"] is not None
+    assert resolved["land_id"] is not None
+    assert resolved["land_position"] == 1
+    assert resolved["source_ref"] == load_manifest_by_name(
+        "hamby252-barrel1-sample"
+    ).files[0].url
+
+    unresolved = [row for row in snapshot["scans"] if row["scan_id"] is None]
+    assert len(unresolved) == 11
+    assert all(row["blob_available"] is False for row in unresolved)
+    assert all(row["download_url"] is None for row in unresolved)
+
+
+def test_catalog_discovered_snapshot_carries_license_and_unavailable_blobs(env):
+    client, ids = env
+    response = client.get("/datasets/fadul-cartridge-cases/snapshot")
+
+    assert response.status_code == 200
+    snapshot = response.json()["data"]
+    assert snapshot["resolution"] == "catalog"
+    assert snapshot["license"] == "cc-by-4.0"
+    assert snapshot["n_files"] == snapshot["n_resolved"] == 1
+    assert snapshot["complete"] is False  # resolved metadata, unsynced bytes
+    assert snapshot["scans"][0]["scan_id"] == ids["fadul"]
+    assert snapshot["scans"][0]["blob_available"] is False
+    assert snapshot["scans"][0]["mark_id"] is not None
+
+
+def test_dataset_snapshot_rejects_path_traversal(env):
+    client, _ids = env
+    response = client.get("/datasets/..%2F..%2Fetc%2Fpasswd/snapshot")
+    assert response.status_code in {404, 422}
+
+
 # --- the honest x3p 404 ------------------------------------------------------ #
 def test_x3p_404_says_metadata_served_but_blob_pending(env):
     client, ids = env
