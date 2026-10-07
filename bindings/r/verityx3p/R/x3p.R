@@ -7,7 +7,8 @@
 #' @param verify_checksums Verify the stored MD5 of the data matrix (default `TRUE`).
 #' @return A `verity_x3p` object: a list with `surface` (an `nx`-by-`ny` numeric
 #'   matrix, invalid points `NaN`), `mask` (logical matrix), `nx`, `ny`,
-#'   `increment_x`, `increment_y`, `z_type`, `creator`, and `comment`.
+#'   `increment_x`, `increment_y`, `z_type`, `creator`, `comment`, and `metadata`
+#'   containing the remaining standard axis and instrument provenance fields.
 #' @export
 read_x3p <- function(path, verify_checksums = TRUE) {
   res <- rust_read_x3p(path.expand(path), isTRUE(verify_checksums))
@@ -23,7 +24,8 @@ read_x3p <- function(path, verify_checksums = TRUE) {
       increment_y = res$increment_y,
       z_type = res$z_type,
       creator = res$creator,
-      comment = res$comment
+      comment = res$comment,
+      metadata = res$metadata
     ),
     class = "verity_x3p"
   )
@@ -40,6 +42,9 @@ write_x3p <- function(x, path, z_type = c("D", "F")) {
   z_type <- match.arg(z_type)
   stopifnot(inherits(x, "verity_x3p"))
   mask <- if (!is.null(x$mask)) as.integer(x$mask) else integer(0)
+  metadata <- if (!is.null(x$metadata)) x$metadata else list()
+  metadata$creator <- if (!is.null(x$creator)) as.character(x$creator) else ""
+  metadata$comment <- if (!is.null(x$comment)) as.character(x$comment) else ""
   rust_write_x3p(
     path.expand(path),
     as.double(as.vector(x$surface)),
@@ -48,7 +53,8 @@ write_x3p <- function(x, path, z_type = c("D", "F")) {
     as.integer(x$ny),
     as.double(x$increment_x),
     as.double(x$increment_y),
-    z_type
+    z_type,
+    metadata
   )
   invisible(path)
 }

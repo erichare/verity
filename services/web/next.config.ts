@@ -10,6 +10,8 @@ const DOCS_SEGMENTS = [
   "references",
   "docs",
   "lineage",
+  "about",
+  "plugins",
 ];
 
 const nextConfig: NextConfig = {

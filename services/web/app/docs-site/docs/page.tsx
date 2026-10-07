@@ -465,6 +465,14 @@ export default function DocsPage() {
             </Section>
 
             <Section id="mcp" eyebrow="For agents" title="MCP server">
+              <a href="/plugins" className="block rounded-xl border border-accent/30 bg-accent/5 p-5 text-foreground transition hover:border-accent">
+                <strong className="font-display text-lg">Claude Code &amp; Codex plugins</strong>
+                <span className="mt-1 block text-sm text-foreground/75">
+                  Install either plugin, check the connection, and use the compare-marks,
+                  explain-result, and service-check skills.
+                </span>
+                <span className="mt-3 inline-block text-sm font-medium text-accent">Installation guide<LinkArrow className="ml-1" /></span>
+              </a>
               <p>
                 Verity ships a <strong className="text-foreground">Model Context Protocol</strong>{" "}
                 server (&ldquo;verity&rdquo;) so AI agents can drive the same calibrated engine as the

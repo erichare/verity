@@ -94,6 +94,7 @@ export interface StudioRun {
   rawFormB: number[][];
   bandA: number[][];
   bandB: number[][];
+  preprocessIllustrative: boolean;
   regionsA: AttributionRegion[];
   regionsB: AttributionRegion[];
   report: ComparisonReport;
@@ -109,7 +110,7 @@ export interface StudioRun {
   arealRaw?: number[][];
   tiltDeg?: number;
   stages: Stage[];
-  configHash: string;
+  configHash: string | null;
 }
 
 // ── Deterministic helpers (stable across renders → no hydration drift) ────────
@@ -356,10 +357,14 @@ function buildStages(run: Omit<StudioRun, "stages">): Stage[] {
     "preprocess",
     { type: "surfaces", variant: "bandpassed" },
     [
-      { label: "form", value: "ISO polynomial" },
-      { label: "band", value: "roughness λ" },
+      { label: "form", value: run.preprocessIllustrative ? "illustrative" : "ISO polynomial" },
+      { label: "band", value: run.preprocessIllustrative ? "display high-pass" : "roughness λ" },
     ],
     false,
+    run.preprocessIllustrative ? {
+      caption: "An illustrative view of form removal and the fine working marks.",
+      why: "The exact preprocessing intermediate is unavailable. This display filters the preview to illustrate the step. It is not a measured intermediate or an input to the reported likelihood ratio.",
+    } : undefined,
   );
 
   if (domain === "impressed") {
@@ -519,12 +524,14 @@ function makeRun(input: RunInput): StudioRun {
   let gridA: number[][];
   let gridB: number[][];
   let ridgedFromSignature = false;
-  if (input.rawA && input.rawB) {
-    gridA = center(input.rawA);
-    gridB = center(input.rawB);
-  } else if (previews) {
+  // Attribution coordinates describe the report's processed previews. Raw scans
+  // belong only to the ingest view and must not replace those overlay surfaces.
+  if (previews) {
     gridA = center(previews.a);
     gridB = center(previews.b);
+  } else if (input.rawA && input.rawB) {
+    gridA = center(input.rawA);
+    gridB = center(input.rawB);
   } else if (signatures) {
     const s = hashSeed(input.id);
     gridA = ridgeFromSignature(signatures.a, 60, 48, s);
@@ -548,9 +555,10 @@ function makeRun(input: RunInput): StudioRun {
     rawFormB,
     bandA: input.bandA ? center(input.bandA) : highpass(gridA),
     bandB: input.bandB ? center(input.bandB) : highpass(gridB),
+    preprocessIllustrative: !(input.bandA && input.bandB),
     regionsA: report.attribution ?? [],
     regionsB: report.attribution_b ?? [],
-    configHash: CONFIG_HASH,
+    configHash: input.provenance === "gallery" ? CONFIG_HASH : report.recipe?.scorer_config_hash ?? null,
   };
   return { ...partial, stages: buildStages(partial) };
 }

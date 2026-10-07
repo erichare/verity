@@ -127,3 +127,21 @@ def test_client_ip_ignores_forged_forwarded_entries(monkeypatch):
     monkeypatch.setattr(main_mod, "_TRUST_PROXY_HEADERS", False)
     untrusted = _request_with({"x-forwarded-for": "6.6.6.6"})
     assert main_mod._client_ip(untrusted) == "10.0.0.1"
+
+
+def test_chunked_multipart_rejected_before_full_parse(monkeypatch):
+    monkeypatch.setattr(limits_mod, "LIMITS", replace(limits_mod.LIMITS, max_total_bytes=128))
+    response = client.post(
+        "/detect",
+        content=iter(
+            [
+                b'--upload\r\nContent-Disposition: form-data; name="scan"; filename="scan.x3p"\r\n\r\n',
+                b"x" * 256,
+                b"\r\n--upload--\r\n",
+            ]
+        ),
+        headers={"Content-Type": "multipart/form-data; boundary=upload"},
+    )
+    assert response.status_code == 413
+    assert response.json()["detail"] == "request body too large"
+    assert response.headers["x-content-type-options"] == "nosniff"

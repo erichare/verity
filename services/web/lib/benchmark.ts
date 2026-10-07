@@ -3,6 +3,8 @@
 // tables are SELECT-only under row-level security; submissions are written only
 // through the data API's scored POST endpoint.
 
+import { fetchWithTimeout, SHORT_TIMEOUT_MS } from "./http";
+
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
 
@@ -50,11 +52,11 @@ export async function getSplits(): Promise<BenchmarkSplit[]> {
       "id,name,title,modality,split_hash,protocol_version,n_pairs,n_km,n_sources,n_folds",
     order: "name",
   });
-  const res = await fetch(`${SB_URL}/rest/v1/benchmarksplit?${params}`, {
+  const res = await fetchWithTimeout(`${SB_URL}/rest/v1/benchmarksplit?${params}`, {
     headers: authHeaders(),
     next: { revalidate: 300 },
-  });
-  if (!res.ok) return [];
+  }, SHORT_TIMEOUT_MS);
+  if (!res.ok) throw new Error("Benchmark splits are temporarily unavailable");
   return res.json();
 }
 
@@ -68,12 +70,26 @@ export async function getSubmissions(): Promise<BenchmarkSubmission[]> {
     order: "cllr.asc",
     limit: "400",
   });
-  const res = await fetch(`${SB_URL}/rest/v1/benchmarksubmission?${params}`, {
+  const res = await fetchWithTimeout(`${SB_URL}/rest/v1/benchmarksubmission?${params}`, {
     headers: authHeaders(),
     next: { revalidate: 300 },
-  });
-  if (!res.ok) return [];
+  }, SHORT_TIMEOUT_MS);
+  if (!res.ok) throw new Error("Benchmark submissions are temporarily unavailable");
   return res.json();
+}
+
+/** Distinguish an upstream outage from a legitimately empty leaderboard. */
+export async function getBenchmarkData(): Promise<{
+  splits: BenchmarkSplit[];
+  submissions: BenchmarkSubmission[];
+  error: boolean;
+}> {
+  try {
+    const [splits, submissions] = await Promise.all([getSplits(), getSubmissions()]);
+    return { splits, submissions, error: false };
+  } catch {
+    return { splits: [], submissions: [], error: true };
+  }
 }
 
 export function kitUrl(split: BenchmarkSplit): string {

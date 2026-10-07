@@ -10,6 +10,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Read declared X3P validity masks for I/L/F/D data in X-fastest, LSB-first
+  order, validate mask checksums and lengths, and expose masked heights as NaN.
+  Linked members are resolved relative to `main.xml`, including wrapped archives.
+  Missing, malformed, or nonlocal mask links fail clearly. Earlier versions
+  ignored these masks, so masked scans can change downstream scientific results.
+  Historical published figures have not been recomputed for this decoder change.
+- Reject overflowing point-data byte counts before allocation.
+- Preserve standard axis and instrument provenance in Python and R roundtrips.
+
 ## [0.2.0] - 2026-07-01
 
 First packaged release: the `verity-x3p` crate on crates.io and the

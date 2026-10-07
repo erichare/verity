@@ -29,6 +29,7 @@ from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 from mcp.server.transport_security import TransportSecuritySettings
+from mcp.types import ToolAnnotations
 
 from verity.decision import DEFAULT_SCORER_CONFIG
 from verity.detect import detect_domain
@@ -44,7 +45,9 @@ def _transport_security() -> TransportSecuritySettings:
     domain, health checks), so protection is **off by default** — set
     ``VERITY_MCP_ALLOWED_HOSTS`` (comma-separated; ``VERITY_MCP_ALLOWED_ORIGINS`` too, for
     browser clients) to lock it down to known hosts."""
-    hosts = [h.strip() for h in os.environ.get("VERITY_MCP_ALLOWED_HOSTS", "").split(",") if h.strip()]
+    hosts = [
+        h.strip() for h in os.environ.get("VERITY_MCP_ALLOWED_HOSTS", "").split(",") if h.strip()
+    ]
     if not hosts:
         return TransportSecuritySettings(enable_dns_rebinding_protection=False)
     origins = [
@@ -66,6 +69,15 @@ mcp = FastMCP(
     transport_security=_transport_security(),
 )
 
+# These tools only read supplied scans and bundled references. Derived calibration
+# caches are internal optimizations, not mutations to caller data or reference records.
+_TOOL_ANNOTATIONS = ToolAnnotations(
+    readOnlyHint=True,
+    destructiveHint=False,
+    idempotentHint=True,
+    openWorldHint=False,
+)
+
 
 # --- input decoding ---------------------------------------------------------
 
@@ -74,12 +86,19 @@ def _decode_scan(b64: str, *, filename: str, budget: limits.ByteBudget) -> tuple
     """Decode one base64 ``.x3p`` payload, enforcing the same per-file / total-size and
     zip-bomb guards as an HTTP upload, and return ``(bytes, sha256)`` — the content hash
     is the provenance spine that ties a report back to the exact scanned file."""
+    # Reject oversized encoded input before allocating another large decoded buffer.
+    if len(b64) > 4 * ((limits.LIMITS.max_file_bytes + 2) // 3):
+        raise ValueError(
+            f"{filename} exceeds the {limits.LIMITS.max_file_bytes}-byte per-file limit"
+        )
     try:
         data = base64.b64decode(b64, validate=True)
     except (binascii.Error, ValueError) as exc:
         raise ValueError(f"{filename}: not valid base64 ({exc})") from exc
     if len(data) > limits.LIMITS.max_file_bytes:
-        raise ValueError(f"{filename} exceeds the {limits.LIMITS.max_file_bytes}-byte per-file limit")
+        raise ValueError(
+            f"{filename} exceeds the {limits.LIMITS.max_file_bytes}-byte per-file limit"
+        )
     budget.take(len(data))
     try:
         limits.validate_x3p(data, filename=filename)
@@ -117,10 +136,11 @@ def _scope_warnings(report: dict) -> list[str]:
     out: list[str] = []
     scope = report.get("scope") or {}
     for side in ("mark_a", "mark_b"):
-        for chk in scope.get(side, []) or []:
-            if not chk.get("passed", True):
-                detail = chk.get("reason") or chk.get("severity") or "out of range"
-                out.append(f"{side} · {chk.get('name')}: {detail}")
+        for index, scan in enumerate(scope.get(side, []) or []):
+            for chk in scan.get("checks", []) or []:
+                if not chk.get("passed", True):
+                    detail = chk.get("reason") or chk.get("severity") or "out of range"
+                    out.append(f"{side}[{index}] · {chk.get('name')}: {detail}")
     return out
 
 
@@ -148,6 +168,7 @@ def _summarize_compare(report: dict) -> dict:
     ref = report.get("reference") or {}
     handle = report.get("handle")
     ci_lo, ci_hi = report.get("log10_lr_ci_lo"), report.get("log10_lr_ci_hi")
+    evidence_note = report.get("evidence_note") or {}
     return {
         "status": "calibrated",
         "domain": report.get("domain"),
@@ -162,9 +183,11 @@ def _summarize_compare(report: dict) -> dict:
         "handle": handle,
         "scope_warnings": _scope_warnings(report),
         "scope_note": report.get("scope_note"),
+        "evidence_note": evidence_note or None,
         "summary": (
             f"{report.get('verbal')} (LR ~ {_human_lr(lr)}). Calibrated on "
             f"{ref.get('name')}. Reproducible recipe handle: {handle}."
+            + (f" {evidence_note['reason']}" if evidence_note.get("reason") else "")
         ),
     }
 
@@ -172,14 +195,29 @@ def _summarize_compare(report: dict) -> dict:
 # --- tools ------------------------------------------------------------------
 
 
-@mcp.tool()
+async def _run_compute(fn, /, *args, **kwargs):
+    """Use the REST API's bounded worker pool and timeout for every heavy MCP tool.
+
+    FastMCP executes synchronous tools on the event loop, so merely declaring a tool
+    with ``def`` would block all requests and bypass the configured compute limits.
+    """
+    from fastapi import HTTPException
+    from .main import _offload
+
+    try:
+        return await _offload(fn, *args, **kwargs)
+    except HTTPException as exc:
+        raise ValueError(exc.detail) from exc
+
+
+@mcp.tool(title="Check Verity service health", annotations=_TOOL_ANNOTATIONS)
 def service_health() -> dict:
     """Verity service status and the mark types (domains) it can calibrate."""
     return {"status": "ok", "engine_version": engine_version(), "domains": available_domains()}
 
 
-@mcp.tool()
-def detect_mark_type(scan_base64: str) -> dict:
+@mcp.tool(title="Detect surface mark type", annotations=_TOOL_ANNOTATIONS)
+async def detect_mark_type(scan_base64: str) -> dict:
     """Suggest whether a 3-D surface scan is a STRIATED mark (directional striae — bullet
     lands or toolmarks) or an IMPRESSED mark (cartridge breech face), from striation
     anisotropy. `scan_base64` is the raw bytes of one `.x3p` file, base64-encoded.
@@ -188,6 +226,10 @@ def detect_mark_type(scan_base64: str) -> dict:
     striated result maps to either the `striated` domain (bullet lands) or the `toolmark`
     domain (screwdriver-style toolmarks), which calibrate against different references. The
     detected mark type selects the reference, so confirm the domain before comparing."""
+    return await _run_compute(_detect_mark_type, scan_base64)
+
+
+def _detect_mark_type(scan_base64: str) -> dict:
     budget = limits.ByteBudget(limits.LIMITS.max_total_bytes)
     data, _ = _decode_scan(scan_base64, filename="scan.x3p", budget=budget)
     try:
@@ -197,8 +239,8 @@ def detect_mark_type(scan_base64: str) -> dict:
     return {"domain": domain, "coherence": round(coherence, 3)}
 
 
-@mcp.tool()
-def compare_marks(
+@mcp.tool(title="Compare forensic marks", annotations=_TOOL_ANNOTATIONS)
+async def compare_marks(
     domain: str,
     mark_a_base64: list[str],
     mark_b_base64: list[str],
@@ -214,6 +256,7 @@ def compare_marks(
     - `mark_a_base64`, `mark_b_base64`: base64-encoded `.x3p` bytes — one per side for
       impressed; for a bullet, pass ALL of that bullet's land scans (aggregating the lands is
       the strong path). (This server is hosted, so it cannot read local paths — send the bytes.)
+      A single-land striated result is diagnostic only, not reportable evidence.
     - `scorer_config`: optional hyperparameter override (e.g. {"lambda_c": 8e-6}); if it
       doesn't match the reference's config, the result is the raw score with NO calibrated
       LR (the firewall).
@@ -222,9 +265,18 @@ def compare_marks(
     on, the content handle (the same inputs reproduce it), and any scope caveats — or an
     honest refusal if an input is outside the validated domain. This is a calibrated weight
     of evidence on a named reference, not a claim about the error rate of examination."""
+    return await _run_compute(_compare_marks, domain, mark_a_base64, mark_b_base64, scorer_config)
+
+
+def _compare_marks(
+    domain: str,
+    mark_a_base64: list[str],
+    mark_b_base64: list[str],
+    scorer_config: dict | None = None,
+) -> dict:
     # Lazy: the comparison orchestration lives in ``main`` (which mounts this server);
     # importing it here, at call time, keeps module import cycle-free.
-    from .main import _compute_report, _coerce_scorer_config
+    from .main import _compute_report, _coerce_scorer_config, _validate_scan_counts
 
     if domain not in available_domains():
         raise ValueError(
@@ -232,6 +284,7 @@ def compare_marks(
         )
     if not mark_a_base64 or not mark_b_base64:
         raise ValueError("provide at least one scan per mark")
+    _validate_scan_counts(domain, len(mark_a_base64), len(mark_b_base64))
     if len(mark_a_base64) + len(mark_b_base64) > limits.LIMITS.max_files:
         raise ValueError(
             f"{len(mark_a_base64) + len(mark_b_base64)} files exceeds the "
@@ -261,7 +314,7 @@ def compare_marks(
     return _summarize_compare(report)
 
 
-@mcp.tool()
+@mcp.tool(title="List calibration references", annotations=_TOOL_ANNOTATIONS)
 def list_references() -> list[dict]:
     """The calibration reference populations and their provenance — the scorer-config hash
     each was built under, its source datasets, and its discrimination/calibration
@@ -269,19 +322,26 @@ def list_references() -> list[dict]:
     return all_reference_metadata()
 
 
-@mcp.tool()
+@mcp.tool(title="Read scorer configuration", annotations=_TOOL_ANNOTATIONS)
 def scorer_config() -> dict:
     """The deployed scorer hyperparameters and their content hash. A calibrated LR is valid
     only against a reference built under this same config hash (the firewall)."""
     return {**DEFAULT_SCORER_CONFIG.to_dict(), "config_hash": DEFAULT_SCORER_CONFIG.config_hash}
 
 
-@mcp.tool()
-def calibrate_score(score: float, reference: str, scorer_config_hash: str | None = None) -> dict:
+@mcp.tool(title="Calibrate a comparison score", annotations=_TOOL_ANNOTATIONS)
+async def calibrate_score(
+    score: float, reference: str, scorer_config_hash: str | None = None
+) -> dict:
     """Map a comparison score to a bounded likelihood ratio against a named reference
-    ("striated" | "impressed" | "striated_single"), with its calibration curve and credible
-    interval. If `scorer_config_hash` is given and doesn't match the reference's,
-    calibration is refused (the firewall)."""
+    ("striated" | "impressed" | "toolmark" | "striated_single"), with its calibration curve
+    and credible interval. If `scorer_config_hash` is given and doesn't match the reference's,
+    calibration is refused (the firewall). If omitted, `config_verified` is false: this
+    maps a caller-supplied score and does not establish its provenance or reportability."""
+    return await _run_compute(_calibrate_score, score, reference, scorer_config_hash)
+
+
+def _calibrate_score(score: float, reference: str, scorer_config_hash: str | None) -> dict:
     from .steps import step_calibrate
 
     try:

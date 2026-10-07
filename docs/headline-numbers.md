@@ -21,6 +21,32 @@ Sources are all committed and recomputable:
 
 `Cllr < 1` = informative; `Cllr − Cllr_min` = calibration loss; lower Cllr is better.
 
+## Codec validity-mask change (2026-10-07)
+
+The unreleased codec now honors an X3P `ValidPointsLink` packed mask and its
+checksum. Previous versions ignored separately stored masks. A finite height
+marked invalid is now excluded and represented as NaN, so affected scans can
+change preprocessing, extracted scores, calibration, and validation figures.
+
+The figures below remain historical results from their recorded pipelines and
+artifacts. They have **not** been revalidated with this decoder change. No numeric
+table or bundled calibration reference was regenerated in this sweep.
+
+Local impact checks covered the existing `csafe-logo.x3p`, which declares no mask,
+and synthetic non-square I/L/F/D files with known packed masks. The real fixture's
+decoded height and mask hashes are unchanged. The full scientific source datasets
+were unavailable locally (`~/.cache/verity` absent and no catalog source blobs),
+so this check cannot establish that any complete validation dataset is unaffected.
+
+Before claiming these figures apply to the updated decoder, inventory the exact
+source archives for `ValidPointsLink`, resolve and verify each declared mask, and
+compare decoded heights and validity against the historical decoder. Recompute
+affected preprocessing, scores, reference provenance and validation artifacts
+using the same labeled protocols. For a pre-registered external test, retain the
+original result and document the decoder correction separately rather than
+silently replacing the registered outcome. Update this registry and downstream
+claims together with the resulting evidence.
+
 ---
 
 ## Bullet lands — striated (`bullet_pooled.npz`; Hamby-252 & 173, PGPD Beretta, Phoenix)

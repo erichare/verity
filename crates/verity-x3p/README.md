@@ -19,7 +19,25 @@ written from one language reads back bit-identically in every other.
   opt out via `ReadOptions` to recover known-corrupt files) and emits both the
   point-data checksum and `md5checksum.hex` on write.
 - Invalid points are surfaced as `NaN` plus an explicit validity mask.
+- Reads the declared `ValidPointsLink` packed mask for all four Z encodings,
+  verifies `MD5ChecksumValidPoints`, and resolves linked files relative to
+  `main.xml`, including archives inside a wrapping folder. Missing or malformed
+  mask declarations, missing members, and incorrect mask lengths are errors.
 - Path and in-memory byte-slice APIs (`read_x3p_bytes`, `write_x3p_to_bytes`).
+
+The validity mask is X-fastest and least-significant-bit first, with 1 meaning
+valid, as implemented by the [openGPS reference library](https://svn.code.sf.net/p/open-gps/code/!svn/bc/402/ISO5436_XML/branches/Kohler_LinuxPort/src/ISO5436_2_XML/cxx/valid_buffer.cxx).
+It must contain exactly `ceil(SizeX * SizeY / 8)` bytes. Unused high bits of the
+last byte are ignored. A point is valid only when its mask bit is set and its
+height is not NaN. With no declared mask, the existing NaN-based behavior applies.
+Writers retain the validity semantics by storing masked points as NaN in F/D
+output. `verify_checksums=false` skips checksum comparisons for recovery but
+does not bypass mask declaration or length validation.
+
+This corrects earlier versions that ignored separately stored masks. Scans with
+finite heights marked invalid may therefore produce different downstream scores.
+See the [validation impact note](../../docs/headline-numbers.md#codec-validity-mask-change-2026-10-07)
+before associating historical validation numbers with the changed decoder.
 
 ## Usage
 

@@ -2,6 +2,8 @@
 // The anon key is public and the data is locked read-only by row-level security,
 // so it is safe to query directly from the browser.
 
+import { fetchWithTimeout, SHORT_TIMEOUT_MS } from "./http";
+
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
 
@@ -76,23 +78,28 @@ export function instrumentLabel(scan: Scan): string {
 /** The distinct instrument names available in the catalog (for the filter). */
 export async function getInstruments(): Promise<string[]> {
   if (!catalogConfigured) return [];
-  const res = await fetch(
-    `${SB_URL}/rest/v1/instrument?select=external_id&order=external_id`,
-    { headers: authHeaders(), cache: "no-store" },
+  const rows = await getCatalogRows<{ external_id: string | null }>(
+    "instrument?select=external_id&order=external_id",
   );
-  if (!res.ok) return [];
-  const rows: { external_id: string | null }[] = await res.json();
   return rows.map((r) => r.external_id).filter((x): x is string => Boolean(x));
 }
 
 export async function getStudies(): Promise<Study[]> {
   if (!catalogConfigured) return [];
-  const res = await fetch(
-    `${SB_URL}/rest/v1/study?select=id,source,external_id,title,consecutively_manufactured&order=id`,
-    { headers: authHeaders(), cache: "no-store" },
-  );
-  if (!res.ok) return [];
-  return res.json();
+  return getCatalogRows<Study>("study?select=id,source,external_id,title,consecutively_manufactured&order=id");
+}
+
+async function getCatalogRows<T>(path: string): Promise<T[]> {
+  try {
+    const res = await fetchWithTimeout(`${SB_URL}/rest/v1/${path}`, {
+      headers: authHeaders(), cache: "no-store",
+    }, SHORT_TIMEOUT_MS);
+    if (!res.ok) return [];
+    return await res.json();
+  } catch {
+    // Optional study cards and filter choices must not create unhandled rejections.
+    return [];
+  }
 }
 
 export async function getScans(opts: {
@@ -123,10 +130,10 @@ export async function getScans(opts: {
   if (markClass === "toolmark") params.set("toolmark_id", "not.is.null");
   if (instrument) params.set("instrument.external_id", `eq.${instrument}`);
   try {
-    const res = await fetch(`${SB_URL}/rest/v1/scan?${params.toString()}`, {
+    const res = await fetchWithTimeout(`${SB_URL}/rest/v1/scan?${params.toString()}`, {
       headers: { ...authHeaders(), Prefer: "count=exact" },
       cache: "no-store",
-    });
+    }, SHORT_TIMEOUT_MS);
     if (!res.ok) return { scans: [], total: 0, error: true };
     const range = res.headers.get("content-range") ?? "*/0";
     const total = Number(range.split("/")[1] || 0);
