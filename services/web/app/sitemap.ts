@@ -15,6 +15,7 @@ const DOCS_PATHS = [
   "/docs",
   "/lineage",
   "/about",
+  "/plugins",
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {

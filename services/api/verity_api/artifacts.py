@@ -26,6 +26,10 @@ import numpy as np
 
 from verity.surface import Surface
 
+from .limits import UploadTooLarge, _env_int
+
+_DEFAULT_MAX_BYTES = _env_int("VERITY_MAX_ARTIFACT_BYTES", 256 * 1024 * 1024)
+
 # Surface kinds carry pixel pitch; the handle must cover it (same heights, different dx is
 # a different artifact). Other array kinds hash the array bytes alone.
 _SURFACE_KINDS = frozenset({"surface", "surface.bandpassed"})
@@ -69,17 +73,24 @@ class Artifact:
 class ArtifactStore:
     """A thread-safe, TTL'd, size-capped content-addressed cache of pipeline artifacts."""
 
-    def __init__(self, *, max_items: int = 512, ttl_s: float = 3600.0) -> None:
+    def __init__(
+        self, *, max_items: int = 512, ttl_s: float = 3600.0, max_bytes: int = _DEFAULT_MAX_BYTES
+    ) -> None:
+        if max_items <= 0 or ttl_s <= 0 or max_bytes <= 0:
+            raise ValueError("artifact cache limits must be positive")
         self._items: OrderedDict[str, Artifact] = OrderedDict()
         self._max = max_items
+        self._max_bytes = max_bytes
+        self._bytes = 0
         self._ttl = ttl_s
         self._lock = threading.Lock()
 
     def _evict(self, now: float) -> None:
         for h in [h for h, a in self._items.items() if now - a.created > self._ttl]:
-            del self._items[h]
-        while len(self._items) > self._max:
-            self._items.popitem(last=False)  # LRU
+            self._bytes -= len(self._items.pop(h).data)
+        while len(self._items) > self._max or self._bytes > self._max_bytes:
+            _, evicted = self._items.popitem(last=False)  # LRU
+            self._bytes -= len(evicted.data)
 
     def put_array(
         self, arr: np.ndarray, *, kind: str, meta: dict, produced_by: dict, now: float | None = None
@@ -88,7 +99,12 @@ class ArtifactStore:
         the pitch (for surfaces), so identical content dedupes and distinct content can't
         collide."""
         now = time.time() if now is None else now
+        # Check the canonical float64 payload before copying/serializing it.
+        if np.asarray(arr).size * 8 > self._max_bytes:
+            raise UploadTooLarge(f"artifact exceeds the {self._max_bytes}-byte cache limit")
         data = _npy_bytes(arr)
+        if len(data) > self._max_bytes:
+            raise UploadTooLarge(f"artifact exceeds the {self._max_bytes}-byte cache limit")
         hash_meta = (
             {k: meta[k] for k in ("dx", "dy") if k in meta} if kind in _SURFACE_KINDS else {}
         )
@@ -103,13 +119,18 @@ class ArtifactStore:
             created=now,
         )
         with self._lock:
+            previous = self._items.get(handle)
+            if previous is not None:
+                self._bytes -= len(previous.data)
             self._items[handle] = art
+            self._bytes += len(data)
             self._items.move_to_end(handle)
             self._evict(now)
         return art
 
     def get(self, handle: str) -> Artifact | None:
         with self._lock:
+            self._evict(time.time())
             art = self._items.get(handle)
             if art is not None:
                 self._items.move_to_end(handle)

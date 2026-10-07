@@ -352,12 +352,17 @@ function UploadModal({
   const [markB, setMarkB] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const manualDomain = useRef(false);
+  const detectionRequest = useRef(0);
 
   async function onPickA(files: File[]) {
+    const request = ++detectionRequest.current;
     setMarkA(files);
     if (!files.length) return;
     const d = await detectDomain(files[0]);
-    if (d?.domain) setDomain(d.domain as MarkDomain);
+    if (d?.domain && request === detectionRequest.current && !manualDomain.current) {
+      setDomain(d.domain as MarkDomain);
+    }
   }
 
   async function run() {
@@ -401,7 +406,11 @@ function UploadModal({
           <select
             id="studio-mark-type"
             value={domain}
-            onChange={(e) => setDomain(e.target.value as MarkDomain)}
+            onChange={(e) => {
+              manualDomain.current = true;
+              detectionRequest.current += 1;
+              setDomain(e.target.value as MarkDomain);
+            }}
             className="w-full rounded-lg border border-border bg-background/60 px-3 py-2 text-sm text-foreground outline-none focus:border-accent/60 focus-visible:ring-2 focus-visible:ring-accent"
           >
             {DOMAIN_OPTIONS.map((o) => (

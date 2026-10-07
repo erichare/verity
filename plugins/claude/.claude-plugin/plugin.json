@@ -1,0 +1,11 @@
+{
+  "name": "verity",
+  "version": "0.1.0",
+  "description": "Compare forensic surface scans, explain calibrated likelihood ratios, and check reference provenance and service readiness.",
+  "author": { "name": "Eric Hare", "url": "https://verity.codes" },
+  "homepage": "https://verity.codes",
+  "repository": "https://github.com/erichare/verity",
+  "license": "MIT OR Apache-2.0",
+  "keywords": ["forensics", "x3p", "likelihood-ratio", "surface-comparison"],
+  "mcpServers": "./.mcp.json"
+}

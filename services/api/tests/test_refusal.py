@@ -13,11 +13,25 @@ from pathlib import Path
 
 import numpy as np
 import verity_x3p
+import pytest
 from fastapi.testclient import TestClient
 
 from verity_api.main import app
 
 client = TestClient(app)
+
+
+@pytest.mark.parametrize("domain", ["impressed", "toolmark"])
+@pytest.mark.parametrize("path", ["/compare", "/v1/compare", "/v1/compare/report.pdf"])
+def test_extra_scans_rejected_before_decoding(domain, path):
+    files = [
+        ("mark_a", ("first.x3p", b"invalid")),
+        ("mark_a", ("extra.x3p", b"invalid")),
+        ("mark_b", ("other.x3p", b"invalid")),
+    ]
+    response = client.post(path, data={"domain": domain}, files=files)
+    assert response.status_code == 400
+    assert "exactly one" in response.json()["detail"]
 
 
 def _x3p_bytes(heights: np.ndarray, dx: float) -> bytes:
@@ -77,7 +91,9 @@ def test_compare_refuses_wrong_modality():
     body = r.json()
     assert body["refused"] is True
     assert "likelihood_ratio" not in body
-    assert any(not c["passed"] for c in body["scope"]["mark_a"][0]["checks"] if c["name"] == "modality")
+    assert any(
+        not c["passed"] for c in body["scope"]["mark_a"][0]["checks"] if c["name"] == "modality"
+    )
 
 
 def test_compare_admits_in_domain_and_attaches_scope():

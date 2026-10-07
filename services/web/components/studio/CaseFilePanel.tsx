@@ -5,8 +5,8 @@ import { getScorerConfig } from "@/lib/stepApi";
 import type { Stage, StudioRun } from "@/lib/studio";
 
 // The deployed engine's scorer-config hash, fetched once (best-effort — null on failure).
-// Uploads score against the live engine, so their recipe must show THIS hash, not the baked
-// tour's; on the tour a differing live hash is surfaced as config drift.
+// A differing live hash flags drift in the baked tour. Upload provenance comes from
+// that comparison's recipe, never from a separate request or the tour's baked hash.
 let liveHashPromise: Promise<string | null> | null = null;
 function fetchLiveHash(): Promise<string | null> {
   liveHashPromise ??= getScorerConfig().then((c) => c?.config_hash ?? null);
@@ -40,11 +40,9 @@ export function CaseFilePanel({
     };
   }, []);
 
-  // Uploads: the live engine's hash (fall back to the baked one if the fetch failed).
-  // Tour: always the baked hash the numbers were generated under, plus a drift note.
   const isUpload = run.provenance === "upload";
-  const shownHash = isUpload && liveHash ? liveHash : run.configHash;
-  const drifted = !isUpload && liveHash != null && liveHash !== run.configHash;
+  const shownHash = run.configHash;
+  const drifted = !isUpload && shownHash != null && liveHash != null && liveHash !== shownHash;
 
   return (
     <aside aria-label="Case file" className="flex h-full w-full flex-col gap-4 overflow-y-auto p-5">
@@ -103,21 +101,23 @@ export function CaseFilePanel({
         {recipeOpen && (
           <div className="mt-2 space-y-1 font-mono text-[10px] leading-relaxed text-muted">
             <p>
-              scorer-config <span className="text-foreground/80">{shownHash.slice(0, 12)}…</span>
-              {isUpload && liveHash && <span className="text-muted/70"> (live engine)</span>}
+              scorer-config <span className="text-foreground/80">{shownHash ? `${shownHash.slice(0, 12)}…` : "not recorded"}</span>
+              {isUpload && shownHash && <span className="text-muted/70"> (comparison recipe)</span>}
             </p>
             <p>
               reference <span className="text-foreground/80">{run.report.reference.name}</span>
             </p>
             <p className="text-muted/70">
-              Every frame derives from this deterministic configuration.
+              {shownHash
+                ? "The comparison records this configuration. Illustrative stages are labeled separately."
+                : "This response did not record a scorer configuration. Its reproducibility cannot be verified here."}
             </p>
           </div>
         )}
         {drifted && (
           <p className="mt-2 font-mono text-[10px] leading-relaxed text-oxblood">
             config drift: the live engine runs {liveHash.slice(0, 12)}… — this tour was baked
-            under {run.configHash.slice(0, 12)}….
+            under {shownHash?.slice(0, 12)}….
           </p>
         )}
       </div>

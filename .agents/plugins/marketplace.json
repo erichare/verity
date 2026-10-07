@@ -1,0 +1,12 @@
+{
+  "name": "verity",
+  "interface": { "displayName": "Verity" },
+  "plugins": [
+    {
+      "name": "verity",
+      "source": { "source": "local", "path": "./plugins/codex" },
+      "policy": { "installation": "AVAILABLE", "authentication": "ON_USE" },
+      "category": "Research"
+    }
+  ]
+}

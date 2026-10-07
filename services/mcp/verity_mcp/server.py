@@ -33,8 +33,9 @@ def service_health() -> dict:
 def detect_mark_type(scan: str) -> dict:
     """Suggest whether a 3-D surface scan (.x3p) is a STRIATED mark (bullet land, toolmark)
     or an IMPRESSED mark (cartridge breech face), from striation anisotropy. `scan` is a
-    local file path. The mark type selects the calibration reference, so confirm it before
-    comparing."""
+    local file path. This detects surface physics, not the calibration population: bullet
+    lands use domain `striated`, while striated screwdriver marks use `toolmark`. Confirm
+    the source material and domain before comparing."""
     return _api.detect(scan)
 
 
@@ -48,9 +49,13 @@ def compare_marks(
     """Compare two forensic marks into a CALIBRATED likelihood ratio with a reproducible
     recipe handle and region-level attribution.
 
-    - `domain`: "striated" (bullet lands / toolmarks) or "impressed" (cartridge breech faces).
+    - `domain`: "striated" (bullet lands), "impressed" (cartridge breech faces), or
+      "toolmark" (striated screwdriver-style toolmarks). Toolmarks and bullet lands use
+      different calibration populations. Passing a toolmark as `striated` yields an
+      invalid LR even if the physical-modality guard accepts it.
     - `mark_a`, `mark_b`: local .x3p file paths — one per side for impressed; for a bullet,
       pass ALL of that bullet's land scans (aggregating the lands is the strong path).
+      A single-land striated result is diagnostic only, not reportable evidence.
     - `scorer_config`: optional hyperparameter override (e.g. {"lambda_c": 8e-6}); if it
       doesn't match the reference's config, the result is the raw score with NO calibrated
       LR (the firewall).
@@ -80,9 +85,10 @@ def scorer_config() -> dict:
 @mcp.tool()
 def calibrate_score(score: float, reference: str, scorer_config_hash: str | None = None) -> dict:
     """Map a comparison score to a bounded likelihood ratio against a named reference
-    ("striated" | "impressed" | "striated_single"), with its calibration curve and credible
-    interval. If `scorer_config_hash` is given and doesn't match the reference's,
-    calibration is refused (the firewall)."""
+    ("striated" | "impressed" | "toolmark" | "striated_single"), with its calibration curve
+    and credible interval. If `scorer_config_hash` is given and doesn't match the reference's,
+    calibration is refused (the firewall). If omitted, `config_verified` is false: this
+    maps a caller-supplied score and does not establish its provenance or reportability."""
     return _api.calibrate(score, reference, scorer_config_hash)
 
 

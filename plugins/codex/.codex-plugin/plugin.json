@@ -1,0 +1,25 @@
+{
+  "name": "verity",
+  "version": "0.1.0",
+  "description": "Compare forensic surface scans, explain calibrated likelihood ratios, and check reference provenance and service readiness.",
+  "author": { "name": "Eric Hare", "url": "https://verity.codes" },
+  "homepage": "https://verity.codes",
+  "repository": "https://github.com/erichare/verity",
+  "license": "MIT OR Apache-2.0",
+  "keywords": ["forensics", "x3p", "likelihood-ratio", "surface-comparison"],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Verity",
+    "shortDescription": "Forensic comparisons with explicit evidence limits",
+    "longDescription": "Compare X3P surface scans using Verity's hosted service. Inspect the likelihood ratio, named reference, uncertainty, applicability warnings, and reproducible recipe handle. Explain a report without converting it into a match verdict.",
+    "developerName": "Eric Hare",
+    "category": "Research",
+    "websiteURL": "https://verity.codes",
+    "defaultPrompt": [
+      "Use Verity to check service health and list the available calibration references.",
+      "Use Verity to compare these two cartridge-case X3P scans and explain the evidence limits.",
+      "Use Verity to explain this comparison report, including uncertainty and scope warnings."
+    ]
+  }
+}

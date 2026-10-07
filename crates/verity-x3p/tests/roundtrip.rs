@@ -1,6 +1,7 @@
 //! Round-trip and real-fixture conformance tests for the X3P codec.
 
 use ndarray::{array, Array2};
+use std::io::{Cursor, Write};
 use verity_x3p::{
     read_x3p, read_x3p_bytes, write_x3p, write_x3p_to_bytes, DataType, ReadOptions, Surface,
     WriteOptions,
@@ -94,6 +95,28 @@ fn bad_checksum_is_rejected() {
     bytes[n / 2] ^= 0xFF;
     let res = read_x3p_bytes(&bytes, &ReadOptions::default());
     assert!(res.is_err(), "corrupted archive must not read as valid");
+}
+
+#[test]
+fn overflowing_dimensions_are_rejected_without_panicking() {
+    // A tiny archive can declare dimensions whose point count or byte count
+    // overflows usize. Reject before reserving memory, including release builds.
+    for (nx, ny) in [(usize::MAX, 2), (usize::MAX / 8 + 1, 1)] {
+        let mut archive = zip::ZipWriter::new(Cursor::new(Vec::new()));
+        let options = zip::write::SimpleFileOptions::default();
+        archive.start_file("main.xml", options).unwrap();
+        write!(
+            archive,
+            "<ISO5436_2><CX/><CY/><CZ><DataType>D</DataType></CZ>\
+             <SizeX>{nx}</SizeX><SizeY>{ny}</SizeY><SizeZ>1</SizeZ></ISO5436_2>"
+        )
+        .unwrap();
+        archive.start_file("bindata/data.bin", options).unwrap();
+        let bytes = archive.finish().unwrap().into_inner();
+
+        let err = read_x3p_bytes(&bytes, &ReadOptions::default()).unwrap_err();
+        assert!(err.to_string().contains("overflows"), "{err}");
+    }
 }
 
 #[test]

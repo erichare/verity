@@ -1,0 +1,13 @@
+{
+  "name": "verity",
+  "description": "Verity forensic surface comparison for Claude Code.",
+  "owner": { "name": "Eric Hare", "url": "https://verity.codes" },
+  "plugins": [
+    {
+      "name": "verity",
+      "source": "./plugins/claude",
+      "description": "Forensic surface comparison with calibrated likelihood ratios and explicit evidence limits.",
+      "version": "0.1.0"
+    }
+  ]
+}

@@ -14,6 +14,11 @@ it's identical across the Python and R clients.
 Point either client at a deployment with `VERITY_API_URL` (default
 `https://api.verity.codes`).
 
+Requests use a 120-second timeout by default. Set `VerityClient(timeout=300)` in
+Python or `options(verity.timeout = 300)` in R for a slower deployment. Python
+closes scan files it opens after each request, including failed requests. Streams
+passed by the caller remain open.
+
 ## Python
 
 ```python
