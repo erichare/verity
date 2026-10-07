@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 from fastapi.testclient import TestClient
 
 from verity.decision import DEFAULT_SCORER_CONFIG
@@ -148,6 +149,33 @@ def test_build_recipe_structure_and_deterministic_handle():
         build_recipe(_recipe_resp(lr=999.0), domain="impressed", reference_provenance=rp)["handle"]
         != r["handle"]
     )
+
+
+@pytest.mark.parametrize(
+    "domain,score_kind,expected",
+    [
+        ("striated", "ccf", "verity.registration.align.align_1d"),
+        ("striated", "bullet-contrast", "verity.aggregate.bullet_comparison"),
+        ("toolmark", "cmr-1d", "verity.cmr.cmr_regions_1d_pair"),
+        ("impressed", "cmr-2d", "verity.cmr.areal_votes"),
+    ],
+)
+def test_recipe_records_actual_comparison_branch(domain, score_kind, expected):
+    report = {**_recipe_resp(), "domain": domain, "score_kind": score_kind}
+    recipe = build_recipe(report, domain=domain, reference_provenance={})
+    compare = next(step for step in recipe["steps"] if step["step"] == "compare")
+    assert expected in compare["code"]
+    signature = recipe["steps"][2]
+    assert signature["step"] == ("areal-signature" if domain == "impressed" else "signature")
+
+
+def test_impressed_recipe_records_actual_areal_cutoff():
+    from verity.areal import DEFAULT_LAMBDA_C
+
+    recipe = build_recipe(_recipe_resp(), domain="impressed", reference_provenance={})
+    for step in recipe["steps"]:
+        if step["step"] in {"preprocess", "areal-signature"}:
+            assert step["params"]["lambda_c"] == DEFAULT_LAMBDA_C
 
 
 def test_recipe_n_boot_follows_env_knob_and_changes_handle(monkeypatch):

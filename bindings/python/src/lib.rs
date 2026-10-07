@@ -9,8 +9,8 @@ use numpy::{PyArray1, PyArray2, PyArrayMethods, PyReadonlyArray2, PyUntypedArray
 use pyo3::exceptions::{PyIOError, PyValueError};
 use pyo3::prelude::*;
 use verity_core::{
-    read_x3p_with, write_x3p as core_write, DataType, ReadOptions, Surface as CoreSurface,
-    WriteOptions, X3pError,
+    read_x3p_with, write_x3p as core_write, Axis, DataType, GeneralInfo, ReadOptions,
+    Surface as CoreSurface, WriteOptions, X3pError,
 };
 
 /// Map a core error onto an appropriate Python exception.
@@ -35,6 +35,11 @@ fn parse_z_type(code: &str) -> PyResult<DataType> {
 /// An X3P surface: height matrix + validity mask (as NumPy arrays) and metadata.
 #[pyclass(module = "verity_x3p")]
 pub struct Surface {
+    // Preserve metadata not yet exposed as Python properties across read/write.
+    cx: Axis,
+    cy: Axis,
+    cz: Axis,
+    general: GeneralInfo,
     /// Height matrix, shape `(ny, nx)`, dtype float64; invalid points are NaN.
     #[pyo3(get)]
     data: Py<PyArray2<f64>>,
@@ -84,11 +89,15 @@ fn surface_to_py(py: Python<'_>, core: CoreSurface) -> PyResult<Surface> {
         increment_x: core.increment_x(),
         increment_y: core.increment_y(),
         z_type: core.cz.data_type.code().to_string(),
-        creator: core.general.creator,
-        comment: core.general.comment,
-        manufacturer: core.general.instrument.manufacturer,
+        creator: core.general.creator.clone(),
+        comment: core.general.comment.clone(),
+        manufacturer: core.general.instrument.manufacturer.clone(),
         revision: core.revision,
         feature_type: core.feature_type,
+        cx: core.cx,
+        cy: core.cy,
+        cz: core.cz,
+        general: core.general,
     })
 }
 
@@ -134,6 +143,10 @@ impl Surface {
         let mask = PyArray1::from_vec(py, mask_vec).reshape([ny, nx])?.unbind();
 
         Ok(Surface {
+            cx: Axis::default_lateral(),
+            cy: Axis::default_lateral(),
+            cz: Axis::default_z(),
+            general: GeneralInfo::default(),
             data,
             mask,
             nx,
@@ -173,6 +186,10 @@ fn py_to_surface(py: Python<'_>, surface: &Surface) -> PyResult<CoreSurface> {
 
     let mut core = CoreSurface::from_data(data);
     core.mask = mask;
+    core.cx = surface.cx.clone();
+    core.cy = surface.cy.clone();
+    core.cz = surface.cz.clone();
+    core.general = surface.general.clone();
     core.cx.increment = surface.increment_x;
     core.cy.increment = surface.increment_y;
     core.general.creator = surface.creator.clone();

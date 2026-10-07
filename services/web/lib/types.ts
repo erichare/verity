@@ -68,6 +68,8 @@ export interface ComparisonReport {
   attribution: AttributionRegion[]; // matched regions on Mark A
   attribution_b?: AttributionRegion[]; // the same matches on Mark B
   provenance: Record<string, unknown>;
+  // Recorded by /v1/compare?include=recipe for this specific comparison.
+  recipe?: { scorer_config_hash?: string; handle?: string };
   scope_note: string;
   // Applicability-domain annotation for each input (warnings ride along here).
   scope?: CompareScope;

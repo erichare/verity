@@ -3,8 +3,7 @@ import { Reveal } from "@/components/Reveal";
 import { SplitHash } from "@/components/benchmark/SplitHash";
 import {
   benchmarkConfigured,
-  getSplits,
-  getSubmissions,
+  getBenchmarkData,
   kitUrl,
   modalityLabel,
   submitUrl,
@@ -270,7 +269,7 @@ function SplitCard({
 }
 
 export default async function BenchmarkPage() {
-  const [splits, submissions] = await Promise.all([getSplits(), getSubmissions()]);
+  const { splits, submissions, error } = await getBenchmarkData();
   const bySplit = new Map<number, BenchmarkSubmission[]>();
   for (const s of submissions) {
     const list = bySplit.get(s.split_id) ?? [];
@@ -329,7 +328,9 @@ export default async function BenchmarkPage() {
         {splits.length === 0 ? (
           <Reveal>
             <div className="rounded-2xl border border-border bg-card/40 p-8 text-center text-foreground/70">
-              {benchmarkConfigured
+              {error
+                ? "Benchmark data is temporarily unavailable. Please try again shortly."
+                : benchmarkConfigured
                 ? "The frozen splits are being published — check back shortly."
                 : "Benchmark data is not configured for this deployment."}
             </div>

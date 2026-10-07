@@ -15,6 +15,7 @@ from __future__ import annotations
 import hashlib
 import json
 
+from verity.areal import DEFAULT_LAMBDA_C, DEFAULT_LAMBDA_S
 from verity.decision import DEFAULT_SCORER_CONFIG, ScorerConfig, default_n_boot
 
 
@@ -35,18 +36,26 @@ def _round(value: object, ndigits: int = 6) -> object:
     return value
 
 
-def _steps(domain: str, cfg: ScorerConfig, provenance: dict, reference: dict) -> list[dict]:
+def _steps(
+    domain: str, cfg: ScorerConfig, provenance: dict, reference: dict, score_kind: str
+) -> list[dict]:
     """The ordered pipeline for this modality, each step naming its code path and the
     exact parameters it ran under --- the auditable trail from scan to LR."""
-    striated = domain == "striated"
+    striated = domain in {"striated", "toolmark"}
+    # The deployed impressed pipeline preserves areal_signature's 150 um long
+    # cutoff. ScorerConfig's 250 um cutoff describes the striated branch.
+    if domain == "impressed" and cfg.config_hash == DEFAULT_SCORER_CONFIG.config_hash:
+        lambda_s, lambda_c = DEFAULT_LAMBDA_S, DEFAULT_LAMBDA_C
+    else:
+        lambda_s, lambda_c = cfg.lambda_s, cfg.lambda_c
     input_hashes = provenance.get("input_hashes")
     signature_step = (
         {
             "step": "signature",
             "code": "verity.signature.striation_signature",
             "params": {
-                "lambda_s": cfg.lambda_s,
-                "lambda_c": cfg.lambda_c,
+                "lambda_s": lambda_s,
+                "lambda_c": lambda_c,
                 "form_degree": 2,
                 "orient": "fft-power-spectrum",
                 "keep": 0.5,
@@ -58,29 +67,42 @@ def _steps(domain: str, cfg: ScorerConfig, provenance: dict, reference: dict) ->
             "step": "areal-signature",
             "code": "verity.areal.areal_signature",
             "params": {
-                "lambda_s": cfg.lambda_s,
-                "lambda_c": cfg.lambda_c,
+                "lambda_s": lambda_s,
+                "lambda_c": lambda_c,
                 "decimate": 5,
                 "size": 256,
             },
             "produces": "decimated 2-D areal map",
         }
     )
-    compare_step = (
-        {
+    if domain == "toolmark":
+        compare_step = {
+            "step": "compare",
+            "code": "verity.cmr.cmr_regions_1d_pair",
+            "params": {"cmr_1d_corr": cfg.cmr_1d_corr, "cmr_1d_lag": cfg.cmr_1d_lag},
+            "produces": "CMR-1D consensus count from matched striae regions",
+        }
+    elif domain == "striated" and score_kind == "ccf":
+        compare_step = {
+            "step": "compare",
+            "code": "verity.registration.align.align_1d",
+            "params": {"metric": "normalized cross-correlation"},
+            "produces": "peak CCF between two single-land signatures (diagnostic only)",
+        }
+    elif domain == "striated":
+        compare_step = {
             "step": "compare",
             "code": "verity.aggregate.bullet_comparison + verity.decision.scorer.ContrastScorer",
             "params": {"metric": "normalized cross-correlation", "scorer": cfg.name},
             "produces": "land×land CCF matrix; diag_contrast = matched diagonal minus background",
         }
-        if striated
-        else {
+    else:
+        compare_step = {
             "step": "compare",
-            "code": "verity.cmr.cmr_count (areal_votes -> consensus_members)",
+            "code": "verity.cmr.areal_votes + verity.cmr.consensus_members",
             "params": {"cmr_corr": cfg.cmr_corr, "cmr_tol": list(cfg.cmr_tol)},
             "produces": "congruent matching regions (2-D cells under translation+rotation)",
         }
-    )
     return [
         {
             "step": "decode",
@@ -92,7 +114,7 @@ def _steps(domain: str, cfg: ScorerConfig, provenance: dict, reference: dict) ->
         {
             "step": "preprocess",
             "code": "verity.preprocess",
-            "params": {"form_degree": 2, "lambda_s": cfg.lambda_s, "lambda_c": cfg.lambda_c},
+            "params": {"form_degree": 2, "lambda_s": lambda_s, "lambda_c": lambda_c},
             "produces": "ISO 25178 form removal + ISO 16610 roughness band (NaN-aware)",
         },
         signature_step,
@@ -158,7 +180,7 @@ def build_recipe(
         "inputs": prov.get("input_hashes"),
         "reference": reference,
         "result": result,
-        "steps": _steps(domain, cfg, prov, reference),
+        "steps": _steps(domain, cfg, prov, reference, resp.get("score_kind", "")),
         "replay": (
             "POST /v1/compare with the same scans, domain, and scorer config (hash above) "
             "reproduces this handle; calibration is valid only when reference.scorer_config_hash "

@@ -11,6 +11,11 @@
 verity_base <- function() Sys.getenv("VERITY_API_URL", unset = "https://api.verity.codes")
 
 .verity_perform <- function(req) {
+  timeout <- getOption("verity.timeout", 120)
+  if (!is.numeric(timeout) || length(timeout) != 1L || !is.finite(timeout) || timeout <= 0) {
+    stop("verity.timeout must be a finite positive number of seconds")
+  }
+  req <- httr2::req_timeout(req, seconds = timeout)
   httr2::resp_body_json(httr2::req_perform(req), simplifyVector = FALSE)
 }
 

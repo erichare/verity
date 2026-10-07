@@ -19,7 +19,7 @@ cp manifest.json "$BUILD/"
 cp -r verity_mcp "$BUILD/verity_mcp"
 
 # Flat dependency tree next to the package (no venv inside the bundle).
-python -m pip install --quiet --target "$BUILD/lib" "mcp>=1.2" "requests>=2.31"
+python -m pip install --quiet --target "$BUILD/lib" "mcp>=1.28.1,<2" "requests>=2.31"
 
 ( cd "$BUILD" && zip -qr "../$OUT" manifest.json verity_mcp lib )
 rm -rf "$BUILD"

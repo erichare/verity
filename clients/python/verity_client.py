@@ -18,7 +18,9 @@ Uses ``requests`` by default; inject any requests-compatible session (e.g. a Fas
 from __future__ import annotations
 
 import json
+import math
 import os
+from contextlib import ExitStack
 from typing import Any
 
 DEFAULT_BASE_URL = "https://api.verity.codes"
@@ -32,18 +34,25 @@ def _aslist(paths: Any) -> list:
     return list(paths) if isinstance(paths, (list, tuple)) else [paths]
 
 
-def _file_field(path: Any) -> tuple[str, Any]:
+def _file_field(path: Any, stack: ExitStack) -> tuple[str, Any]:
     """A multipart file value ``(filename, fileobj)`` for a path or open file."""
     if hasattr(path, "read"):
         return (getattr(path, "name", "scan.x3p"), path)
-    return (os.path.basename(str(path)), open(str(path), "rb"))  # noqa: SIM115 - closed by the request
+    return (os.path.basename(str(path)), stack.enter_context(open(str(path), "rb")))
 
 
 class VerityClient:
     """A client for the Verity calibrated-LR API."""
 
-    def __init__(self, base_url: str = DEFAULT_BASE_URL, *, session: Any = None) -> None:
-        self._base = base_url.rstrip("/")
+    def __init__(
+        self, base_url: str | None = None, *, session: Any = None, timeout: float = 120.0
+    ) -> None:
+        self._base = (
+            base_url if base_url is not None else os.environ.get("VERITY_API_URL") or DEFAULT_BASE_URL
+        ).rstrip("/")
+        self._timeout = float(timeout)
+        if not math.isfinite(self._timeout) or self._timeout <= 0:
+            raise ValueError("timeout must be a finite positive number of seconds")
         if session is None:
             import requests  # lazy: only needed for real HTTP, not for an injected session
 
@@ -58,9 +67,11 @@ class VerityClient:
         return resp.json()
 
     def _get(self, path: str, **kw: Any) -> Any:
+        kw.setdefault("timeout", self._timeout)
         return self._json(self._session.get(self._base + path, **kw))
 
     def _post(self, path: str, **kw: Any) -> Any:
+        kw.setdefault("timeout", self._timeout)
         return self._json(self._session.post(self._base + path, **kw))
 
     # --- meta --------------------------------------------------------------
@@ -83,7 +94,8 @@ class VerityClient:
 
     def detect(self, scan: Any) -> dict:
         """Suggest a mark type (striated / impressed) for one scan."""
-        return self._post("/detect", files={"scan": _file_field(scan)})
+        with ExitStack() as stack:
+            return self._post("/detect", files={"scan": _file_field(scan, stack)})
 
     def compare(
         self,
@@ -98,18 +110,20 @@ class VerityClient:
         with the reproducible ``recipe`` + ``handle`` by default. ``scorer_config`` is an
         optional override; if its hash doesn't match the reference's, the API returns the
         raw score with ``calibrated: false`` (the firewall)."""
-        files = [("mark_a", _file_field(p)) for p in _aslist(mark_a)]
-        files += [("mark_b", _file_field(p)) for p in _aslist(mark_b)]
         data = {"domain": domain, "include": include}
         if scorer_config is not None:
             data["scorer_config"] = json.dumps(scorer_config)
-        return self._post("/v1/compare", data=data, files=files)
+        with ExitStack() as stack:
+            files = [("mark_a", _file_field(p, stack)) for p in _aslist(mark_a)]
+            files += [("mark_b", _file_field(p, stack)) for p in _aslist(mark_b)]
+            return self._post("/v1/compare", data=data, files=files)
 
     # --- the glass-box step graph -----------------------------------------
 
     def upload(self, scan: Any) -> str:
         """Upload a scan → a content-addressed surface handle (the graph entry point)."""
-        return self._post("/v1/artifacts", files={"scan": _file_field(scan)})["handle"]
+        with ExitStack() as stack:
+            return self._post("/v1/artifacts", files={"scan": _file_field(scan, stack)})["handle"]
 
     def artifact(self, handle: str) -> dict:
         return self._get(f"/v1/artifacts/{handle}")

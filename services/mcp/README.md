@@ -5,16 +5,24 @@ reproducible forensic comparison to any MCP client (Claude Desktop, Claude Code,
 wraps the REST API ([api.verity.codes](https://api.verity.codes)), so it inherits the
 engine's guarantees and stays in sync with the deployment.
 
-## Why this is safe to hand to an agent
+## How to interpret the results
 
-Verity is unusually well-suited to an LLM, because the model **cannot fabricate a forensic
-conclusion**:
+The tools preserve the engine's result and its limitations. They do not establish that
+an agent's interpretation is correct or replace an examiner's judgment:
 
 - **The calibration firewall** — a likelihood ratio is only emitted when the score's
   scorer-config hash matches the reference's; otherwise the tool returns the raw score with
   `status: "uncalibrated"`, never a mis-scaled LR.
 - **The scope guard** — an out-of-domain scan (wrong resolution, wrong mark type) is
   *refused*, returned as `status: "refused"` with the reason, not a guessed answer.
+  Non-blocking scope warnings are preserved. The guard detects surface physics, so the
+  caller must distinguish bullet lands (`striated`) from screwdriver marks (`toolmark`).
+- **Diagnostic results** — a single-land bullet comparison carries an `evidence_note`
+  stating that its LR is diagnostic only and is not reportable evidence. Preserve that
+  restriction in any explanation.
+- **Caller-supplied scores** — `calibrate_score` maps a number to a reference. Without a
+  matching scorer hash, `config_verified` is false. Even a supplied matching hash is a
+  caller assertion, not proof that a score was computed by this pipeline.
 - **Reproducibility** — every comparison carries a content **handle**; the same inputs
   reproduce it, so a claim can be checked.
 
@@ -34,6 +42,9 @@ a reproducible recipe — or an honest refusal.
 
 Scans are local `.x3p` file paths the agent already has access to; the server uploads them
 to the API. Set `VERITY_API_URL` to point at the hosted instance (default) or your own.
+Use a service approved for the scans being uploaded. HTTP requests have a 10-second
+connect timeout and a 120-second read timeout. Files opened by the server are closed
+after the upload, including when a request fails.
 
 ## Install — Claude Code
 
@@ -81,9 +92,11 @@ The one difference from the stdio server above: a hosted server **cannot read yo
 files**, so the scan-taking tools accept the `.x3p` bytes **inline, base64-encoded**
 (`detect_mark_type(scan_base64)`, `compare_marks(domain, mark_a_base64, mark_b_base64)`)
 rather than file paths. Everything else — the calibration firewall, the scope guard, the
-reproducible recipe handles — is identical, because the endpoint runs the same engine as
-the REST API. Use the **stdio** server when the agent already has the scans on disk (no
-base64, no upload size to worry about); use the **remote** endpoint for zero-install access.
+reproducible recipe handles — uses the same engine as the REST API. Use the **stdio**
+server when the agent already has the scans on disk, avoiding base64 in tool arguments.
+Use the **remote** endpoint for zero-install access. Both enforce API upload limits.
+Remote detection, comparison, and calibration use the API's bounded compute pool and
+request timeout.
 
 > Implementation note: the remote endpoint lives in the API service
 > (`services/api/verity_api/mcp_server.py`, mounted at `/mcp`), not in this package — it

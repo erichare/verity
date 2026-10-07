@@ -29,7 +29,8 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [detected, setDetected] = useState<Detection | null>(null);
-  const [manualDomain, setManualDomain] = useState(false);
+  const manualDomain = useRef(false);
+  const detectionRequest = useRef(0);
   const uploadResultRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -64,12 +65,14 @@ export default function Home() {
   // Auto-detect the mark type from the first scan of Mark A and pre-select it
   // (unless the user has manually chosen a type). Keeps the picked files.
   async function onPickA(files: File[]) {
+    const request = ++detectionRequest.current;
     setMarkA(files);
+    setDetected(null);
     if (!files.length) return;
     const d = await detectDomain(files[0]);
-    if (!d) return;
+    if (!d || request !== detectionRequest.current || manualDomain.current) return;
     setDetected(d);
-    if (!manualDomain && d.domain !== domain) setDomain(d.domain);
+    if (d.domain !== domain) setDomain(d.domain);
   }
 
   const shownDomains = domains.length ? domains : ["striated", "impressed", "toolmark"];
@@ -225,7 +228,8 @@ export default function Home() {
                 value={domain}
                 onChange={(e) => {
                   setDomain(e.target.value);
-                  setManualDomain(true);
+                  manualDomain.current = true;
+                  detectionRequest.current += 1;
                   setDetected(null);
                   setMarkA([]);
                   setMarkB([]);

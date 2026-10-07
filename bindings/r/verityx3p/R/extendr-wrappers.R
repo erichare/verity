@@ -7,6 +7,6 @@ NULL
 
 rust_read_x3p <- function(path, verify_checksums) .Call(wrap__rust_read_x3p, path, verify_checksums)
 
-rust_write_x3p <- function(path, data, mask, nx, ny, increment_x, increment_y, z_type) .Call(wrap__rust_write_x3p, path, data, mask, nx, ny, increment_x, increment_y, z_type)
+rust_write_x3p <- function(path, data, mask, nx, ny, increment_x, increment_y, z_type, metadata) .Call(wrap__rust_write_x3p, path, data, mask, nx, ny, increment_x, increment_y, z_type, metadata)
 
 # nolint end

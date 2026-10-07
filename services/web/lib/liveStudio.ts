@@ -22,14 +22,24 @@ export async function runLivePipeline(
   marksB: File[],
 ): Promise<LiveResult> {
   // The calibrated result is required (throws on a network/API error → surfaced to the user).
-  const report = await compareMarks(domain, marksA, marksB);
+  const report = await compareMarks(domain, marksA, marksB, { recipe: true });
   if (isRefusal(report)) return { kind: "refused", refusal: report };
 
   const extras: LiveExtras = { idSuffix: String(++seq) };
+  // Attribution belongs to the strongest land pair selected by the engine. Walking
+  // the first uploaded files instead would put these regions on unrelated surfaces.
+  const aIndex = marksA.length === 1 ? 0 : report.provenance.best_land_a;
+  const bIndex = marksB.length === 1 ? 0 : report.provenance.best_land_b;
+  if (
+    typeof aIndex !== "number" || !Number.isInteger(aIndex) || aIndex < 0 || aIndex >= marksA.length ||
+    typeof bIndex !== "number" || !Number.isInteger(bIndex) || bIndex < 0 || bIndex >= marksB.length
+  ) {
+    return { kind: "run", run: uploadRunRich(report, domain, extras) };
+  }
   try {
     const [aRef, bRef] = await Promise.all([
-      ingestArtifact(marksA[0]),
-      ingestArtifact(marksB[0]),
+      ingestArtifact(marksA[aIndex]),
+      ingestArtifact(marksB[bIndex]),
     ]);
 
     if (domain === "impressed") {

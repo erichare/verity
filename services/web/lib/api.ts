@@ -36,6 +36,7 @@ export async function compareMarks(
   domain: string,
   marksA: File[],
   marksB: File[],
+  options: { recipe?: boolean } = {},
 ): Promise<CompareResponse> {
   const form = new FormData();
   form.append("domain", domain);
@@ -43,7 +44,9 @@ export async function compareMarks(
   for (const f of marksA) form.append("mark_a", f);
   for (const f of marksB) form.append("mark_b", f);
   // The comparison (with a cold bootstrap CI) can run long — uses the generous default.
-  const res = await fetchWithTimeout(`${API_BASE}/compare`, { method: "POST", body: form });
+  if (options.recipe) form.append("include", "recipe");
+  const path = options.recipe ? "/v1/compare" : "/compare";
+  const res = await fetchWithTimeout(`${API_BASE}${path}`, { method: "POST", body: form });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: res.statusText }));
     throw new Error(err.detail ?? "comparison failed");

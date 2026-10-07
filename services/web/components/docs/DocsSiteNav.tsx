@@ -20,6 +20,7 @@ const DOCS_LINKS: DocsLink[] = [
   { href: "/references", label: "References" },
   { href: "/lineage", label: "Lineage" },
   { href: "/docs", label: "Use Verity" },
+  { href: "/plugins", label: "Plugins" },
   { href: "https://api.verity.codes/scalar", label: "API", external: true },
   { href: "/whitepaper.pdf", label: "White paper", external: true },
 ];
@@ -31,7 +32,7 @@ const DOCS_LINKS: DocsLink[] = [
  * defensively so the active-tab underline is correct either way. The wordmark and the
  * "Open the app" CTA point back to the app host (cross-host → plain <a>).
  *
- * The full horizontal nav only fits from lg up; below that it collapses into a menu
+ * The full horizontal nav only fits from xl up; below that it collapses into a menu
  * button + dropdown panel so nothing is cut off on phones or tablets.
  */
 export function DocsSiteNav() {
@@ -81,10 +82,10 @@ export function DocsSiteNav() {
           <span className="ml-1.5 align-middle text-xs font-normal text-muted">docs</span>
         </a>
 
-        {/* lg+: the full horizontal nav (every item fits without scrolling). */}
+        {/* xl+: the full horizontal nav (every item fits without scrolling). */}
         <nav
           aria-label="Documentation"
-          className="hidden items-center gap-4 lg:flex xl:gap-5"
+          className="hidden items-center gap-4 xl:flex"
         >
           {DOCS_LINKS.map((link) => renderLink(link, false))}
           <a
@@ -96,8 +97,8 @@ export function DocsSiteNav() {
           <ThemeToggle />
         </nav>
 
-        {/* Below lg: theme toggle stays reachable; the rest collapses behind a menu. */}
-        <div className="flex items-center gap-2 lg:hidden">
+        {/* Below xl: theme toggle stays reachable; the rest collapses behind a menu. */}
+        <div className="flex items-center gap-2 xl:hidden">
           <ThemeToggle />
           <button
             type="button"
@@ -115,7 +116,7 @@ export function DocsSiteNav() {
       {open && (
         <nav
           aria-label="Documentation (mobile)"
-          className="border-t border-border/60 px-4 pb-4 pt-1 sm:px-6 lg:hidden"
+          className="border-t border-border/60 px-4 pb-4 pt-1 sm:px-6 xl:hidden"
         >
           <div className="mx-auto flex max-w-6xl flex-col">
             {DOCS_LINKS.map((link) => renderLink(link, true))}
