@@ -35,10 +35,11 @@ All five positive and three negative review cases and release notes are saved in
 the portal. The [genuine recorded walkthrough](https://github.com/erichare/verity/releases/download/plugins-v0.1.1/verity-live.mp4)
 is uploaded and linked. Its public download matched the local file byte for byte
 and decoded completely without errors. The maintainer approved all six final
-legal declarations, which were accepted, and Submit was clicked. The portal then
-lost its authenticated session before a submission receipt could be confirmed.
-Receipt verification is pending restored sign-in. Do not infer acceptance or
-create a duplicate submission without checking the existing portal entry.
+legal declarations, which were accepted, and the plugin was submitted. After
+restoring an expired authenticated session, the existing portal entry confirmed
+**Review status: In review** and **0.1.1 · In review**. Publication remains
+**Not published**. OpenAI must review it before it can be listed. No duplicate
+submission was created.
 
 The positive and negative cases, observed behavior, and test limitations are in
 [the review materials](marketplace-review.md). Five initial positive cases passed
