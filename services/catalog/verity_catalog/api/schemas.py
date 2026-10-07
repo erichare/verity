@@ -171,6 +171,55 @@ class DatasetDetail(DatasetSummary):
     files: list[PinnedScan]
 
 
+class DatasetSnapshotScan(BaseModel):
+    """One stable scan row in a dataset snapshot export.
+
+    The hierarchy identifiers make source-disjoint split assignment possible
+    without additional catalog requests. Unresolved static-manifest entries
+    retain their filename/source reference but have null catalog identifiers.
+    """
+
+    filename: str
+    scan_id: int | None = None
+    content_hash: str | None = None
+    size_bytes: int | None = None
+    source: str
+    source_ref: str
+    license: str
+    modality: str | None = None
+    blob_available: bool = False
+    download_url: str | None = None
+    study_id: int | None = None
+    firearm_id: int | None = None
+    firearm_external_id: str | None = None
+    bullet_id: int | None = None
+    bullet_external_id: str | None = None
+    land_id: int | None = None
+    land_external_id: str | None = None
+    land_position: int | None = None
+    cartridge_case_id: int | None = None
+    mark_id: int | None = None
+    tool_id: int | None = None
+    toolmark_id: int | None = None
+
+
+class DatasetSnapshot(BaseModel):
+    """Versioned, content-hashed dataset export for offline consumers."""
+
+    schema_version: int = 1
+    dataset: str
+    title: str | None = None
+    source: str
+    external_id: str
+    license: str
+    resolution: str
+    n_files: int
+    n_resolved: int
+    complete: bool
+    manifest_hash: str
+    scans: list[DatasetSnapshotScan]
+
+
 class BenchmarkSplitSummary(_Read):
     name: str
     title: str
