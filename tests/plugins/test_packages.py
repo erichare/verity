@@ -5,8 +5,11 @@ from __future__ import annotations
 import importlib.util
 import json
 from pathlib import Path
+import shutil
+import struct
 import tempfile
 import unittest
+from unittest.mock import patch
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -50,6 +53,16 @@ class PluginPackages(unittest.TestCase):
                         self.assertEqual(source if target == "claude" else source["path"], "./")
                         self.assertEqual(market["plugins"][0]["name"], manifest["name"])
                         self.assertIn(manifest["mcpServers"].removeprefix("./"), names)
+                        for asset in builder.image_assets(target, manifest):
+                            self.assertIn(asset, names)
+                            self.assertEqual(bundle.read(asset), (ROOT / "plugins" / target / asset).read_bytes())
+                        if target == "claude":
+                            png = bundle.read(manifest["icon"].removeprefix("./"))
+                            self.assertEqual(png[:8], b"\x89PNG\r\n\x1a\n")
+                            width, height = struct.unpack(">II", png[16:24])
+                            self.assertEqual(width, height)
+                            self.assertTrue(512 <= width <= 2048)
+                            self.assertLess(len(png), 2 * 1024 * 1024)
                         mcp = json.loads(bundle.read(".mcp.json"))
                         self.assertEqual(mcp["mcpServers"], {
                             "verity": {"type": "http", "url": "https://api.verity.codes/mcp"}
@@ -62,6 +75,52 @@ class PluginPackages(unittest.TestCase):
                             self.assertIn("\ndescription: ", text)
                         self.assertIn("skills/explain-result/SKILL.md", names)
                         self.assertFalse(any(n.endswith((".pyc", ".env")) for n in names))
+
+    def test_image_references_reject_external_and_traversal_paths(self):
+        for value in ("https://example.com/logo.png", "/tmp/logo.png", "./../logo.png",
+                      "./assets/../../logo.png", "./assets\\logo.png", "./assets/config.json", 123):
+            for target in builder.TARGETS:
+                with self.subTest(target=target, value=value):
+                    manifest = {"icon": value} if target == "claude" else {"interface": {"logo": value}}
+                    with self.assertRaises(ValueError):
+                        builder.image_assets(target, manifest)
+
+    def test_only_referenced_images_are_packaged(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp).resolve()
+            shutil.copytree(ROOT / "plugins/claude", root / "plugins/claude")
+            for name in ("LICENSE-MIT", "LICENSE-APACHE"):
+                shutil.copyfile(ROOT / name, root / name)
+            (root / "plugins/claude/unreferenced.png").write_bytes(b"not a listing asset")
+            with patch.object(builder, "ROOT", root):
+                names = [name for name, _ in builder.package_files("claude")]
+            self.assertIn(".claude-plugin/icon.png", names)
+            self.assertNotIn("unreferenced.png", names)
+
+    def test_missing_and_symlinked_images_are_rejected(self):
+        for case in ("missing", "file-symlink", "directory-symlink"):
+            with self.subTest(case=case), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp).resolve()
+                plugin = root / "plugins/codex"
+                shutil.copytree(ROOT / "plugins/codex", plugin)
+                for name in ("LICENSE-MIT", "LICENSE-APACHE"):
+                    shutil.copyfile(ROOT / name, root / name)
+                image = plugin / "assets/icon.svg"
+                original = image.read_bytes()
+                image.unlink()
+                if case == "file-symlink":
+                    # Even a target within this plugin must not bypass the allowlist.
+                    hidden = plugin / "private.svg"
+                    hidden.write_bytes(original)
+                    image.symlink_to(hidden)
+                elif case == "directory-symlink":
+                    (plugin / "assets").rmdir()
+                    outside = root / "private"
+                    outside.mkdir()
+                    (outside / "icon.svg").write_bytes(original)
+                    (plugin / "assets").symlink_to(outside, target_is_directory=True)
+                with patch.object(builder, "ROOT", root), self.assertRaises(ValueError):
+                    builder.package_files("codex")
 
     def test_workflows_and_connection_do_not_drift_across_hosts(self):
         claude = ROOT / "plugins/claude"

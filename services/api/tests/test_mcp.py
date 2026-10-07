@@ -84,6 +84,19 @@ def test_tools_list_exposes_the_six_tools(client):
     }
 
 
+def test_tools_list_publishes_titles_and_safety_annotations(client):
+    tools = _rpc(client, "tools/list")["result"]["tools"]
+    for tool in tools:
+        assert tool["title"].strip()
+        assert tool["title"] != tool["name"]
+        assert tool["annotations"] == {
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": False,
+        }
+
+
 def test_service_health_tool(client):
     body = _call_tool(client, "service_health", {})
     assert body["status"] == "ok"

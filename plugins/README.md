@@ -9,24 +9,24 @@ Two native plugins, with the same six MCP tools and three workflows:
 
 Both connect to **`https://api.verity.codes/mcp`**. No Python runtime or API key is needed for the hosted connection. Comparison calls send the supplied scan bytes to that service. The plugins do not bundle the scientific engine or process scans entirely on your machine.
 
-## Install release 0.1.0
+## Install release 0.1.1
 
 **Claude Code:**
 
 ```bash
-claude plugin marketplace add erichare/verity@plugins-v0.1.0
+claude plugin marketplace add erichare/verity@plugins-v0.1.1
 claude plugin install verity@verity
 ```
 
 **Codex CLI:**
 
 ```bash
-codex plugin marketplace add erichare/verity@plugins-v0.1.0
+codex plugin marketplace add erichare/verity@plugins-v0.1.1
 codex plugin add verity@verity
 ```
 
 These commands pin the marketplace to the plugin release. The
-[GitHub release](https://github.com/erichare/verity/releases/tag/plugins-v0.1.0)
+[GitHub release](https://github.com/erichare/verity/releases/tag/plugins-v0.1.1)
 also provides separate Claude Code and Codex ZIPs with SHA-256 checksums.
 
 ## Install from a local checkout
@@ -53,7 +53,7 @@ Start a new session after installing. In Codex, `/plugins` also opens the plugin
 claude --plugin-dir /absolute/path/to/verity/plugins/claude
 ```
 
-Once the marketplace files reach the default branch, omit `@plugins-v0.1.0` to track that branch instead. A repository marketplace and GitHub release are separate from a listing in either company's official directory.
+Once the marketplace files reach the default branch, omit `@plugins-v0.1.1` to track that branch instead. A repository marketplace and GitHub release are separate from a listing in either company's official directory.
 
 ## First use
 
@@ -92,7 +92,7 @@ claude plugin validate .
 claude plugin validate plugins/claude
 ```
 
-The build creates `dist/plugins/verity-claude-0.1.0.zip`, `dist/plugins/verity-codex-0.1.0.zip`, and `SHA256SUMS`. Each ZIP is self-contained, with its native manifest, MCP configuration, skills, README, and licenses. Generated archives stay out of Git. A ZIP is a distributable artifact, not evidence of marketplace approval or installation in a user's account.
+The build creates `dist/plugins/verity-claude-0.1.1.zip`, `dist/plugins/verity-codex-0.1.1.zip`, and `SHA256SUMS`. Each ZIP is self-contained, with its native manifest, MCP configuration, skills, README, and licenses. Generated archives stay out of Git. A ZIP is a distributable artifact, not evidence of marketplace approval or installation in a user's account.
 
 Each ZIP also contains a standalone marketplace. Extract the appropriate archive into
 its own folder, then run that client's `marketplace add` command with the extracted

@@ -29,6 +29,7 @@ from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 from mcp.server.transport_security import TransportSecuritySettings
+from mcp.types import ToolAnnotations
 
 from verity.decision import DEFAULT_SCORER_CONFIG
 from verity.detect import detect_domain
@@ -66,6 +67,15 @@ mcp = FastMCP(
     # client POSTing to https://<host>/mcp gets a 200, not a 307 some connectors won't follow.
     streamable_http_path="/mcp",
     transport_security=_transport_security(),
+)
+
+# These tools only read supplied scans and bundled references. Derived calibration
+# caches are internal optimizations, not mutations to caller data or reference records.
+_TOOL_ANNOTATIONS = ToolAnnotations(
+    readOnlyHint=True,
+    destructiveHint=False,
+    idempotentHint=True,
+    openWorldHint=False,
 )
 
 
@@ -200,13 +210,13 @@ async def _run_compute(fn, /, *args, **kwargs):
         raise ValueError(exc.detail) from exc
 
 
-@mcp.tool()
+@mcp.tool(title="Check Verity service health", annotations=_TOOL_ANNOTATIONS)
 def service_health() -> dict:
     """Verity service status and the mark types (domains) it can calibrate."""
     return {"status": "ok", "engine_version": engine_version(), "domains": available_domains()}
 
 
-@mcp.tool()
+@mcp.tool(title="Detect surface mark type", annotations=_TOOL_ANNOTATIONS)
 async def detect_mark_type(scan_base64: str) -> dict:
     """Suggest whether a 3-D surface scan is a STRIATED mark (directional striae — bullet
     lands or toolmarks) or an IMPRESSED mark (cartridge breech face), from striation
@@ -229,7 +239,7 @@ def _detect_mark_type(scan_base64: str) -> dict:
     return {"domain": domain, "coherence": round(coherence, 3)}
 
 
-@mcp.tool()
+@mcp.tool(title="Compare forensic marks", annotations=_TOOL_ANNOTATIONS)
 async def compare_marks(
     domain: str,
     mark_a_base64: list[str],
@@ -304,7 +314,7 @@ def _compare_marks(
     return _summarize_compare(report)
 
 
-@mcp.tool()
+@mcp.tool(title="List calibration references", annotations=_TOOL_ANNOTATIONS)
 def list_references() -> list[dict]:
     """The calibration reference populations and their provenance — the scorer-config hash
     each was built under, its source datasets, and its discrimination/calibration
@@ -312,14 +322,14 @@ def list_references() -> list[dict]:
     return all_reference_metadata()
 
 
-@mcp.tool()
+@mcp.tool(title="Read scorer configuration", annotations=_TOOL_ANNOTATIONS)
 def scorer_config() -> dict:
     """The deployed scorer hyperparameters and their content hash. A calibrated LR is valid
     only against a reference built under this same config hash (the firewall)."""
     return {**DEFAULT_SCORER_CONFIG.to_dict(), "config_hash": DEFAULT_SCORER_CONFIG.config_hash}
 
 
-@mcp.tool()
+@mcp.tool(title="Calibrate a comparison score", annotations=_TOOL_ANNOTATIONS)
 async def calibrate_score(
     score: float, reference: str, scorer_config_hash: str | None = None
 ) -> dict:
