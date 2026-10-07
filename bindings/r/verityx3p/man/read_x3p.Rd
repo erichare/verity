@@ -14,7 +14,8 @@ read_x3p(path, verify_checksums = TRUE)
 \value{
 A \code{verity_x3p} object: a list with \code{surface} (an \code{nx}-by-\code{ny} numeric
 matrix, invalid points \code{NaN}), \code{mask} (logical matrix), \code{nx}, \code{ny},
-\code{increment_x}, \code{increment_y}, \code{z_type}, \code{creator}, and \code{comment}.
+\code{increment_x}, \code{increment_y}, \code{z_type}, \code{creator}, \code{comment}, and \code{metadata}
+containing the remaining standard axis and instrument provenance fields.
 }
 \description{
 Reads an X3P (ISO 25178-72) 3D surface-topography file via the Verity Rust

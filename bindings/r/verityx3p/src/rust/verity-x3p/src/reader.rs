@@ -11,7 +11,7 @@ use std::path::Path;
 /// Options controlling how an X3P file is read.
 #[derive(Debug, Clone)]
 pub struct ReadOptions {
-    /// Verify the stored MD5 of `bindata/data.bin` against the bytes on disk.
+    /// Verify stored MD5 checksums of point data and any declared validity mask.
     /// On for forensic integrity; turn off only to recover known-corrupt files.
     pub verify_checksums: bool,
 }
@@ -42,40 +42,164 @@ pub fn read_x3p_bytes(bytes: &[u8], opts: &ReadOptions) -> Result<Surface> {
 
 /// Raw members pulled out of the zip container.
 struct Members {
-    main_xml: String,
+    meta: ParsedMeta,
     data_bin: Vec<u8>,
+    valid_bin: Option<Vec<u8>>,
 }
 
-/// Locate and extract the X3P members from the archive. X3P entries may sit at
-/// the archive root or under a wrapping folder, so we match by path suffix.
+/// Normalize safe archive paths consistently for links and ZIP member names.
+fn normalized_member_path(link: &str) -> Result<String> {
+    if link.is_empty()
+        || link.starts_with('/')
+        || link.chars().any(|c| matches!(c, ':' | '\\' | '?' | '#'))
+    {
+        return Err(X3pError::Malformed(format!(
+            "linked member must be a local relative archive path: {link:?}"
+        )));
+    }
+    let mut parts = Vec::new();
+    for part in link.split('/') {
+        match part {
+            "." => {}
+            "" | ".." => {
+                return Err(X3pError::Malformed(format!(
+                    "invalid linked archive path: {link:?}"
+                )))
+            }
+            part => parts.push(part),
+        }
+    }
+    if parts.is_empty() {
+        return Err(X3pError::Malformed("empty linked archive path".to_string()));
+    }
+    Ok(parts.join("/"))
+}
+
+/// Resolve a local link inside the same archive directory as main.xml. Never
+/// interpret links as filesystem paths or network URLs.
+fn member_path(main_path: &str, link: &str) -> Result<String> {
+    let link = normalized_member_path(link)?;
+    let base = main_path.strip_suffix("main.xml").unwrap_or_default();
+    normalized_member_path(&format!("{base}{link}"))
+}
+
+fn open_member<'a, R: Read + Seek>(
+    archive: &'a mut zip::ZipArchive<R>,
+    path: &str,
+) -> Result<zip::read::ZipFile<'a>> {
+    let name = {
+        let mut matches = archive
+            .file_names()
+            .filter(|name| normalized_member_path(name).is_ok_and(|normalized| normalized == path));
+        let name = matches.next().ok_or_else(|| {
+            X3pError::Malformed(format!("missing linked archive member {path:?}"))
+        })?;
+        if matches.next().is_some() {
+            return Err(X3pError::Malformed(format!(
+                "ambiguous linked archive member {path:?}"
+            )));
+        }
+        name.to_owned()
+    };
+    Ok(archive.by_name(&name)?)
+}
+
+fn read_member<R: Read + Seek>(archive: &mut zip::ZipArchive<R>, path: &str) -> Result<Vec<u8>> {
+    let mut entry = open_member(archive, path)?;
+    let mut bytes = Vec::new();
+    entry.read_to_end(&mut bytes)?;
+    Ok(bytes)
+}
+
+fn read_validity_member<R: Read + Seek>(
+    archive: &mut zip::ZipArchive<R>,
+    path: &str,
+    expected: usize,
+) -> Result<Vec<u8>> {
+    let entry = open_member(archive, path)?;
+    if entry.size() != expected as u64 {
+        return Err(X3pError::Malformed(format!(
+            "validity mask length is {} bytes, expected {expected}",
+            entry.size()
+        )));
+    }
+    // Do not trust the central directory's size. A forged size must not allow
+    // the decompressed stream to grow beyond one byte over the expected mask.
+    // ceil(point_count / 8) + 1 is representable even at usize::MAX points.
+    let mut bytes = Vec::new();
+    entry.take(expected as u64 + 1).read_to_end(&mut bytes)?;
+    if bytes.len() != expected {
+        return Err(X3pError::Malformed(format!(
+            "validity mask length is {} bytes, expected {expected}",
+            bytes.len()
+        )));
+    }
+    Ok(bytes)
+}
+
+fn point_data_size(meta: &ParsedMeta) -> Result<(usize, usize)> {
+    let n = meta
+        .size_x
+        .checked_mul(meta.size_y)
+        .ok_or_else(|| X3pError::Malformed("SizeX * SizeY overflows".to_string()))?;
+    let needed = n
+        .checked_mul(meta.cz.data_type.byte_size())
+        .ok_or_else(|| X3pError::Malformed("point count * data type size overflows".to_string()))?;
+    Ok((n, needed))
+}
+
+fn validate_point_data_length(actual: usize, needed: usize) -> Result<()> {
+    if actual < needed {
+        return Err(X3pError::Malformed(format!(
+            "data.bin too short: have {actual} bytes, need {needed}"
+        )));
+    }
+    Ok(())
+}
+
+/// Locate a unique main.xml and read its declared links, including wrapped
+/// archives. Exact paths avoid substituting unrelated files with equal suffixes.
 fn extract_members<R: Read + Seek>(reader: R) -> Result<Members> {
     let mut archive = zip::ZipArchive::new(reader)?;
-    let mut main_xml: Option<String> = None;
-    let mut data_bin: Option<Vec<u8>> = None;
-
-    for i in 0..archive.len() {
-        let mut entry = archive.by_index(i)?;
-        let name = entry.name().to_string();
-        if name.ends_with('/') {
-            continue; // directory entry
+    let main_paths: Vec<_> = archive
+        .file_names()
+        .filter(|name| name.rsplit('/').next() == Some("main.xml"))
+        .map(str::to_owned)
+        .collect();
+    let main_path = match main_paths.as_slice() {
+        [path] => path,
+        [] => return Err(X3pError::Malformed("no main.xml in archive".to_string())),
+        _ => {
+            return Err(X3pError::Malformed(
+                "multiple main.xml files in archive".to_string(),
+            ))
         }
-        if name.ends_with("main.xml") {
-            let mut s = String::new();
-            entry.read_to_string(&mut s)?;
-            main_xml = Some(s);
-        } else if name.ends_with("data.bin") {
-            let mut b = Vec::with_capacity(entry.size() as usize);
-            entry.read_to_end(&mut b)?;
-            data_bin = Some(b);
-        }
-        // valid.bin / mask.png are not yet consumed (see decode notes).
-    }
-
+    };
+    let mut main_xml = String::new();
+    archive.by_name(main_path)?.read_to_string(&mut main_xml)?;
+    let meta = xml::parse_main_xml(&main_xml)?;
+    let (n, needed) = point_data_size(&meta)?;
+    let data_bin = read_member(
+        &mut archive,
+        &member_path(main_path, &meta.point_data_link)?,
+    )?;
+    // Inflated dimensions cannot justify a huge mask when point data is short.
+    validate_point_data_length(data_bin.len(), needed)?;
+    let valid_bin = meta
+        .validity
+        .as_ref()
+        .map(|link| {
+            read_validity_member(
+                &mut archive,
+                &member_path(main_path, &link.path)?,
+                n / 8 + usize::from(n % 8 != 0),
+            )
+        })
+        .transpose()?;
     Ok(Members {
-        main_xml: main_xml
-            .ok_or_else(|| X3pError::Malformed("no main.xml in archive".to_string()))?,
-        data_bin: data_bin
-            .ok_or_else(|| X3pError::Malformed("no bindata/data.bin in archive".to_string()))?,
+        meta,
+        data_bin,
+        valid_bin,
     })
 }
 
@@ -86,24 +210,28 @@ fn extract_members<R: Read + Seek>(reader: R) -> Result<Members> {
 /// rescaled by the Z axis (`value * increment + offset`); float encodings are
 /// taken verbatim (matching the `x3ptools` reference), with NaN marking invalid
 /// points.
-fn decode_z(bytes: &[u8], meta: &ParsedMeta) -> Result<(Array2<f64>, Array2<bool>)> {
+fn decode_z(
+    bytes: &[u8],
+    validity: Option<&[u8]>,
+    meta: &ParsedMeta,
+) -> Result<(Array2<f64>, Array2<bool>)> {
     let nx = meta.size_x;
     let ny = meta.size_y;
-    let n = nx
-        .checked_mul(ny)
-        .ok_or_else(|| X3pError::Malformed("SizeX * SizeY overflows".to_string()))?;
+    let (n, needed) = point_data_size(meta)?;
     let dtype = meta.cz.data_type;
     let bs = dtype.byte_size();
 
-    let needed = n * bs;
-    if bytes.len() < needed {
-        return Err(X3pError::Malformed(format!(
-            "data.bin too short: have {} bytes, need {} ({} points x {} bytes)",
-            bytes.len(),
-            needed,
-            n,
-            bs
-        )));
+    validate_point_data_length(bytes.len(), needed)?;
+    if let Some(bits) = validity {
+        let needed = n / 8 + usize::from(n % 8 != 0);
+        if bits.len() != needed {
+            return Err(X3pError::Malformed(format!(
+                "validity mask length is {} bytes, expected {} for {} points",
+                bits.len(),
+                needed,
+                n
+            )));
+        }
     }
 
     let inc = meta.cz.increment;
@@ -126,8 +254,15 @@ fn decode_z(bytes: &[u8], meta: &ParsedMeta) -> Result<(Array2<f64>, Array2<bool
                 i32::from_le_bytes(bytes[p..p + 4].try_into().unwrap()) as f64 * inc + off
             }
         };
-        valid.push(!v.is_nan());
-        heights.push(v);
+        // OpenGPS ValidBuffer::IsValid: LSB-first bits, 1 = valid, X-fastest.
+        // Unused high bits of the last byte have no associated point. A set
+        // mask bit cannot turn a NaN coordinate into a measured height.
+        let mask_valid = match validity {
+            Some(bits) => bits[i / 8] & (1 << (i % 8)) != 0,
+            None => true,
+        };
+        valid.push(mask_valid && !v.is_nan());
+        heights.push(if mask_valid { v } else { f64::NAN });
     }
 
     let data = Array2::from_shape_vec((ny, nx), heights)
@@ -140,7 +275,7 @@ fn decode_z(bytes: &[u8], meta: &ParsedMeta) -> Result<(Array2<f64>, Array2<bool
 /// Core read path shared by the path/bytes entry points.
 fn read_x3p_reader<R: Read + Seek>(reader: R, opts: &ReadOptions) -> Result<Surface> {
     let members = extract_members(reader)?;
-    let meta = xml::parse_main_xml(&members.main_xml)?;
+    let meta = members.meta;
 
     if meta.size_z != 1 {
         return Err(X3pError::Unsupported(format!(
@@ -154,15 +289,25 @@ fn read_x3p_reader<R: Read + Seek>(reader: R, opts: &ReadOptions) -> Result<Surf
             let actual = md5_hex(&members.data_bin, true);
             if &actual != expected {
                 return Err(X3pError::Checksum {
-                    what: "bindata/data.bin".to_string(),
+                    what: meta.point_data_link.clone(),
                     expected: expected.clone(),
+                    actual,
+                });
+            }
+        }
+        if let (Some(link), Some(bytes)) = (&meta.validity, &members.valid_bin) {
+            let actual = md5_hex(bytes, true);
+            if actual != link.checksum {
+                return Err(X3pError::Checksum {
+                    what: link.path.clone(),
+                    expected: link.checksum.clone(),
                     actual,
                 });
             }
         }
     }
 
-    let (data, mask) = decode_z(&members.data_bin, &meta)?;
+    let (data, mask) = decode_z(&members.data_bin, members.valid_bin.as_deref(), &meta)?;
 
     Ok(Surface {
         data,

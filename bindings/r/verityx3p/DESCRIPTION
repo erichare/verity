@@ -10,7 +10,6 @@ Description: Read and write X3P (ISO 25178-72) 3D surface-topography files via
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 8.0.0
 Config/rextendr/version: 0.5.0
 SystemRequirements: Cargo (Rust's package manager), rustc >= 1.65.0, xz
 Depends:
@@ -18,3 +17,4 @@ Depends:
 Suggests:
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
+Config/roxygen2/version: 8.1.0

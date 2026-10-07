@@ -155,6 +155,12 @@ curl -s -X POST https://api.verity.codes/compare \
 
 Full docs: [docs.verity.codes](https://docs.verity.codes) · interactive [API reference](https://api.verity.codes/scalar).
 
+**Claude Code and Codex plugins:**
+
+Native packages with guided comparison, report explanation, and connection checks.
+See the [plugin installation guide](plugins/README.md) for separate Claude Code and
+Codex instructions, example prompts, local-file handling, and self-hosting.
+
 **MCP:**
 
 - Hosted remote server at `https://api.verity.codes/mcp` (base64 scan inputs).
@@ -192,13 +198,14 @@ A polyglot monorepo: one Rust codec core, thin language bindings, and the Python
 | [`services/catalog`](services/catalog) | Python | Normalized catalog + content-addressed store + ingestion (NBTRD / Figshare / GitHub harvests, virtual kits). |
 | [`services/web`](services/web) | Next.js | [verity.codes](https://verity.codes), [docs.verity.codes](https://docs.verity.codes), and the [Studio](https://app.verity.codes). |
 | [`services/mcp`](services/mcp) | Python | MCP server ("verity") — local stdio, plus the hosted endpoint at api.verity.codes/mcp. |
+| [`plugins/`](plugins/README.md) | Claude Code / Codex | Native plugin packages, marketplaces, and evidence-aware workflows. |
 | [`clients/`](clients) | Python / R | Thin API clients + the content-handle reproducibility contract. |
 
 ## Status & roadmap
 
 **Done:** `verity-x3p` native codec + Python/R bindings (bit-identical round-trip), v0.2.0 on crates.io and PyPI. Engine: ISO 16610 preprocessing, registration, the calibrated-LR decision layer, CMR; source-disjoint validation across bullet lands, cartridge cases, and toolmarks (tables above). Platform: comparison API, web app, docs, Studio, and the open benchmark — live at verity.codes and api/docs/app/data.verity.codes.
 
-**In progress:** the pre-registered one-shot external validation on untouched data (see [Validation](#validation-honest)).
+**External validation complete:** the pre-registered one-shot Weller test supports H1 (see [Validation](#validation-honest)).
 
 **Next:** expand the bullet/cartridge/toolmark datasets (NBTRD harvest) and retest the learned representation; CMR-2D → CMC parity on Fadul — `cmcR` still leads, parity is open roadmap; TypeScript/Swift/Java codec bindings. Extending to more mark families: [`docs/toolmark-roadmap.md`](docs/toolmark-roadmap.md).
 

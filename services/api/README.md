@@ -43,7 +43,7 @@ uv run --extra dev verity-api          # serves on 127.0.0.1:8000
 All knobs are environment variables, validated at startup:
 
 - **CORS** — defaults to the local dev origins `http://localhost:3000` and
-  `http://127.0.0.1:3000` only (never `*`). Set `VERITY_CORS_ORIGINS`
+  `http://127.0.0.1:3000`, plus `https://docs.verity.codes` (never `*`). Set `VERITY_CORS_ORIGINS`
   (comma-separated) to allow a deployed front end.
 - **Rate limiting** — a per-IP sliding window on the upload/compute endpoints
   (`/compare`, `/detect`, `/v1/*` uploads and steps, `/mcp`): default
@@ -54,12 +54,28 @@ All knobs are environment variables, validated at startup:
   the limit keys on the real client IP from `X-Forwarded-For` instead of the
   proxy address.
 - **Upload safety** — every upload is treated as hostile: per-file and
-  per-request byte caps, a file-count cap, and a zip-bomb guard on the
+  per-request byte caps (including chunked requests before body parsing), a file-count
+  cap, and a zip-bomb guard on the
   decompressed size/ratio (`VERITY_MAX_FILE_BYTES`, `VERITY_MAX_UPLOAD_BYTES`,
   `VERITY_MAX_FILES`, `VERITY_MAX_UNCOMPRESSED_BYTES`,
   `VERITY_MAX_COMPRESSION_RATIO`), plus a compare timeout and concurrency cap
   (`VERITY_COMPARE_TIMEOUT_S`, `VERITY_MAX_CONCURRENCY`). See
   `verity_api/limits.py` for the defaults.
+- **Compute admission** — when all workers are occupied, new computations return
+  503 immediately. A timed-out or canceled request keeps its capacity reserved until
+  the underlying computation finishes. The timeout bounds the request's wait, but
+  cannot terminate an already-running Python thread.
+- **Artifact cache** — intermediates expire after one hour and are evicted by least
+  recent use, with limits of 512 items and 256 MiB of stored array bytes. Set
+  `VERITY_MAX_ARTIFACT_BYTES` to change the byte cap. A single artifact larger than
+  the cap is rejected with 413.
+
+Impressed and toolmark comparisons require exactly one scan per mark. Only bullet-land
+comparisons aggregate multiple scans. PDF reports preserve diagnostic-only restrictions
+and include the input scope checks. Recipe steps describe the executed scoring branch
+and its cutoffs. Correcting recipe metadata changes the content handle of an otherwise
+unchanged numerical result, so reproduce historical handles using the corresponding code
+revision as well as the same scans and configuration.
 
 ## Calibration references
 

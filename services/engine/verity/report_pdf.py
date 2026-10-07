@@ -30,14 +30,17 @@ def _findings_page(pdf, report: dict, *, case_id: str | None, examiner: str | No
 
     fig = plt.figure(figsize=(8.5, 11))
     fig.text(0.5, 0.95, "Verity — Comparison Report", ha="center", fontsize=20, weight="bold")
+    diagnostic = (report.get("evidence_note") or {}).get("level") == "diagnostic_only"
     fig.text(
         0.5,
         0.915,
-        "Calibrated weight of evidence for a forensic surface comparison",
+        "Diagnostic only — not reportable evidence"
+        if diagnostic
+        else "Calibrated weight of evidence for a forensic surface comparison",
         ha="center",
         fontsize=10,
         style="italic",
-        color="#444444",
+        color="#9A3412" if diagnostic else "#444444",
     )
 
     y = 0.86
@@ -127,7 +130,10 @@ def _findings_page(pdf, report: dict, *, case_id: str | None, examiner: str | No
 
     # Scope note — manually wrapped (matplotlib's wrap=True is unreliable) so it
     # never runs past the margin or into the footer.
-    scope = textwrap.fill("Scope.  " + report.get("scope_note", ""), width=96)
+    scope_note = report.get("scope_note", "")
+    if report.get("scope") or report.get("evidence_note"):
+        scope_note += " See the following pages for evidence restrictions and input scope checks."
+    scope = textwrap.fill("Scope.  " + scope_note, width=96)
     fig.text(
         0.12,
         y - 0.02,
@@ -147,6 +153,53 @@ def _findings_page(pdf, report: dict, *, case_id: str | None, examiner: str | No
     )
     pdf.savefig(fig)
     plt.close(fig)
+
+
+def _scope_pages(pdf, report: dict) -> None:
+    """Preserve every applicability check and restriction without overflowing a page."""
+    import matplotlib.pyplot as plt
+
+    entries: list[str] = []
+    evidence = report.get("evidence_note") or {}
+    if evidence:
+        entries.append(
+            f"Evidence restriction ({evidence.get('level', 'see note')}): "
+            f"{evidence.get('reason', '')}"
+        )
+    for side in ("mark_a", "mark_b"):
+        for index, scan in enumerate((report.get("scope") or {}).get(side, []) or []):
+            for check in scan.get("checks", []) or []:
+                status = "passed" if check.get("passed") else check.get("severity", "warning")
+                entries.append(
+                    f"{side}, scan {index + 1} — {check.get('name', 'scope')} ({status}): "
+                    f"{check.get('reason', 'No reason supplied')}"
+                )
+    lines = []
+    for entry in entries:
+        lines.extend(textwrap.wrap(entry, width=96))
+        lines.append("")
+    lines_per_page = 44
+    for start in range(0, len(lines), lines_per_page):
+        fig = plt.figure(figsize=(8.5, 11))
+        fig.text(0.12, 0.94, "Applicability and evidence restrictions", fontsize=16, weight="bold")
+        fig.text(
+            0.12,
+            0.88,
+            "\n".join(lines[start : start + lines_per_page]),
+            fontsize=9,
+            va="top",
+            linespacing=1.5,
+        )
+        fig.text(
+            0.5,
+            0.04,
+            "Verity · Preserve these limitations with the comparison result",
+            ha="center",
+            fontsize=8,
+            color="#666666",
+        )
+        pdf.savefig(fig)
+        plt.close(fig)
 
 
 def _attribution_page(pdf, report: dict) -> None:
@@ -191,4 +244,5 @@ def render_comparison_pdf(
     out.parent.mkdir(parents=True, exist_ok=True)
     with PdfPages(out) as pdf:
         _findings_page(pdf, report, case_id=case_id, examiner=examiner)
+        _scope_pages(pdf, report)
         _attribution_page(pdf, report)

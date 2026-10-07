@@ -24,6 +24,9 @@ write_x3p(s, tempfile(fileext = ".x3p"))
 the `x3ptools` layout; `s$mask` is the matching logical validity matrix.
 Building requires a Rust toolchain.
 
+Standard axis and instrument provenance are retained in `s$metadata` and
+preserved by `write_x3p()`, along with the `creator` and `comment` fields.
+
 ## Development
 
 To stay self-contained for `R CMD check` and CRAN, this package bundles its own

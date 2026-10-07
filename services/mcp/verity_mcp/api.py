@@ -15,9 +15,11 @@ formatters are unit-testable on their own.
 from __future__ import annotations
 
 import os
+from contextlib import ExitStack
 from typing import Any
 
 DEFAULT_BASE_URL = "https://api.verity.codes"
+DEFAULT_TIMEOUT = (10, 120)  # connect/read seconds; longer than the API's default compute limit
 
 
 class VerityAPIError(RuntimeError):
@@ -28,23 +30,30 @@ def _aslist(value: Any) -> list:
     return list(value) if isinstance(value, (list, tuple)) else [value]
 
 
-def _file_field(path: Any) -> tuple[str, Any]:
+def _file_field(path: Any, stack: ExitStack) -> tuple[str, Any]:
     if hasattr(path, "read"):
         return (getattr(path, "name", "scan.x3p"), path)
-    return (os.path.basename(str(path)), open(str(path), "rb"))  # noqa: SIM115 - read by the request
+    return (os.path.basename(str(path)), stack.enter_context(open(str(path), "rb")))
 
 
 class VerityAPI:
     """Thin client for the Verity REST API. ``session`` defaults to a ``requests`` session;
     inject a requests-compatible session (e.g. a FastAPI ``TestClient``) for testing."""
 
-    def __init__(self, base_url: str | None = None, *, session: Any = None) -> None:
+    def __init__(
+        self,
+        base_url: str | None = None,
+        *,
+        session: Any = None,
+        timeout: tuple[float, float] = DEFAULT_TIMEOUT,
+    ) -> None:
         self.base = (base_url or os.environ.get("VERITY_API_URL") or DEFAULT_BASE_URL).rstrip("/")
         if session is None:
             import requests
 
             session = requests.Session()
         self.session = session
+        self.timeout = timeout
 
     def _json(self, resp: Any) -> Any:
         if resp.status_code >= 400:
@@ -52,9 +61,11 @@ class VerityAPI:
         return resp.json()
 
     def get(self, path: str, **kw: Any) -> Any:
+        kw.setdefault("timeout", self.timeout)
         return self._json(self.session.get(self.base + path, **kw))
 
     def post(self, path: str, **kw: Any) -> Any:
+        kw.setdefault("timeout", self.timeout)
         return self._json(self.session.post(self.base + path, **kw))
 
     def health(self) -> dict:
@@ -67,19 +78,21 @@ class VerityAPI:
         return self.get("/v1/references")["references"]
 
     def detect(self, scan: Any) -> dict:
-        return self.post("/detect", files={"scan": _file_field(scan)})
+        with ExitStack() as stack:
+            return self.post("/detect", files={"scan": _file_field(scan, stack)})
 
     def compare(
         self, domain: str, mark_a: Any, mark_b: Any, scorer_config: dict | None = None
     ) -> dict:
         import json
 
-        files = [("mark_a", _file_field(p)) for p in _aslist(mark_a)]
-        files += [("mark_b", _file_field(p)) for p in _aslist(mark_b)]
-        data = {"domain": domain, "include": "calibration,recipe"}
-        if scorer_config is not None:
-            data["scorer_config"] = json.dumps(scorer_config)
-        return self.post("/v1/compare", data=data, files=files)
+        with ExitStack() as stack:
+            files = [("mark_a", _file_field(p, stack)) for p in _aslist(mark_a)]
+            files += [("mark_b", _file_field(p, stack)) for p in _aslist(mark_b)]
+            data = {"domain": domain, "include": "calibration,recipe"}
+            if scorer_config is not None:
+                data["scorer_config"] = json.dumps(scorer_config)
+            return self.post("/v1/compare", data=data, files=files)
 
     def calibrate(
         self, score: float, reference: str, scorer_config_hash: str | None = None
@@ -104,10 +117,11 @@ def _scope_warnings(report: dict) -> list[str]:
     out: list[str] = []
     scope = report.get("scope") or {}
     for side in ("mark_a", "mark_b"):
-        for chk in scope.get(side, []) or []:
-            if not chk.get("passed", True):
-                detail = chk.get("reason") or chk.get("severity") or "out of range"
-                out.append(f"{side} · {chk.get('name')}: {detail}")
+        for index, scan in enumerate(scope.get(side, []) or []):
+            for chk in scan.get("checks", []) or []:
+                if not chk.get("passed", True):
+                    detail = chk.get("reason") or chk.get("severity") or "out of range"
+                    out.append(f"{side}[{index}] · {chk.get('name')}: {detail}")
     return out
 
 
@@ -139,6 +153,7 @@ def summarize_compare(report: dict) -> dict:
     ref = report.get("reference") or {}
     handle = report.get("handle")
     ci_lo, ci_hi = report.get("log10_lr_ci_lo"), report.get("log10_lr_ci_hi")
+    evidence_note = report.get("evidence_note") or {}
     return {
         "status": "calibrated",
         "domain": report.get("domain"),
@@ -153,8 +168,10 @@ def summarize_compare(report: dict) -> dict:
         "handle": handle,
         "scope_warnings": _scope_warnings(report),
         "scope_note": report.get("scope_note"),
+        "evidence_note": evidence_note or None,
         "summary": (
             f"{report.get('verbal')} (LR ~ {_human_lr(lr)}). Calibrated on "
             f"{ref.get('name')}. Reproducible recipe handle: {handle}."
+            + (f" {evidence_note['reason']}" if evidence_note.get("reason") else "")
         ),
     }

@@ -23,6 +23,7 @@ import json
 import logging
 import os
 import tempfile
+import threading
 import time
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor
@@ -54,6 +55,7 @@ from verity.detect import detect_domain
 from verity.surface import Surface
 
 from . import limits
+from .body_limit import BodySizeLimitMiddleware
 from .intermediates import (
     calibration_diagnostics,
     parse_include,
@@ -237,7 +239,7 @@ _UPLOAD_ERROR_RESPONSES = {
 _PROXY_CAP_NOTE = (
     "\n\nNote: requests larger than the reverse-proxy request-body cap "
     "(~100 MB, the Cloudflare proxy limit) may be rejected upstream with a non-JSON "
-    '(HTML) `413` before reaching the app — so an oversized upload can fail without the '
+    "(HTML) `413` before reaching the app — so an oversized upload can fail without the "
     'JSON `{"detail": …}` body the app returns for limits it enforces itself.'
 )
 
@@ -306,9 +308,7 @@ class DetectResponse(BaseModel):
 # local dev (localhost / 127.0.0.1 :3000) plus the deployed docs site
 # (docs.verity.codes, whose API-reference tries this API cross-origin); override
 # with VERITY_CORS_ORIGINS (comma-separated) to add or replace the deployed origins.
-_DEFAULT_CORS_ORIGINS = (
-    "http://localhost:3000,http://127.0.0.1:3000,https://docs.verity.codes"
-)
+_DEFAULT_CORS_ORIGINS = "http://localhost:3000,http://127.0.0.1:3000,https://docs.verity.codes"
 _cors_origins = [
     o.strip()
     for o in os.environ.get("VERITY_CORS_ORIGINS", _DEFAULT_CORS_ORIGINS).split(",")
@@ -320,6 +320,7 @@ app.add_middleware(
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
+app.add_middleware(BodySizeLimitMiddleware)
 
 # Per-IP sliding-window rate limit on the upload endpoints. In-process (fine for a
 # single instance); front a shared store (Redis) when scaling horizontally.
@@ -395,15 +396,7 @@ def _rate_ok(request: Request) -> bool:
 
 @app.middleware("http")
 async def _enforce_limits(request: Request, call_next):
-    """Reject an over-large body up front (when the client declares its size) and
-    rate-limit the upload endpoints per client IP, before any work is done."""
-    declared = request.headers.get("content-length")
-    if (
-        declared is not None
-        and declared.isdigit()
-        and int(declared) > limits.LIMITS.max_total_bytes
-    ):
-        return JSONResponse(status_code=413, content={"detail": "request body too large"})
+    """Rate-limit upload endpoints before parsing or computation."""
     if request.url.path in _RATE_LIMITED_PATHS and not _rate_ok(request):
         # Retry-After (whole seconds, rounded up) is the sliding-window length: a client
         # that waits it out is guaranteed the oldest hit has aged out of the bucket.
@@ -482,15 +475,30 @@ async def _on_http_exception(request: Request, exc: StarletteHTTPException) -> J
 _COMPARE_EXECUTOR = ThreadPoolExecutor(
     max_workers=limits.LIMITS.max_concurrency, thread_name_prefix="verity-compare"
 )
+# ThreadPoolExecutor itself has an unbounded queue. Admission must happen before
+# submit so saturated requests cannot queue decoded scans or inline MCP uploads.
+_COMPARE_CAPACITY = threading.BoundedSemaphore(limits.LIMITS.max_concurrency)
 
 
 async def _offload(fn, /, *args, **kwargs):
-    """Run a CPU-bound comparison in the bounded pool with a wall-clock timeout, so one
-    heavy or pathological scan can neither block the loop nor run unbounded."""
-    loop = asyncio.get_running_loop()
-    fut = loop.run_in_executor(_COMPARE_EXECUTOR, functools.partial(fn, *args, **kwargs))
+    """Admit work without queueing and bound the caller's wait time.
+
+    A timed-out/canceled await cannot stop a running thread. Keep its capacity
+    reserved until the concurrent future actually finishes, including across loops.
+    """
+    capacity = _COMPARE_CAPACITY
+    if not capacity.acquire(blocking=False):
+        raise HTTPException(status_code=503, detail="comparison service busy; try again later")
     try:
-        return await asyncio.wait_for(fut, timeout=limits.LIMITS.compare_timeout_s)
+        future = _COMPARE_EXECUTOR.submit(functools.partial(fn, *args, **kwargs))
+    except BaseException:
+        capacity.release()
+        raise
+    future.add_done_callback(lambda _future: capacity.release())
+    try:
+        return await asyncio.wait_for(
+            asyncio.wrap_future(future), timeout=limits.LIMITS.compare_timeout_s
+        )
     except TimeoutError as exc:
         raise HTTPException(status_code=503, detail="comparison timed out") from exc
 
@@ -709,6 +717,7 @@ async def _run_compare(
         )
     if not mark_a or not mark_b:
         raise HTTPException(status_code=400, detail="provide at least one scan per mark")
+    _validate_scan_counts(domain, len(mark_a), len(mark_b))
     if len(mark_a) + len(mark_b) > limits.LIMITS.max_files:
         raise limits.TooManyFiles(
             f"{len(mark_a) + len(mark_b)} files exceeds the {limits.LIMITS.max_files}-file limit"
@@ -735,6 +744,12 @@ async def _run_compare(
     )
 
 
+def _validate_scan_counts(domain: str, n_a: int, n_b: int) -> None:
+    """Only bullet comparisons aggregate multiple scans. Never silently drop inputs."""
+    if domain in {"impressed", "toolmark"} and (n_a != 1 or n_b != 1):
+        raise HTTPException(status_code=400, detail=f"{domain} requires exactly one scan per mark")
+
+
 def _compute_report(
     domain: str,
     surfaces_a: list[Surface],
@@ -746,6 +761,7 @@ def _compute_report(
 ) -> dict:
     """The synchronous comparison: applicability guard → score → calibrate → assemble.
     Runs in a worker thread, off the event loop."""
+    _validate_scan_counts(domain, len(surfaces_a), len(surfaces_b))
     # Applicability-domain guard (refuse mode) on every input, BEFORE scoring — never
     # compute a likelihood ratio for a scan outside the validated domain. The scope
     # annotation rides along on admissible comparisons too (warn-severity notes).
@@ -842,7 +858,7 @@ def _compute_report(
     if "recipe" in include:
         # The reproducible methods-as-JSON + content handle — assembled from the report
         # and the reference's provenance, no new computation.
-        recipe = build_recipe(resp, domain=domain, reference_provenance=ref_provenance)
+        recipe = build_recipe(resp, domain=domain, reference_provenance=ref_provenance, config=cfg)
         resp["recipe"] = recipe
         resp["handle"] = recipe["handle"]
     return resp

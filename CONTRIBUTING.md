@@ -22,6 +22,7 @@ All participation is governed by our [Code of Conduct](CODE_OF_CONDUCT.md).
 | [`services/api`](services/api) | FastAPI (uv) | The comparison HTTP API (api.verity.codes). |
 | [`services/catalog`](services/catalog) | Python (uv) | Data catalog + content-addressed store + REST data API. |
 | [`services/mcp`](services/mcp) | Python (uv) | MCP server exposing the comparison API as tools. |
+| [`plugins/`](plugins/README.md) | Claude Code / Codex | Native plugin packages and marketplace manifests. |
 | [`services/web`](services/web) | Next.js (pnpm) | verity.codes / docs.verity.codes / app.verity.codes. |
 | [`clients/`](clients) | Python / R | Thin API clients + the content-handle reproducibility contract. |
 
@@ -116,6 +117,7 @@ uv run --extra dev pytest
 cd services/web
 pnpm install
 pnpm typecheck     # what CI runs
+pnpm test          # Studio, request-contract, and availability regressions
 pnpm build
 pnpm dev           # local dev server on :3000
 ```
@@ -123,6 +125,20 @@ pnpm dev           # local dev server on :3000
 Client-side configuration is `NEXT_PUBLIC_*` env vars — see
 [`services/web/.env.example`](services/web/.env.example). Note that
 `NEXT_PUBLIC_*` values are inlined at **build** time.
+
+### Agent plugins and thin clients
+
+```bash
+python3 -m unittest discover -s tests/plugins -v
+python3 -m unittest discover -s tests/clients -v
+python3 scripts/build_plugins.py
+```
+
+CI uploads both plugin ZIPs and their checksums as the `verity-plugins` artifact.
+Before sharing a release, also run `claude plugin validate .` and
+`claude plugin validate plugins/claude`, and load the Codex marketplace in a current
+client. Keep the duplicated workflow files identical across the two packages.
+See [`plugins/README.md`](plugins/README.md) for setup and transport checks.
 
 ### R binding (`bindings/r/verityx3p`, optional)
 

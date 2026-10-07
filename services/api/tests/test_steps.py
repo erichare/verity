@@ -84,6 +84,41 @@ def test_store_size_cap_lru():
     assert st.get(a.handle) is None
 
 
+def test_store_expires_on_read_without_another_write(monkeypatch):
+    from verity_api import artifacts
+
+    st = ArtifactStore(ttl_s=10)
+    a = _store_surface(_striated_surface(0), st, now=100)
+    monkeypatch.setattr(artifacts.time, "time", lambda: 111)
+    assert st.get(a.handle) is None
+    assert st.array(a.handle) is None
+
+
+def test_store_byte_limit_evicts_lru_and_dedup_does_not_double_count():
+    st = ArtifactStore(max_bytes=450)
+
+    def put(value):
+        return st.put_array(np.full(8, value), kind="signature.1d", meta={}, produced_by={})
+
+    a = put(1)
+    b = put(2)
+    assert st.get(a.handle) is not None  # a is now most recently used
+    put(1)  # replace the same artifact without charging its bytes twice
+    c = put(3)
+    assert st.get(a.handle) is not None and st.get(c.handle) is not None
+    assert st.get(b.handle) is None
+
+
+def test_store_rejects_one_artifact_over_byte_cap_without_evicting_existing():
+    from verity_api.limits import UploadTooLarge
+
+    st = ArtifactStore(max_bytes=300)
+    a = st.put_array(np.zeros(8), kind="signature.1d", meta={}, produced_by={})
+    with pytest.raises(UploadTooLarge, match="artifact"):
+        st.put_array(np.zeros(100), kind="signature.1d", meta={}, produced_by={})
+    assert st.get(a.handle) is not None
+
+
 # --- step endpoints (synthetic surfaces injected, no scans needed) ----------
 
 

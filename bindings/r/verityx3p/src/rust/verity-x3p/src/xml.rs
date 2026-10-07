@@ -16,8 +16,16 @@ pub(crate) struct ParsedMeta {
     pub general: GeneralInfo,
     pub revision: String,
     pub feature_type: String,
+    /// Local archive path relative to the directory containing main.xml.
+    pub point_data_link: String,
     /// `Record3/DataLink/MD5ChecksumPointData`, if present (normalized upper-case hex).
     pub md5_point_data: Option<String>,
+    pub validity: Option<ValidityLink>,
+}
+
+pub(crate) struct ValidityLink {
+    pub path: String,
+    pub checksum: String,
 }
 
 /// Find the first descendant element with the given local name (namespace-agnostic).
@@ -31,6 +39,44 @@ fn text(root: Node, name: &str) -> Option<String> {
     find(root, name)
         .and_then(|n| n.text())
         .map(|s| s.trim().to_string())
+}
+
+/// Link declarations must not be ambiguous, empty, or silently discarded.
+fn unique_optional_text(root: Node, name: &str) -> Result<Option<String>> {
+    let mut nodes = root
+        .descendants()
+        .filter(|node| node.is_element() && node.tag_name().name() == name);
+    let value = nodes
+        .next()
+        .map(|node| node.text().unwrap_or_default().trim().to_string());
+    if nodes.next().is_some() {
+        return Err(X3pError::Malformed(format!(
+            "multiple <{name}> declarations"
+        )));
+    }
+    Ok(value)
+}
+
+fn parse_validity(root: Node) -> Result<Option<ValidityLink>> {
+    let path = unique_optional_text(root, "ValidPointsLink")?;
+    let checksum = unique_optional_text(root, "MD5ChecksumValidPoints")?;
+    match (path, checksum) {
+        (None, None) => Ok(None),
+        (Some(path), Some(checksum)) => {
+            if checksum.len() != 32 || !checksum.bytes().all(|byte| byte.is_ascii_hexdigit()) {
+                return Err(X3pError::Malformed(
+                    "MD5ChecksumValidPoints must contain exactly 32 hexadecimal digits".to_string(),
+                ));
+            }
+            Ok(Some(ValidityLink {
+                path,
+                checksum: checksum.to_ascii_uppercase(),
+            }))
+        }
+        _ => Err(X3pError::Malformed(
+            "ValidPointsLink and MD5ChecksumValidPoints must be declared together".to_string(),
+        )),
+    }
 }
 
 /// Required `usize` field.
@@ -115,7 +161,10 @@ pub(crate) fn parse_main_xml(xml: &str) -> Result<ParsedMeta> {
         general,
         revision: text(root, "Revision").unwrap_or_else(|| "ISO5436 - 2000".to_string()),
         feature_type: text(root, "FeatureType").unwrap_or_else(|| "SUR".to_string()),
+        point_data_link: unique_optional_text(root, "PointDataLink")?
+            .unwrap_or_else(|| "bindata/data.bin".to_string()),
         md5_point_data: text(root, "MD5ChecksumPointData").map(|s| s.trim().to_uppercase()),
+        validity: parse_validity(root)?,
     })
 }
 

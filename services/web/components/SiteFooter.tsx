@@ -14,6 +14,7 @@ const HOSTS: { href: string; host: string; label: string; external?: boolean }[]
 ];
 
 const PROJECT: { href: string; label: string; external?: boolean }[] = [
+  { href: "https://docs.verity.codes/plugins", label: "Claude Code & Codex plugins" },
   { href: GITHUB, label: "GitHub", external: true },
   // The PDF resolves from /public identically on every host (proxy.ts skips *.pdf).
   { href: "/whitepaper.pdf", label: "White paper (PDF)", external: true },

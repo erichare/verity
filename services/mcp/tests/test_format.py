@@ -30,7 +30,7 @@ def test_summarize_calibrated_trims_previews_and_keeps_handle():
         "attribution": [{"x": 0}, {"x": 1}],
         "handle": "sha256:abc123",
         "scope_note": "calibrated weight of evidence …",
-        "scope": {"mark_a": [{"name": "resolution", "passed": True}], "mark_b": []},
+        "scope": {"mark_a": [{"checks": [{"name": "resolution", "passed": True}]}], "mark_b": []},
         "previews": {"a": [[1, 2]], "b": [[3, 4]]},  # bulky — must be dropped
     }
     s = summarize_compare(report)
@@ -81,13 +81,35 @@ def test_scope_warnings_surfaced():
         "handle": "h",
         "scope": {
             "mark_a": [
-                {"name": "signal", "passed": False, "reason": "low RMS", "severity": "warn"}
+                {
+                    "admissible": True,
+                    "checks": [
+                        {"name": "signal", "passed": False, "reason": "low RMS", "severity": "warn"}
+                    ],
+                }
             ],
             "mark_b": [],
         },
     }
     s = summarize_compare(report)
     assert any("signal" in w for w in s["scope_warnings"])
+
+
+def test_single_land_diagnostic_restriction_survives_summary():
+    note = {
+        "single_land": True,
+        "level": "diagnostic_only",
+        "reason": "Single-land likelihood ratio is diagnostic only, not reportable evidence.",
+    }
+    summary = summarize_compare(
+        {
+            "domain": "striated",
+            "likelihood_ratio": 2.0,
+            "evidence_note": note,
+        }
+    )
+    assert summary["evidence_note"] == note
+    assert "not reportable evidence" in summary["summary"]
 
 
 def test_human_lr():

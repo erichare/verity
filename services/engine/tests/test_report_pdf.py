@@ -61,3 +61,37 @@ def test_render_comparison_pdf_without_previews(tmp_path):
     out = tmp_path / "c2.pdf"
     render_comparison_pdf(rep, str(out))
     assert out.exists() and out.read_bytes()[:4] == b"%PDF"
+
+
+def test_pdf_keeps_diagnostic_restriction_and_all_scope_warnings(tmp_path, monkeypatch):
+    from matplotlib.backends.backend_pdf import PdfPages
+
+    captured = []
+    original_savefig = PdfPages.savefig
+
+    def capture(self, figure, *args, **kwargs):
+        captured.append("\n".join(text.get_text() for text in figure.texts))
+        return original_savefig(self, figure, *args, **kwargs)
+
+    monkeypatch.setattr(PdfPages, "savefig", capture)
+    report = _report()
+    report["evidence_note"] = {
+        "level": "diagnostic_only",
+        "reason": "Diagnostic only, not reportable evidence.",
+    }
+    report["scope"] = {
+        "mark_a": [
+            {
+                "checks": [
+                    {"name": "signal", "passed": False, "reason": f"Weak texture check {i}"}
+                    for i in range(60)
+                ]
+            }
+        ]
+    }
+    render_comparison_pdf(report, str(tmp_path / "diagnostic.pdf"))
+    assert "Diagnostic only" in captured[0]
+    all_text = "\n".join(captured)
+    assert "not reportable evidence" in all_text
+    for i in range(60):
+        assert f"Weak texture check {i}" in all_text
