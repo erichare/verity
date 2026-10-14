@@ -1,3 +1,5 @@
+<p align="center"><img src=".claude-plugin/icon.png" alt="Verity icon" width="88" height="88"></p>
+
 # Verity for Claude Code
 
 Compare forensic X3P scans and explain calibrated likelihood ratios with explicit evidence limits.

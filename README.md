@@ -1,3 +1,5 @@
+<p align="center"><img src="plugins/claude/.claude-plugin/icon.png" alt="Verity icon" width="88" height="88"></p>
+
 <div align="center">
 
 # Verity

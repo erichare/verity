@@ -1,3 +1,5 @@
+<p align="center"><img src="claude/.claude-plugin/icon.png" alt="Verity icon" width="88" height="88"></p>
+
 # Verity plugins
 
 Two native plugins, with the same six MCP tools and three workflows:
