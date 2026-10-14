@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import Image from "next/image";
+import pluginIcon from "@/public/images/verity-plugin.png";
 import { CodeBlock } from "@/components/docs/CodeBlock";
 import { Reveal } from "@/components/Reveal";
 import { LinkArrow } from "@/components/LinkArrow";
@@ -16,6 +18,7 @@ export const metadata: Metadata = {
     title: TITLE,
     description: DESCRIPTION,
     url: "/plugins",
+    images: [{ url: pluginIcon.src, alt: "Verity plugin icon" }],
   },
 };
 
@@ -23,13 +26,13 @@ const PLUGINS = [
   {
     name: "Claude Code",
     path: "plugins/claude",
-    code: "claude plugin marketplace add erichare/verity@plugins-v0.1.0\nclaude plugin install verity@verity",
+    code: "claude plugin marketplace add erichare/verity@plugins-v0.1.1\nclaude plugin install verity@verity",
     verify: "Open Claude Code and run /verity:service-check.",
   },
   {
     name: "Codex",
     path: "plugins/codex",
-    code: "codex plugin marketplace add erichare/verity@plugins-v0.1.0\ncodex plugin add verity@verity",
+    code: "codex plugin marketplace add erichare/verity@plugins-v0.1.1\ncodex plugin add verity@verity",
     verify: "Open a new Codex chat and ask it to use the Verity service-check skill.",
   },
 ];
@@ -38,6 +41,7 @@ export default function PluginsPage() {
   return (
     <main id="main" className="mx-auto w-full max-w-6xl px-6 pb-24 pt-28 sm:pt-36">
       <section className="rise max-w-3xl">
+        <Image src={pluginIcon} alt="Verity plugin icon" width={88} height={88} className="mb-6 rounded-2xl" />
         <p className="font-mono text-xs uppercase tracking-wider text-accent">Verity for agents</p>
         <h1 className="mt-4 font-display text-4xl font-semibold leading-tight tracking-tight sm:text-6xl">
           Claude Code &amp; Codex plugins
@@ -55,14 +59,18 @@ export default function PluginsPage() {
 
       <Reveal>
         <section aria-labelledby="install-title" className="mt-12 border-t border-border pt-8">
-          <h2 id="install-title" className="font-display text-2xl font-medium">Install release 0.1.0</h2>
+          <h2 id="install-title" className="font-display text-2xl font-medium">Install release 0.1.1</h2>
           <p className="mt-3 max-w-3xl text-sm leading-relaxed text-foreground/80">
             Add Verity&rsquo;s repository marketplace and install the plugin for your client.
-            These commands pin version 0.1.0. You can also download separate plugin ZIPs and
+            These commands pin version 0.1.1. You can also download separate plugin ZIPs and
             checksums from the{" "}
-            <a href="https://github.com/erichare/verity/releases/tag/plugins-v0.1.0" className="text-accent hover:underline">
+            <a href="https://github.com/erichare/verity/releases/tag/plugins-v0.1.1" className="text-accent hover:underline">
               GitHub release
             </a>.
+          </p>
+          <p className="mt-3 max-w-3xl text-sm leading-relaxed text-muted">
+            These are community marketplace packages. Official directory submissions are under
+            review; an installable release does not establish directory approval or endorsement.
           </p>
           <div className="mt-6 grid gap-6 lg:grid-cols-2">
             {PLUGINS.map((plugin) => (

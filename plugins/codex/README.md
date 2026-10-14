@@ -1,3 +1,5 @@
+<p align="center"><img src="assets/icon.svg" alt="Verity icon" width="88" height="88"></p>
+
 # Verity for Codex
 
 Compare forensic X3P scans and explain calibrated likelihood ratios with explicit evidence limits.
