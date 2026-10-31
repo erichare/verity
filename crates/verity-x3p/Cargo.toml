@@ -13,7 +13,7 @@ readme = "README.md"
 [dependencies]
 ndarray.workspace = true
 thiserror.workspace = true
-zip = { version = "2.2", default-features = false, features = ["deflate"] }
+zip = { version = "9.0", default-features = false, features = ["deflate"] }
 roxmltree = "0.20"
 md-5 = "0.10"
 
