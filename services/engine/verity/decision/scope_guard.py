@@ -16,7 +16,8 @@ The checks are glass-box and physically motivated:
 * **modality** — the detected mark type (striae anisotropy) must match the
   requested one, because the mark type picks the calibration reference. A
   hysteresis band flags the ambiguous middle rather than guessing.
-* **coverage** — enough of the scan must be measured (not NaN) to compare.
+* **coverage** — enough of the scan's measured extent (the bounding box of its finite
+  data) must be measured (not NaN) to compare; empty export border does not count.
 * **signal** — the roughness band must carry real amplitude (not a flat/polished
   or mis-acquired surface).
 
@@ -27,7 +28,8 @@ only (every scan stays admissible — useful while a reference still lacks its
 calibrated thresholds), while ``"refuse"`` returns a structured refusal when a
 blocking check fails. The hosted API runs ``"refuse"`` mode on its comparison
 path, blocking on the hard, unrecoverable failures (resolution, modality) and
-keeping coverage/signal shortfalls as non-blocking warnings.
+keeping coverage/signal shortfalls as non-blocking warnings, except that coverage
+below a hard floor (``coverage_floor``) still refuses.
 """
 
 from __future__ import annotations
@@ -161,8 +163,21 @@ def _modality_check(surface: Surface, requested_domain: str | None) -> tuple[Sco
     )
 
 
+def _measured_extent_fraction(mask: np.ndarray) -> float:
+    """Fraction of the measured extent that is actually measured: the share of finite
+    points inside the bounding box of the finite data. Instruments export masked regions
+    on grids of very different sizes (an uncropped EvoFinder export is mostly empty
+    border), so counting over the whole grid measures the export, not the data."""
+    rows = np.flatnonzero(mask.any(axis=1))
+    if rows.size == 0:
+        return 0.0
+    cols = np.flatnonzero(mask.any(axis=0))
+    box = mask[rows[0] : rows[-1] + 1, cols[0] : cols[-1] + 1]
+    return float(box.mean())
+
+
 def _coverage_check(surface: Surface) -> ScopeCheck:
-    frac = float(surface.mask.mean())
+    frac = _measured_extent_fraction(surface.mask)
     if frac < 0.6:
         return ScopeCheck(
             "coverage",
@@ -227,6 +242,7 @@ def check_applicability(
     requested_domain: str | None = None,
     mode: str = "warn",
     blocking: frozenset[str] | None = None,
+    coverage_floor: float | None = None,
 ) -> ScopeReport:
     """Check one scan against the validated domain.
 
@@ -238,7 +254,12 @@ def check_applicability(
     coverage/signal shortfalls as non-blocking warnings (a masked cartridge scan is
     legitimately sparse, so coverage should warn, not refuse, on the comparison path).
     ``requested_domain`` (defaults to ``domain``) is the mark type the caller intends to
-    compare under, used by the modality check."""
+    compare under, used by the modality check.
+
+    ``coverage_floor`` (refuse mode only) is a hard floor on measured coverage that
+    blocks even when ``"coverage"`` is not in ``blocking``: a scan with almost nothing
+    measured cannot be compared, however legitimately masked. Coverage between the
+    floor and the usual 60% line still records a refuse-severity check without blocking."""
     if mode not in ("warn", "refuse"):
         raise ValueError(f"mode must be 'warn' or 'refuse', got {mode!r}")
     requested = requested_domain or domain
@@ -252,7 +273,12 @@ def check_applicability(
     would_refuse = [
         c
         for c in failed
-        if c.severity == "refuse" and (blocking is None or c.name in blocking)
+        if c.severity == "refuse"
+        and (
+            blocking is None
+            or c.name in blocking
+            or (c.name == "coverage" and coverage_floor is not None and c.value < coverage_floor)
+        )
     ]
     admissible = True if mode == "warn" else not would_refuse
     if not failed:
@@ -273,7 +299,7 @@ def applicability_thresholds(surfaces: list[Surface], *, percentile: float = 2.0
     pitches, covs, sqs = [], [], []
     for s in surfaces:
         pitches.append(float(max(abs(s.dx), abs(s.dy)) * 1e6))
-        covs.append(float(s.mask.mean()))
+        covs.append(_measured_extent_fraction(s.mask))
         rough = isolate_roughness(remove_form(s, degree=2), _LAMBDA_S, _LAMBDA_C)
         finite = rough.heights[np.isfinite(rough.heights)]
         sqs.append(float(np.sqrt(np.mean(finite**2)) * 1e9) if finite.size else 0.0)
