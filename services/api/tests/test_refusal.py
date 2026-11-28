@@ -125,6 +125,32 @@ def test_compare_refuses_scan_below_coverage_floor():
     assert "measured" in body["reason"]
 
 
+def _isotropic(seed: int, n: int = 600, dx: float = 2e-6) -> bytes:
+    """An impressed-looking (isotropic) areal scan only n*dx across (1.2 mm by default),
+    the size of a firing-pin impression rather than a breech face."""
+    rng = np.random.default_rng(seed)
+    z = rng.normal(size=(n, n))
+    k = np.fft.fftfreq(n)
+    kk = np.hypot(*np.meshgrid(k, k))
+    z = np.real(np.fft.ifft2(np.fft.fft2(z) * np.exp(-((kk * 2 * np.pi * 3) ** 2) / 2)))
+    return _x3p_bytes(z * 0.2e-6 / z.std(), dx)
+
+
+def test_compare_flags_firing_pin_sized_impressed_scan_without_refusing():
+    # The impressed reference is breech faces only; a firing-pin-sized scan detects as
+    # impressed too. It is flagged in the scope, and still compared (warn-only).
+    r = _post("impressed", _isotropic(1), _isotropic(2))
+    assert r.status_code == 200
+    body = r.json()
+    assert "refused" not in body
+    assert "likelihood_ratio" in body
+    checks = {c["name"]: c for c in body["scope"]["mark_a"][0]["checks"]}
+    assert checks["modality"]["passed"]
+    assert checks["extent"]["passed"] is False
+    assert checks["extent"]["severity"] == "warn"
+    assert "breech faces only" in checks["extent"]["reason"]
+
+
 def test_compare_admits_in_domain_and_attaches_scope():
     r = _post("striated", _striated(3), _striated(3))
     assert r.status_code == 200

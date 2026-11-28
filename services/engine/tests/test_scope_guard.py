@@ -172,3 +172,56 @@ def test_toolmark_domain_expects_striated_physics():
 
     striated_eq = check_applicability(_striated_surface(), domain="striated")
     assert _check(striated_eq, "modality").passed == modality.passed
+
+
+def _isotropic_surface(n: int, dx: float = 2e-6, seed: int = 0) -> Surface:
+    """Isotropic areal roughness (~0.2 µm, smoothed white noise) → detects impressed,
+    resolves the band, full coverage, real signal. ``n`` sets the physical size."""
+    rng = np.random.default_rng(seed)
+    z = rng.normal(size=(n, n))
+    k = np.fft.fftfreq(n)
+    kk = np.hypot(*np.meshgrid(k, k))
+    z = np.real(np.fft.ifft2(np.fft.fft2(z) * np.exp(-((kk * 2 * np.pi * 3) ** 2) / 2)))
+    z *= 0.2e-6 / z.std()
+    return Surface(heights=z, dx=dx, dy=dx)
+
+
+_COMPARE_PATH = dict(
+    mode="refuse", blocking=frozenset({"resolution", "modality"}), coverage_floor=0.25
+)
+
+
+def test_small_impressed_scan_is_flagged_not_refused():
+    # A firing-pin-sized impressed scan (1.6 mm) detects as impressed like a breech face,
+    # but the impressed reference is breech faces only: flag it, never refuse it.
+    rep = check_applicability(_isotropic_surface(800), domain="impressed", **_COMPARE_PATH)
+    assert _check(rep, "modality").passed  # it really does look impressed
+    extent = _check(rep, "extent")
+    assert not extent.passed and extent.severity == "warn"
+    assert extent.value < 2.5
+    assert "breech" in extent.reason and "firing-pin" in extent.reason
+    assert rep.admissible  # warn-only
+
+
+def test_breech_face_sized_impressed_scan_passes_extent():
+    rep = check_applicability(_isotropic_surface(1400), domain="impressed", **_COMPARE_PATH)
+    extent = _check(rep, "extent")
+    assert extent.passed  # 2.8 mm spans a breech face
+    assert rep.admissible
+
+
+def test_extent_check_runs_only_for_impressed():
+    rep = check_applicability(_striated_surface(), domain="striated", mode="refuse")
+    assert "extent" not in {c.name for c in rep.checks}
+
+
+def test_extent_measures_finite_data_not_export_grid():
+    # A small measured patch on a large, mostly empty export grid is still small: the span
+    # is taken over the finite data, as coverage is.
+    s = _isotropic_surface(400)  # 0.8 mm patch
+    big = np.full((1600, 1600), np.nan)  # 3.2 mm grid
+    big[:400, :400] = s.heights
+    rep = check_applicability(
+        Surface(heights=big, dx=s.dx, dy=s.dy), domain="impressed", **_COMPARE_PATH
+    )
+    assert not _check(rep, "extent").passed
