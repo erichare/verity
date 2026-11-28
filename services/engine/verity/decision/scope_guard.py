@@ -20,6 +20,10 @@ The checks are glass-box and physically motivated:
   data) must be measured (not NaN) to compare; empty export border does not count.
 * **signal** — the roughness band must carry real amplitude (not a flat/polished
   or mis-acquired surface).
+* **extent** (impressed only, warn-only) — the measured area must span a breech face.
+  The impressed reference is breech faces only; a firing-pin impression (a crater
+  about 1-2 mm across) is detected as impressed too, so a scan smaller than a breech
+  face is flagged as one the reference may not cover. It never refuses.
 
 Thresholds here are physically-motivated defaults; :func:`applicability_thresholds`
 derives data-driven ones from a low percentile of the in-domain reference (the
@@ -234,6 +238,52 @@ def _signal_check(surface: Surface) -> ScopeCheck:
     return ScopeCheck("signal", True, "ok", sq_nm, 20.0, f"roughness-band amplitude {sq_nm:.1f} nm")
 
 
+# Smallest span (mm) of the measured area expected of a breech face. The impressed
+# reference (Fadul) is breech faces only. A firing-pin impression is a crater about
+# 1-2 mm across, and detect_domain calls it impressed too, so without this it would be
+# calibrated as a breech face. The 40 Fadul reference scans span 3.72-4.03 mm; on the
+# EvoFinder pilot, firing-pin masks spanned 0.86-1.86 mm and breech-face masks 3.0-3.6 mm.
+_IMPRESSED_MIN_SPAN_MM = 2.5
+
+
+def _measured_span_mm(surface: Surface) -> float:
+    """Longer side (mm) of the bounding box of the scan's finite data: how far the
+    measured area reaches, independent of export border and of masked holes inside it."""
+    mask = surface.mask
+    rows = np.flatnonzero(mask.any(axis=1))
+    if rows.size == 0:
+        return 0.0
+    cols = np.flatnonzero(mask.any(axis=0))
+    height = (rows[-1] - rows[0] + 1) * abs(surface.dy)
+    width = (cols[-1] - cols[0] + 1) * abs(surface.dx)
+    return float(max(height, width) * 1e3)
+
+
+def _extent_check(surface: Surface) -> ScopeCheck:
+    """Warn-only: an impressed scan smaller than a breech face is probably a firing-pin
+    impression, which the breech-face-only reference was not calibrated on."""
+    span = _measured_span_mm(surface)
+    if span < _IMPRESSED_MIN_SPAN_MM:
+        return ScopeCheck(
+            "extent",
+            False,
+            "warn",
+            span,
+            _IMPRESSED_MIN_SPAN_MM,
+            f"measured area spans only {span:.2f} mm, smaller than a breech face; this may "
+            "be a firing-pin impression, and the impressed reference is calibrated on breech "
+            "faces only, so the likelihood ratio may not apply",
+        )
+    return ScopeCheck(
+        "extent",
+        True,
+        "ok",
+        span,
+        _IMPRESSED_MIN_SPAN_MM,
+        f"measured area spans {span:.2f} mm (breech-face sized)",
+    )
+
+
 def check_applicability(
     surface: Surface,
     *,
@@ -268,6 +318,8 @@ def check_applicability(
     cov = _coverage_check(surface)
     sig = _signal_check(surface)
     checks = [res, modality, cov, sig]
+    if requested == "impressed":
+        checks.append(_extent_check(surface))  # warn-only: never blocks
 
     failed = [c for c in checks if not c.passed]
     would_refuse = [

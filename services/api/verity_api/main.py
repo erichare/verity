@@ -607,6 +607,9 @@ _REFUSAL_NOTE = (
 # striated-domain scan looks toolmark-like on a coherence/scale heuristic, nudging the user
 # toward domain="toolmark". Left as a warn-only enhancement so it can never reject a valid
 # bullet-land comparison.
+#
+# The impressed-only "extent" check (a scan smaller than a breech face, likely a firing
+# pin, on the breech-face-only reference) is warn-severity by design, so it never blocks.
 _HARD_REFUSE_CHECKS = frozenset({"resolution", "modality"})
 
 # Below this measured fraction (within the extent of the scan's finite data, so empty
