@@ -16,7 +16,7 @@ fn members(bytes: &[u8]) -> Vec<(String, Vec<u8>)> {
     (0..archive.len())
         .map(|index| {
             let mut file = archive.by_index(index).unwrap();
-            let name = file.name().to_owned();
+            let name = file.name().unwrap().into_owned();
             let mut data = Vec::new();
             file.read_to_end(&mut data).unwrap();
             (name, data)
@@ -69,7 +69,9 @@ fn corrupt_mask_stream(bytes: &mut [u8]) {
     let offset = {
         let mut archive = zip::ZipArchive::new(Cursor::new(&*bytes)).unwrap();
         let file = archive.by_name("bindata/valid.bin").unwrap();
-        file.data_start() as usize
+        // zip 9 reports the data offset once the entry has been opened.
+        file.data_start()
+            .expect("data offset is known for an opened entry") as usize
     };
     // Deflate block type 3 is reserved. Attempting decompression must fail.
     bytes[offset] = 0x06;
@@ -178,7 +180,7 @@ fn forged_mask_size_cannot_allow_unbounded_decompression() {
     )
     .unwrap_err();
     assert!(
-        matches!(&err, X3pError::Malformed(message) if message.contains("validity mask length is 3 bytes, expected 2")),
+        matches!(&err, X3pError::Malformed(message) if message.contains("validity mask length is more than 2 bytes, expected 2")),
         "must stop after the first unexpected byte: {err}"
     );
 }

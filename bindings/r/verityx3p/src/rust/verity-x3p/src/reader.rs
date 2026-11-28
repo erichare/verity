@@ -86,10 +86,15 @@ fn member_path(main_path: &str, link: &str) -> Result<String> {
 fn open_member<'a, R: Read + Seek>(
     archive: &'a mut zip::ZipArchive<R>,
     path: &str,
-) -> Result<zip::read::ZipFile<'a>> {
+) -> Result<zip::read::ZipFile<'a, R>> {
     let name = {
-        let mut matches = archive
+        // zip 9 decodes each member name fallibly; a name that cannot be decoded makes
+        // the archive malformed rather than silently dropping that member.
+        let names = archive
             .file_names()
+            .collect::<std::result::Result<Vec<_>, _>>()?;
+        let mut matches = names
+            .iter()
             .filter(|name| normalized_member_path(name).is_ok_and(|normalized| normalized == path));
         let name = matches.next().ok_or_else(|| {
             X3pError::Malformed(format!("missing linked archive member {path:?}"))
@@ -99,7 +104,7 @@ fn open_member<'a, R: Read + Seek>(
                 "ambiguous linked archive member {path:?}"
             )));
         }
-        name.to_owned()
+        name.to_string()
     };
     Ok(archive.by_name(&name)?)
 }
@@ -127,7 +132,17 @@ fn read_validity_member<R: Read + Seek>(
     // the decompressed stream to grow beyond one byte over the expected mask.
     // ceil(point_count / 8) + 1 is representable even at usize::MAX points.
     let mut bytes = Vec::new();
-    entry.take(expected as u64 + 1).read_to_end(&mut bytes)?;
+    if let Err(err) = entry.take(expected as u64 + 1).read_to_end(&mut bytes) {
+        // zip 9 enforces the declared size itself and fails with InvalidData as soon as
+        // the stream runs past it. That is the same malformed mask, so report it as one
+        // (a Python ValueError) rather than as an I/O error.
+        if err.kind() == std::io::ErrorKind::InvalidData {
+            return Err(X3pError::Malformed(format!(
+                "validity mask length is more than {expected} bytes, expected {expected}"
+            )));
+        }
+        return Err(err.into());
+    }
     if bytes.len() != expected {
         return Err(X3pError::Malformed(format!(
             "validity mask length is {} bytes, expected {expected}",
@@ -161,10 +176,12 @@ fn validate_point_data_length(actual: usize, needed: usize) -> Result<()> {
 /// archives. Exact paths avoid substituting unrelated files with equal suffixes.
 fn extract_members<R: Read + Seek>(reader: R) -> Result<Members> {
     let mut archive = zip::ZipArchive::new(reader)?;
-    let main_paths: Vec<_> = archive
+    let main_paths: Vec<String> = archive
         .file_names()
+        .collect::<std::result::Result<Vec<_>, _>>()?
+        .into_iter()
         .filter(|name| name.rsplit('/').next() == Some("main.xml"))
-        .map(str::to_owned)
+        .map(|name| name.into_owned())
         .collect();
     let main_path = match main_paths.as_slice() {
         [path] => path,
