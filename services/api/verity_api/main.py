@@ -596,7 +596,8 @@ _REFUSAL_NOTE = (
 # Only the hard, unrecoverable failures block the comparison: a scan too coarse to
 # resolve the roughness band, or the wrong mark type for this reference. Coverage and
 # signal shortfalls stay as loud warnings — a masked cartridge scan is legitimately
-# sparse, so refusing on coverage would reject valid known-match comparisons.
+# sparse, so refusing on coverage would reject valid known-match comparisons. The one
+# exception is coverage below _COVERAGE_HARD_FLOOR, where too little is measured to compare.
 #
 # FOLLOW-UP (M16, not implemented here — do NOT reject): the modality guard only
 # distinguishes striated-vs-impressed physics, so a striated *toolmark* sent as
@@ -608,13 +609,23 @@ _REFUSAL_NOTE = (
 # bullet-land comparison.
 _HARD_REFUSE_CHECKS = frozenset({"resolution", "modality"})
 
+# Below this measured fraction (within the extent of the scan's finite data, so empty
+# export border does not count) a scan carries too little surface to compare at all, so
+# coverage blocks even though it is not a hard check. Every Fadul (47-57%) and Weller
+# (52-65%) reference scan clears it; a scan with only a few percent measured does not.
+_COVERAGE_HARD_FLOOR = 0.25
+
 
 def _scope_check(surface: Surface, domain: str) -> ScopeReport:
     """Applicability-domain guard for one scan, refusing only on hard failures. A scan
     we cannot even evaluate is treated as out of scope rather than admitted by default."""
     try:
         return check_applicability(
-            surface, domain=domain, mode="refuse", blocking=_HARD_REFUSE_CHECKS
+            surface,
+            domain=domain,
+            mode="refuse",
+            blocking=_HARD_REFUSE_CHECKS,
+            coverage_floor=_COVERAGE_HARD_FLOOR,
         )
     except Exception as exc:  # noqa: BLE001 - cannot establish scope ⇒ refuse, not admit
         return ScopeReport(

@@ -96,6 +96,35 @@ def test_compare_refuses_wrong_modality():
     )
 
 
+def _sparse(seed: int, nx: int = 256, ny: int = 256) -> bytes:
+    """An in-domain striated land with only every 10th column measured (~10% of the
+    measured extent): striae intact, so only the hard coverage floor can refuse it."""
+    rng = np.random.default_rng(seed)
+    x = np.arange(nx)
+    stripes = 0.5e-6 * np.sin(2 * np.pi * x / 12.0 + seed * 0.1)
+    z = np.tile(stripes, (ny, 1)) + rng.normal(scale=0.03e-6, size=(ny, nx))
+    gaps = np.ones(nx, dtype=bool)
+    gaps[::10] = False
+    z[:, gaps] = np.nan
+    return _x3p_bytes(z, 1.5e-6)
+
+
+def test_compare_refuses_scan_below_coverage_floor():
+    # Regression: coverage was never blocking on /compare, so a scan with ~10% measured
+    # still got a likelihood ratio. Below the hard floor it must be refused.
+    r = _post("striated", _sparse(1), _striated(2))
+    assert r.status_code == 200
+    body = r.json()
+    assert body["refused"] is True
+    assert "likelihood_ratio" not in body
+    mark_a = body["scope"]["mark_a"][0]
+    assert mark_a["admissible"] is False
+    checks = {c["name"]: c for c in mark_a["checks"]}
+    assert checks["modality"]["passed"] and checks["resolution"]["passed"]
+    assert checks["coverage"]["value"] < 0.25
+    assert "measured" in body["reason"]
+
+
 def test_compare_admits_in_domain_and_attaches_scope():
     r = _post("striated", _striated(3), _striated(3))
     assert r.status_code == 200

@@ -50,7 +50,7 @@ def test_coarse_pitch_is_refused():
 def test_low_coverage_is_refused():
     s = _striated_surface()
     z = s.heights.copy()
-    z[: z.shape[0] // 2] = np.nan  # 50% missing
+    z[::2] = np.nan  # every other row missing → 50% of the extent
     rep = check_applicability(s.with_heights(z), domain="striated", mode="refuse")
     assert not rep.admissible
     assert _check(rep, "coverage").severity == "refuse"
@@ -77,7 +77,7 @@ def test_blocking_limits_refusal_to_named_checks():
     # what keeps a legitimately-masked cartridge scan from being rejected.
     s = _striated_surface()
     z = s.heights.copy()
-    z[: z.shape[0] // 2] = np.nan  # 50% missing → coverage refuse-severity
+    z[::2] = np.nan  # every other row missing → 50% of the extent, coverage refuse-severity
     rep = check_applicability(
         s.with_heights(z),
         domain="striated",
@@ -86,6 +86,60 @@ def test_blocking_limits_refusal_to_named_checks():
     )
     assert rep.admissible  # coverage no longer blocks the comparison
     assert _check(rep, "coverage").severity == "refuse"  # but the shortfall is recorded
+
+
+def test_coverage_floor_refuses_near_empty_scan_on_restricted_blocking():
+    # Regression: a scan with ~10% measured passed the comparison path because coverage
+    # is not a hard check. The coverage floor blocks it even with blocking restricted.
+    s = _striated_surface()
+    z = np.full_like(s.heights, np.nan)
+    z[:, ::10] = s.heights[:, ::10]  # every 10th column → ~10% of the extent
+    rep = check_applicability(
+        s.with_heights(z),
+        domain="striated",
+        mode="refuse",
+        blocking=frozenset({"resolution", "modality"}),
+        coverage_floor=0.25,
+    )
+    assert _check(rep, "modality").passed  # only coverage can be what blocks here
+    assert _check(rep, "coverage").value < 0.25
+    assert not rep.admissible
+    assert "measured" in rep.overall_reason
+
+
+def test_coverage_floor_keeps_masked_level_coverage_admissible():
+    # 50% coverage (masked-cartridge level) is above the floor: still recorded, not blocking.
+    s = _striated_surface()
+    z = s.heights.copy()
+    z[::2] = np.nan  # 50% of the extent
+    rep = check_applicability(
+        s.with_heights(z),
+        domain="striated",
+        mode="refuse",
+        blocking=frozenset({"resolution", "modality"}),
+        coverage_floor=0.25,
+    )
+    assert rep.admissible
+    assert _check(rep, "coverage").severity == "refuse"
+
+
+def test_coverage_ignores_empty_export_border():
+    # Regression: coverage was the finite fraction of the whole grid, so a fully measured
+    # region exported on a mostly empty grid (an uncropped EvoFinder export) read as a
+    # few percent. Coverage is now measured within the extent of the finite data.
+    s = _striated_surface()
+    big = np.full((4 * s.heights.shape[0], 4 * s.heights.shape[1]), np.nan)
+    big[: s.heights.shape[0], : s.heights.shape[1]] = s.heights  # 1/16 of the grid
+    rep = check_applicability(
+        Surface(heights=big, dx=s.dx, dy=s.dy),
+        domain="striated",
+        mode="refuse",
+        blocking=frozenset({"resolution", "modality"}),
+        coverage_floor=0.25,
+    )
+    assert _check(rep, "coverage").passed
+    assert _check(rep, "coverage").value == 1.0
+    assert rep.admissible
 
 
 def test_blocking_still_refuses_named_hard_failures():
