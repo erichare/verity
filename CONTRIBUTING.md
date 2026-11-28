@@ -5,11 +5,30 @@ surface-comparison platform. This guide covers local development setup for each
 package in the monorepo, the conventions pull requests must follow, and the
 policy for changes that affect published validation numbers.
 
-If you are reporting a problem rather than sending code, please use the
+If you are reporting a problem or proposing a task rather than sending code immediately, please use the
 [issue templates](.github/ISSUE_TEMPLATE/) — including the dedicated
-**validation issue** template for challenging any published number.
+**validation issue** template for challenging any published number, and the
+**data contribution** template for sharing forensic scan datasets.
 
 All participation is governed by our [Code of Conduct](CODE_OF_CONDUCT.md).
+
+## Where help is needed
+
+We maintain a curated, labeled backlog so new contributors — from Rust and Python engineers to forensic examiners and researchers — can find sized, high-impact tasks:
+
+| Label | Who it is for | Scope / Examples |
+|---|---|---|
+| [`good first issue`](https://github.com/erichare/verity/issues?q=is%3Aissue+is%3Aopen+label%3A"good+first+issue") | New contributors | Self-contained tasks, test coverage, CLI ergonomics, docs |
+| [`help wanted`](https://github.com/erichare/verity/issues?q=is%3Aissue+is%3Aopen+label%3A"help+wanted") | General contributors | Features, performance optimizations, bug fixes |
+| [`data`](https://github.com/erichare/verity/issues?q=is%3Aissue+is%3Aopen+label%3Adata) | Forensic examiners / researchers | Contributing new X3P scans, instrument profiles, ground-truth studies |
+| [`validation`](https://github.com/erichare/verity/issues?q=is%3Aissue+is%3Aopen+label%3Avalidation) | Metrologists / statisticians | Benchmarks, score calibration, protocol reviews, Cllr replication |
+| [`bindings`](https://github.com/erichare/verity/issues?q=is%3Aissue+is%3Aopen+label%3Abindings) | Python / R developers | PyO3 and extendr bindings, type stubs, client ergonomics |
+
+When creating a new issue, please select the matching [issue template](.github/ISSUE_TEMPLATE/):
+- **[Bug report](.github/ISSUE_TEMPLATE/bug_report.md)**: Broken behavior across the codec, services, or web app.
+- **[Feature request](.github/ISSUE_TEMPLATE/feature_request.md)**: Capabilities, improvements, or research proposals.
+- **[Data contribution](.github/ISSUE_TEMPLATE/data_contribution.md)**: New forensic scan datasets, test marks, or benchmark kits.
+- **[Validation issue](.github/ISSUE_TEMPLATE/validation-issue.md)**: Questions or challenges regarding published headline numbers.
 
 ## Repository layout
 

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Headline Validation Numbers
+    url: https://github.com/erichare/verity/blob/main/docs/headline-numbers.md
+    about: Read our canonical registry of protocol-labeled validation figures.
+  - name: Onboarding & Architecture Guide
+    url: https://github.com/erichare/verity/blob/main/ONBOARDING.md
+    about: Tour the repository structure, services, and local development setup.
